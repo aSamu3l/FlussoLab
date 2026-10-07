@@ -159,7 +159,12 @@ svg text,.field input,pre.code,.con,.vars td,.tip b,.dlg textarea{font-variant-l
 .support{display:grid;gap:10px;justify-items:start;background:var(--surface-2);border-radius:10px;padding:12px 14px}
 .netpill{font-size:12px;font-weight:700;color:var(--if-s);background:var(--if-f);border:1px solid var(--if-s);border-radius:999px;padding:2px 9px;white-space:nowrap}
 .netpill::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:currentColor;margin-right:6px;vertical-align:1px}
-.toast .tbtn{margin-left:10px;border:0;border-radius:6px;padding:3px 10px;font-weight:700;background:var(--surface);color:var(--ink);cursor:pointer}
+.updbar{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:21;display:flex;align-items:center;gap:14px;
+  background:var(--surface);color:var(--ink);border:1px solid var(--rule);border-left:4px solid var(--pen);border-radius:10px;padding:10px 12px 10px 14px;box-shadow:var(--shadow);font-size:14px;max-width:calc(100% - 24px)}
+.updbar span{flex:1;min-width:0}
+html.locked,html.locked body{overflow:hidden;overscroll-behavior:none}
+dialog{overscroll-behavior:contain}
+.menu{overscroll-behavior:contain}
 .bar{grid-row:1}
 .installbar{grid-row:2}
 .main{grid-row:3}
@@ -290,6 +295,7 @@ kbd{font:12px var(--f-mono);border:1px solid var(--rule);border-bottom-width:2px
   .app{padding-bottom:calc(64px + env(safe-area-inset-bottom,0px))}
   .main{grid-template-rows:58vh auto}
   .toast{bottom:calc(76px + env(safe-area-inset-bottom,0px));max-width:calc(100% - 32px)}
+  .updbar{left:12px;right:12px;transform:none;bottom:calc(72px + env(safe-area-inset-bottom,0px));max-width:none}
   .zoom{right:10px;bottom:10px}
   .tabs button{padding:11px 10px 9px}
 }

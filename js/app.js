@@ -957,7 +957,12 @@ $('#bStop').onclick = () => stopRun(false);
 
 /* ================= dialogs ================= */
 const dlg = $('#dlg');
-function openDlg(html) { dlg.innerHTML = `<div class="dlg">${html}</div>`; if (!dlg.open) dlg.showModal(); }
+function openDlg(html) {
+  hideMenu(); hideCtx(); closePop();
+  dlg.innerHTML = `<div class="dlg">${html}</div>`;
+  if (!dlg.open) { dlg.showModal(); document.documentElement.classList.add('locked'); }
+}
+dlg.addEventListener('close', () => document.documentElement.classList.remove('locked'));
 dlg.addEventListener('click', e => { if (e.target === dlg || e.target.closest('[data-close]')) dlg.close(); });
 function fileBase() { return (prog.name || t('untitled')).trim().replace(/[\\/:*?"<>|]+/g, '').replace(/\s+/g, '_').slice(0, 60) || 'diagramma'; }
 let dlNs;
@@ -1151,7 +1156,7 @@ function hideMenu() {
 }
 $$('.mbtn').forEach(b => {
   b.addEventListener('click', e => { e.stopPropagation(); openMenu === b.dataset.menu ? hideMenu() : showMenu(b.dataset.menu); });
-  b.addEventListener('mouseenter', () => { if (openMenu && openMenu !== b.dataset.menu) showMenu(b.dataset.menu); });
+  b.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse' && openMenu && openMenu !== b.dataset.menu) showMenu(b.dataset.menu); });
   b.addEventListener('keydown', e => { if (e.key === 'ArrowDown') { e.preventDefault(); showMenu(b.dataset.menu); const f = $(`#m-${b.dataset.menu} .mi:not([disabled])`); if (f) f.focus(); } });
 });
 $$('.menubar .menu').forEach(m => {
@@ -1162,7 +1167,14 @@ $$('.menubar .menu').forEach(m => {
     if (e.key === 'ArrowUp') { e.preventDefault(); (items[i - 1] || items[items.length - 1]).focus(); }
   });
 });
-document.addEventListener('click', e => { if (openMenu && !e.target.closest('.mwrap')) hideMenu(); });
+let swallowClick = false;
+document.addEventListener('pointerdown', e => {
+  swallowClick = false;
+  if (openMenu && !e.target.closest('.mwrap')) { hideMenu(); swallowClick = true; }
+}, true);
+document.addEventListener('click', e => { if (swallowClick) { swallowClick = false; e.stopPropagation(); e.preventDefault(); } }, true);
+addEventListener('scroll', () => { if (openMenu) hideMenu(); }, true);
+addEventListener('resize', () => { hideMenu(); hideCtx(); });
 function runCmd(c) {
   const f = sel && find(sel);
   if (c === 'new') return cmdNew();
@@ -1263,10 +1275,11 @@ if ('launchQueue' in window) {
   });
 }
 window.flussoUpdate = (apply) => {
-  const el = $('#toast');
-  el.innerHTML = `${esc(t('updAvail'))} <button class="tbtn">${esc(t('updNow'))}</button>`;
-  el.hidden = false; clearTimeout(toastT);
-  el.querySelector('.tbtn').onclick = apply;
+  const el = $('#updBar');
+  el.querySelector('span').textContent = t('updAvail');
+  const btn = el.querySelector('button'); btn.textContent = t('updNow');
+  btn.onclick = () => { btn.disabled = true; apply(); };
+  el.hidden = false;
 };
 
 /* ================= boot ================= */

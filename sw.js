@@ -1,6 +1,6 @@
 // FlussoLab service worker: keeps the app available offline.
 // Change VERSION whenever you publish new files, so users get the update.
-const VERSION = 'flussolab-0.2.1';
+const VERSION = 'flussolab-0.2.2';
 const FILES = ['./', 'index.html', 'css/style.css', 'js/core.js', 'js/app.js', 'js/pwa.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/maskable-512.png', 'icons/apple-touch-icon.png', 'icons/favicon-64.png'];
 
 self.addEventListener('install', e => {

@@ -3,7 +3,7 @@
 Editor di diagrammi di flusso che funziona nel browser, pensato per la scuola.
 Niente da installare: va su PC, Mac, Chromebook e tablet.
 
-**[Apri FlussoLab](https://asamu3l.github.io/FlussoLab/)**
+**[Apri FlussoLab](https://flussolab.s3l.it/)**
 
 ![Il diagramma "Media dei voti" in FlussoLab](docs/editor.png)
 

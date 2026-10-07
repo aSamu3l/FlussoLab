@@ -158,8 +158,8 @@ const I18N = {
   },
 };
 let lang = store.get('lang') === 'en' ? 'en' : 'it';
-const opts = Object.assign({ explain: true, sym: false, theme: 'auto', trace: false, py: false, link: true }, (() => { try { return JSON.parse(store.get('opts') || '{}'); } catch (e) { return {}; } })());
-function saveOpts() { store.set('opts', JSON.stringify(opts)); }
+const opts = Object.assign({ explain: false, sym: false, theme: 'auto', trace: true, py: false, link: true }, (() => { try { return JSON.parse(store.get('prefs') || '{}'); } catch (e) { return {}; } })());
+function saveOpts() { store.set('prefs', JSON.stringify(opts)); }
 function applyTheme() { const r = document.documentElement; if (opts.theme === 'auto') r.removeAttribute('data-theme'); else r.setAttribute('data-theme', opts.theme); }
 applyTheme();
 function t(k, ...a) { const v = I18N[lang][k] ?? I18N.it[k]; return typeof v === 'function' ? v(...a) : v; }

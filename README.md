@@ -5,7 +5,7 @@ Niente da installare: va su PC, Mac, Chromebook e tablet.
 
 **[Apri FlussoLab](https://asamu3l.github.io/FlussoLab/)**
 
-![FlussoLab](docs/editor.png)
+![Il diagramma "Media dei voti" in FlussoLab](docs/editor.png)
 
 ## Cosa fa
 
@@ -15,6 +15,27 @@ Niente da installare: va su PC, Mac, Chromebook e tablet.
 - Pseudocodice generato in automatico
 - Salvataggio in file `.flusso` ed esportazione in PNG
 - Italiano e inglese, tema chiaro e scuro
+
+## Come si presenta
+
+**Esecuzione passo passo**: il blocco attivo è evidenziato e a destra si vedono le variabili.
+
+![Esecuzione passo passo del programma "Numero primo"](docs/esecuzione.png)
+
+**Errori chiari**: il blocco sbagliato viene segnalato prima di eseguire, con un messaggio che spiega cosa correggere.
+
+![Errore su un blocco OUT con un testo senza virgolette](docs/errore.png)
+
+**Anche su telefono e tablet**, con il tema scuro.
+
+<img src="docs/telefono.png" alt="FlussoLab su telefono, tema scuro" width="300">
+
+## Installare come app
+
+FlussoLab si può installare e funziona anche senza internet:
+
+- **Chrome o Edge** (Windows, Chromebook, Android): menu del browser → «Installa FlussoLab».
+- **iPhone e iPad**: Safari → Condividi → «Aggiungi alla schermata Home».
 
 ## Contribuire
 

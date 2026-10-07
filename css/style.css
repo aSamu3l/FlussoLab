@@ -264,6 +264,26 @@ kbd{font:12px var(--f-mono);border:1px solid var(--rule);border-bottom-width:2px
   .hintbar{display:none}
   .con{max-height:none}
 }
+@media (max-width: 640px){
+  .bar{gap:2px 4px;padding:4px 8px 0}
+  .brand{margin-right:2px}
+  .brand span{display:none}
+  .mbtn{padding:8px 9px}
+  .vsep,.spacer{display:none}
+  .netpill{margin-left:auto}
+  .pname{order:10;flex:1 1 100%;width:100%;margin:2px 0 6px;padding:7px 8px;border-color:var(--rule)}
+  .menubar .menu{position:fixed;left:8px;right:8px;min-width:0;max-height:70vh;overflow:auto}
+  .menubar .menu .mi{padding:11px 12px 11px 8px}
+  .runbar{position:fixed;left:0;right:0;bottom:0;z-index:15;background:var(--surface);border-top:1px solid var(--rule);
+    padding:8px 12px calc(8px + env(safe-area-inset-bottom,0px));gap:8px;box-shadow:0 -6px 18px rgb(20 30 50 / .08)}
+  .rb{flex:1;justify-content:center;height:44px}
+  .speed{display:none}
+  .app{padding-bottom:calc(64px + env(safe-area-inset-bottom,0px))}
+  .main{grid-template-rows:58vh auto}
+  .toast{bottom:calc(76px + env(safe-area-inset-bottom,0px));max-width:calc(100% - 32px)}
+  .zoom{right:10px;bottom:10px}
+  .tabs button{padding:11px 10px 9px}
+}
 @media (pointer: coarse){
   input,textarea,.field input,.inform input,.pname,.dlg input[type=text]{font-size:16px}
   .mi{padding:10px 12px 10px 8px}

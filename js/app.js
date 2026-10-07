@@ -1130,8 +1130,16 @@ function showMenu(name) {
   if (openMenu === name) return;
   hideMenu();
   openMenu = name; renderMenu(name);
-  $('#m-' + name).hidden = false;
+  const m = $('#m-' + name);
+  m.style.top = ''; m.style.left = ''; m.style.right = '';
+  m.hidden = false;
   $(`.mbtn[data-menu="${name}"]`).setAttribute('aria-expanded', 'true');
+  if (innerWidth <= 640) {
+    m.style.top = ($('.bar').getBoundingClientRect().bottom + 4) + 'px';
+  } else {
+    const r = m.getBoundingClientRect(), pr = m.parentElement.getBoundingClientRect();
+    if (r.right > innerWidth - 8) { m.style.left = (innerWidth - 8 - r.width - pr.left) + 'px'; m.style.right = 'auto'; }
+  }
 }
 function hideMenu() {
   if (!openMenu) return;

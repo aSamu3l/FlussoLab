@@ -1,3 +1,10 @@
+@font-face{font-family:"Atkinson Hyperlegible";font-style:normal;font-weight:400;font-display:swap;src:url(../fonts/atkinson-400.woff2) format("woff2")}
+@font-face{font-family:"Atkinson Hyperlegible";font-style:italic;font-weight:400;font-display:swap;src:url(../fonts/atkinson-400i.woff2) format("woff2")}
+@font-face{font-family:"Atkinson Hyperlegible";font-style:normal;font-weight:700;font-display:swap;src:url(../fonts/atkinson-700.woff2) format("woff2")}
+@font-face{font-family:"Gabarito";font-style:normal;font-weight:600;font-display:swap;src:url(../fonts/gabarito-600.woff2) format("woff2")}
+@font-face{font-family:"Gabarito";font-style:normal;font-weight:800;font-display:swap;src:url(../fonts/gabarito-800.woff2) format("woff2")}
+@font-face{font-family:"JetBrains Mono";font-style:normal;font-weight:400;font-display:swap;src:url(../fonts/jetbrains-mono-400.woff2) format("woff2")}
+@font-face{font-family:"JetBrains Mono";font-style:normal;font-weight:600;font-display:swap;src:url(../fonts/jetbrains-mono-600.woff2) format("woff2")}
 /* Layout: one-screen workbench — toolbar on top, squared-notebook canvas on the left, tabbed panel on the right; stacks on phones */
 :root{
   --paper:#fafcff; --grid:#e3eaf4; --grid-strong:#ccd8e8;

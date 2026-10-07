@@ -2,7 +2,7 @@
 'use strict';
 /* ====== Project settings: fill these in before publishing ====== */
 const CONFIG = {
-  version: '0.2',
+  version: '0.3.0',
   author: 'aSamu3l',
   github: 'https://github.com/aSamu3l',
   repo: 'https://github.com/aSamu3l/FlussoLab',
@@ -41,6 +41,9 @@ const I18N = {
     e_cmpmix: op => `Stai confrontando un testo con un numero (${op}). Forse mancano le parentesi, ad esempio "Risultato: " + (x > 5)`, mFile: 'File', mEdit: 'Modifica', mView: 'Visualizza', mHelp: 'Aiuto',
     undoM: 'Annulla', redoM: 'Ripeti', optSymShort: 'Simboli ≥ ≤ ≠', zoomIn: 'Ingrandisci', zoomOut: 'Riduci', zoom100: 'Zoom 100%',
     helpT: 'Guida', language: 'Lingua', offline: 'Offline', offlineT: 'Sei offline: FlussoLab funziona lo stesso e salva tutto su questo dispositivo.',
+    tooMany: n => `Puoi tenere aperti al massimo ${n} diagrammi: chiudine uno.`, newTab: 'Nuovo diagramma', closeTab: 'Chiudi',
+    closeT: 'Chiudere il diagramma?', closeMsg: n => `«${n}» ha modifiche che non hai salvato in un file. Se lo chiudi, le perdi.`,
+    closeAnyway: 'Chiudi senza salvare', unsaved: 'Modifiche non salvate in un file', fitT: 'Adatta allo schermo',
     installAsk: 'Vuoi installare FlussoLab come app? Funziona anche offline.', installBtn: 'Installa', installHowBtn: 'Come si fa',
     installM: 'Installa come app…', installT: 'Installa FlussoLab', installed: 'FlussoLab è installato',
     installHow: '<p>FlussoLab si installa come un\'app e poi funziona anche senza internet.</p><ul><li><b>Chrome o Edge (Windows, Chromebook, Android)</b>: menu del browser → «Installa FlussoLab» o «Aggiungi a schermata Home».</li><li><b>iPhone e iPad</b>: apri il sito con Safari, tocca Condividi → «Aggiungi alla schermata Home».</li></ul>',
@@ -110,6 +113,9 @@ const I18N = {
     e_cmpmix: op => `You are comparing text with a number (${op}). Maybe parentheses are missing, for example "Result: " + (x > 5)`, mFile: 'File', mEdit: 'Edit', mView: 'View', mHelp: 'Help',
     undoM: 'Undo', redoM: 'Redo', optSymShort: 'Symbols ≥ ≤ ≠', zoomIn: 'Zoom in', zoomOut: 'Zoom out', zoom100: 'Zoom 100%',
     helpT: 'Guide', language: 'Language', offline: 'Offline', offlineT: 'You are offline: FlussoLab still works and keeps everything on this device.',
+    tooMany: n => `You can keep at most ${n} diagrams open: close one.`, newTab: 'New diagram', closeTab: 'Close',
+    closeT: 'Close the diagram?', closeMsg: n => `“${n}” has changes you have not saved to a file. If you close it, they are lost.`,
+    closeAnyway: 'Close without saving', unsaved: 'Changes not saved to a file', fitT: 'Fit to screen',
     installAsk: 'Install FlussoLab as an app? It also works offline.', installBtn: 'Install', installHowBtn: 'How to',
     installM: 'Install as app…', installT: 'Install FlussoLab', installed: 'FlussoLab is installed',
     installHow: '<p>FlussoLab installs like an app and then works without internet too.</p><ul><li><b>Chrome or Edge (Windows, Chromebook, Android)</b>: browser menu → “Install FlussoLab” or “Add to Home screen”.</li><li><b>iPhone and iPad</b>: open the site in Safari, tap Share → “Add to Home Screen”.</li></ul>',
@@ -198,7 +204,7 @@ let sel = null;      // selected block id
 let clip = null;     // copied block (JSON)
 let zoom = 1;
 let idN = 0;
-const hist = [], fut = [];
+let hist = [], fut = [];
 const nid = () => 'b' + (++idN);
 const kids = b => b.t === 'if' ? [b.y, b.n] : (b.body ? [b.body] : []);
 function assignIds(seq) { for (const b of seq) { b.id = nid(); kids(b).forEach(assignIds); } }
@@ -223,11 +229,75 @@ function mk(type) {
 }
 const replacer = (k, v) => (k === 'id' || k[0] === '_') ? undefined : v;
 const ser = () => JSON.stringify({ name: prog.name, main: prog.main }, replacer);
-function snap() { hist.push(ser()); if (hist.length > 150) hist.shift(); fut.length = 0; updUndo(); }
+function snap() { hist.push(ser()); if (hist.length > 150) hist.shift(); fut.length = 0; markDirty(); }
 function restore(s) { const o = JSON.parse(s); prog = { name: o.name || '', main: o.main }; assignIds(prog.main); sel = null; $('#pname').value = prog.name; }
-function undo() { if (!hist.length) return; stopRun(); fut.push(ser()); restore(hist.pop()); afterChange(true); }
-function redo() { if (!fut.length) return; stopRun(); hist.push(ser()); restore(fut.pop()); afterChange(true); }
+function undo() { if (!hist.length) return; stopRun(); fut.push(ser()); restore(hist.pop()); markDirty(); afterChange(true); }
+function redo() { if (!fut.length) return; stopRun(); hist.push(ser()); restore(fut.pop()); markDirty(); afterChange(true); }
 function updUndo() {}
+
+/* ================= tabs ================= */
+const MAXTABS = 10;
+let tabs = [], cur = 0, tabSeq = 0;
+function markDirty() { if (tabs[cur] && !tabs[cur].dirty) { tabs[cur].dirty = true; renderTabs(); } }
+function isBlank() { return !prog.main.length && !String(prog.name).trim(); }
+function tabSnapshot() { const T = tabs[cur]; if (!T) return; T.data = ser(); T.hist = hist; T.fut = fut; T.zoom = zoom; }
+function activate(i) {
+  stopRun(true); closePop(); if (typeof tip !== 'undefined') tip.hidden = true;
+  tabSnapshot();
+  cur = i; const T = tabs[i], o = JSON.parse(T.data);
+  prog = { name: o.name || '', main: o.main }; assignIds(prog.main);
+  hist = T.hist || []; fut = T.fut || []; zoom = T.zoom || 1; sel = null;
+  $('#pname').value = prog.name; $('#errBox').hidden = true;
+  clearConsole(); renderTabs(); afterChange(true);
+  $('#canvas').scrollTop = 0;
+}
+function addTab(o, dirty) {
+  if (tabs.length >= MAXTABS) { toast(t('tooMany', MAXTABS)); return false; }
+  tabSnapshot();
+  tabs.push({ id: ++tabSeq, data: JSON.stringify({ name: o.name || '', main: o.main }, replacer), hist: [], fut: [], dirty: !!dirty, zoom: 1 });
+  activate(tabs.length - 1);
+  requestAnimationFrame(() => { const el = $('#tabbar .tab.on'); if (el) el.scrollIntoView({ block: 'nearest', inline: 'nearest' }); });
+  return true;
+}
+function openDoc(o) {
+  if (!o || !Array.isArray(o.main) || !o.main.every(validBlock)) throw new Error('bad');
+  if (isBlank() && !tabs[cur].dirty) { loadObj(o, false); hist = []; fut = []; tabs[cur].dirty = false; renderTabs(); afterChange(true); return true; }
+  return addTab(o, false);
+}
+function closeTab(i, force) {
+  const T = tabs[i];
+  if (!force && T.dirty) {
+    openDlg(`<h2>${esc(t('closeT'))}</h2><p>${esc(t('closeMsg', tabLabel(i)))}</p>
+      <div class="foot"><button class="btn" data-close>${esc(t('cancel'))}</button><button class="btn danger" id="closeNo">${esc(t('closeAnyway'))}</button><button class="btn primary" id="closeSave">${esc(t('save'))}…</button></div>`);
+    $('#closeNo').onclick = () => { dlg.close(); closeTab(i, true); };
+    $('#closeSave').onclick = () => { if (i !== cur) activate(i); cmdSave(); };
+    return;
+  }
+  if (i === cur) stopRun(true);
+  if (i !== cur) tabSnapshot();
+  tabs.splice(i, 1);
+  if (!tabs.length) { tabs.push({ id: ++tabSeq, data: JSON.stringify({ name: '', main: [] }), hist: [], fut: [], dirty: false, zoom: 1 }); cur = -1; }
+  const next = i < cur ? cur - 1 : (i === cur ? Math.min(i, tabs.length - 1) : cur);
+  cur = -1; activate(Math.max(0, next));
+}
+function tabLabel(i) {
+  if (i === cur) return prog.name.trim() || t('untitled');
+  try { return JSON.parse(tabs[i].data).name.trim() || t('untitled'); } catch (e) { return t('untitled'); }
+}
+function renderTabs() {
+  const bar = $('#tabbar'); if (!bar) return;
+  bar.innerHTML = tabs.map((T, i) => `<div class="tab${i === cur ? ' on' : ''}" data-i="${i}" role="tab" aria-selected="${i === cur}" title="${esc(tabLabel(i))}">
+      <span class="tl">${esc(tabLabel(i))}</span>${T.dirty ? `<span class="td" title="${esc(t('unsaved'))}"></span>` : ''}
+      <button class="tx" data-x="${i}" aria-label="${esc(t('closeTab'))}">×</button></div>`).join('') +
+    `<button class="tadd" id="tabAdd" aria-label="${esc(t('newTab'))}" title="${esc(t('newTab'))}" ${tabs.length >= MAXTABS ? 'disabled' : ''}>+</button>`;
+}
+$('#tabbar').addEventListener('click', e => {
+  const x = e.target.closest('[data-x]'); if (x) { e.stopPropagation(); closeTab(+x.dataset.x); return; }
+  if (e.target.closest('#tabAdd')) { addTab({ name: '', main: [] }, false); return; }
+  const tb = e.target.closest('.tab'); if (tb && +tb.dataset.i !== cur) activate(+tb.dataset.i);
+});
+$('#tabbar').addEventListener('auxclick', e => { const tb = e.target.closest('.tab'); if (tb && e.button === 1) { e.preventDefault(); closeTab(+tb.dataset.i); } });
+addEventListener('beforeunload', e => { if (tabs.some(T => T.dirty)) { e.preventDefault(); e.returnValue = ''; } });
 
 const TYPES = ['input', 'output', 'assign', 'if', 'while', 'do', 'for', 'comment'];
 const MENU = ['input', 'output', 'outln', 'assign', 'if', 'while', 'do', 'for', 'comment'];
@@ -578,6 +648,14 @@ $('#svgHost').addEventListener('contextmenu', e => {
   }
 });
 const tip = $('#tip');
+(function calmOverlays() {
+  const st = $('.stage'), c = $('#canvas'); let tm = 0;
+  const busy = () => { st.classList.add('busy'); clearTimeout(tm); tm = setTimeout(() => st.classList.remove('busy'), 2200); };
+  c.addEventListener('pointerdown', e => { if (!e.target.closest('.blk,.slot')) busy(); });
+  c.addEventListener('scroll', busy, { passive: true });
+  c.addEventListener('wheel', busy, { passive: true });
+  c.addEventListener('pointermove', e => { if (e.buttons || e.pointerType !== 'mouse') busy(); }, { passive: true });
+})();
 $('#svgHost').addEventListener('mouseover', e => {
   const g = e.target.closest('.blk'); if (!g) return;
   const f = find(g.dataset.b); if (!f) return;
@@ -612,7 +690,15 @@ function moveTip(e) {
   window.addEventListener('pointerup', () => { if (drag) { drag = null; c.classList.remove('panning'); } });
   c.addEventListener('click', e => { if (moved) { e.stopPropagation(); e.preventDefault(); moved = false; } }, true);
 })();
-function setZoom(z) { zoom = Math.min(2, Math.max(0.4, Math.round(z * 10) / 10)); renderDiagram(); }
+function setZoom(z) { zoom = Math.min(2, Math.max(0.25, Math.round(z * 20) / 20)); renderDiagram(); persist(); }
+function fitZoom() {
+  const svg = $('#svgHost svg'), c = $('#canvas'); if (!svg) return;
+  const vb = svg.viewBox.baseVal, f = Math.min((c.clientWidth - 48) / vb.width, (c.clientHeight - 48) / vb.height, 1);
+  const z = Math.max(0.25, Math.floor(f * 20) / 20);
+  setZoom(Math.abs(zoom - z) < 0.01 ? 1 : z);
+  c.scrollTop = 0; c.scrollLeft = (c.scrollWidth - c.clientWidth) / 2;
+}
+$('#zLbl').onclick = fitZoom;
 $('#zIn').onclick = () => setZoom(zoom + 0.1);
 $('#zOut').onclick = () => setZoom(zoom - 0.1);
 
@@ -989,6 +1075,7 @@ function cmdSave() {
     const blob = new Blob([json], { type: 'application/json' }), url = URL.createObjectURL(blob);
     triggerDownload(url, name, blob); setTimeout(() => URL.revokeObjectURL(url), 30000);
     dlg.close();
+    if (tabs[cur]) { tabs[cur].dirty = false; renderTabs(); persist(); }
   };
 };
 
@@ -1007,20 +1094,16 @@ function cmdOpen() {
   drop.ondrop = e => { e.preventDefault(); drop.classList.remove('over'); readFile(e.dataTransfer.files[0]); };
   $$('[data-ex]', dlg).forEach(b => b.onclick = () => {
     const x = EX[+b.dataset.ex];
-    loadObj({ name: x[lang][0], main: JSON.parse(JSON.stringify(x.main)) }, true);
-    dlg.close(); afterChange(true); toast(t('loadedOk'));
+    dlg.close(); if (openDoc({ name: x[lang][0], main: JSON.parse(JSON.stringify(x.main)) })) toast(t('loadedOk'));
   });
 };
 function tryLoad(text) {
-  try { loadObj(JSON.parse(text), true); dlg.close(); afterChange(true); toast(t('loadedOk')); }
+  let o; try { o = JSON.parse(text); } catch (e) { toast(t('badFile')); return; }
+  try { if (dlg.open) dlg.close(); if (openDoc(o)) toast(t('loadedOk')); }
   catch (e) { toast(t('badFile')); }
 }
 
-function cmdNew() {
-  openDlg(`<h2>${esc(t('newTitle'))}</h2><p>${esc(t('newConfirm'))}</p>
-    <div class="foot"><button class="btn" data-close>${esc(t('cancel'))}</button><button class="btn primary" id="newOk">${esc(t('confirmNew'))}</button></div>`);
-  $('#newOk').onclick = () => { loadObj({ name: '', main: [] }, true); dlg.close(); afterChange(true); };
-};
+function cmdNew() { if (isBlank() && !tabs[cur].dirty) return; addTab({ name: '', main: [] }, false); }
 
 function cmdPng() {
   const { W, H, inner } = buildSVG(PRINT, false);
@@ -1091,7 +1174,7 @@ function cmdAbout() {
     <div class="foot"><button class="btn" data-close>${esc(t('close'))}</button></div>`);
 }
 function cmdHelp() { openDlg(`<h2>${esc(t('helpT'))}</h2><div class="guide">${GUIDE[lang]}</div><div class="foot"><button class="btn primary" data-close>${esc(t('close'))}</button></div>`); }
-function loadExample(i) { const x = EX[i]; loadObj({ name: x[lang][0], main: JSON.parse(JSON.stringify(x.main)) }, true); afterChange(true); toast(t('loadedOk')); }
+function loadExample(i) { const x = EX[i]; if (openDoc({ name: x[lang][0], main: JSON.parse(JSON.stringify(x.main)) })) toast(t('loadedOk')); }
 function pasteBlock() {
   if (!clip) return; stopRun(); snap();
   const f = sel && find(sel); const nb = JSON.parse(clip); assignIds([nb]);
@@ -1221,11 +1304,16 @@ function applyLang() {
 
 /* ================= misc ================= */
 $('#pname').addEventListener('focus', () => { editSnapDone = false; });
-$('#pname').addEventListener('input', e => { if (!editSnapDone) { snap(); editSnapDone = true; } prog.name = e.target.value; persist(); });
+$('#pname').addEventListener('input', e => { if (!editSnapDone) { snap(); editSnapDone = true; } prog.name = e.target.value; renderTabs(); persist(); });
 let toastT = 0;
 function toast(msg) { const el = $('#toast'); el.textContent = msg; el.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => el.hidden = true, 1800); }
 let persistT = 0;
-function persist() { clearTimeout(persistT); persistT = setTimeout(() => store.set('prog', ser()), 300); }
+function persist() { clearTimeout(persistT); persistT = setTimeout(persistNow, 300); }
+function persistNow() {
+  tabSnapshot();
+  store.set('tabs', JSON.stringify({ cur, tabs: tabs.map(T => ({ data: T.data, dirty: T.dirty })) }));
+}
+addEventListener('pagehide', persistNow);
 
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') { closePop(); hideMenu(); hideCtx(); return; }
@@ -1284,10 +1372,21 @@ window.flussoUpdate = (apply) => {
 
 /* ================= boot ================= */
 (function boot() {
-  let loaded = false;
-  const saved = store.get('prog');
-  if (saved) { try { loadObj(JSON.parse(saved), false); loaded = true; } catch (e) {} }
-  if (!loaded) loadObj({ name: '', main: [] }, false);
+  try {
+    const st = JSON.parse(store.get('tabs') || 'null');
+    if (st && Array.isArray(st.tabs)) st.tabs.slice(0, MAXTABS).forEach(x => {
+      const o = JSON.parse(x.data);
+      if (o && Array.isArray(o.main) && o.main.every(validBlock)) tabs.push({ id: ++tabSeq, data: JSON.stringify(o), hist: [], fut: [], dirty: !!x.dirty, zoom: 1 });
+    });
+    if (tabs.length) cur = Math.min(Math.max(0, st.cur | 0), tabs.length - 1);
+  } catch (e) { tabs = []; }
+  if (!tabs.length) {
+    let o = { name: '', main: [] };
+    try { const old = JSON.parse(store.get('prog') || 'null'); if (old && Array.isArray(old.main) && old.main.every(validBlock)) o = old; } catch (e) {}
+    tabs.push({ id: ++tabSeq, data: JSON.stringify(o), hist: [], fut: [], dirty: false, zoom: 1 }); cur = 0;
+  }
+  { const T = tabs[cur], o = JSON.parse(T.data); loadObj(o, false); }
+  renderTabs();
   updUndo(); clearConsole(); applyLang(); syncNet();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => renderDiagram());
 })();

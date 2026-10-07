@@ -120,7 +120,6 @@ button,input,textarea,select{font:inherit;color:inherit}
 .zoom{position:absolute;right:14px;bottom:14px;display:flex;align-items:center;gap:2px;background:var(--surface);border:1px solid var(--rule);border-radius:9px;padding:3px;box-shadow:var(--shadow);z-index:2}
 .zoom button{border:0;background:transparent;width:30px;height:28px;border-radius:6px;cursor:pointer;font-size:17px;line-height:1}
 .zoom button:hover{background:var(--surface-2)}
-.zoom span{font:600 12px var(--f-mono);min-width:44px;text-align:center;color:var(--muted);font-variant-numeric:tabular-nums}
 .hintbar{position:absolute;left:14px;bottom:14px;font-size:12.5px;color:var(--muted);background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:5px 10px;max-width:calc(100% - 200px);z-index:2}
 
 .tip{position:absolute;z-index:6;max-width:300px;background:var(--surface);color:var(--ink);border:1px solid var(--rule);border-radius:7px;padding:7px 10px;font-size:13px;line-height:1.35;pointer-events:none;box-shadow:var(--shadow)}
@@ -173,6 +172,22 @@ dialog{overscroll-behavior:contain}
 .installbar span{flex:1;min-width:0}
 .btn.sm{padding:4px 12px;font-size:13.5px}
 .ibx{border:0;background:transparent;font-size:20px;line-height:1;color:var(--muted);cursor:pointer;padding:0 4px}
+.tabbar{display:flex;align-items:stretch;gap:2px;padding:6px 8px 0;background:var(--surface-2);border-bottom:1px solid var(--rule);overflow-x:auto;scrollbar-width:none;flex:none}
+.tabbar::-webkit-scrollbar{display:none}
+.tab{display:flex;align-items:center;gap:6px;max-width:220px;min-width:0;flex:none;padding:6px 6px 6px 12px;border:1px solid transparent;border-bottom:0;border-radius:8px 8px 0 0;color:var(--muted);cursor:pointer;font-size:13.5px;-webkit-user-select:none;user-select:none}
+.tab:hover{background:var(--surface)}
+.tab.on{background:var(--paper);border-color:var(--rule);color:var(--ink);font-weight:700;margin-bottom:-1px}
+.tab .tl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.tab .td{width:7px;height:7px;border-radius:50%;background:var(--if-s);flex:none}
+.tab .tx{border:0;background:transparent;color:inherit;font-size:16px;line-height:1;width:22px;height:22px;border-radius:5px;cursor:pointer;opacity:.6;flex:none}
+.tab .tx:hover{opacity:1;background:var(--surface-2)}
+.tadd{flex:none;border:0;background:transparent;font-size:18px;width:32px;border-radius:6px;cursor:pointer;color:var(--muted)}
+.tadd:hover:not(:disabled){background:var(--surface);color:var(--ink)}
+.tadd:disabled{opacity:.35;cursor:default}
+.zoom .zlbl{width:auto;min-width:52px;font:600 12px var(--f-mono);color:var(--muted);font-variant-numeric:tabular-nums}
+.hintbar,.zoom{transition:opacity .25s}
+.stage.busy .hintbar,.stage.busy .zoom{opacity:0;pointer-events:none}
+@media (pointer: coarse){ .tab .tx{width:28px;height:28px} .tab{padding:8px 6px 8px 12px} }
 /* diagram */
 .blk{cursor:pointer}
 .blk:hover .shape{filter:brightness(.95)}

@@ -49,9 +49,10 @@
   </div>
   <main class="main">
     <section class="stage">
+      <div class="tabbar" id="tabbar" role="tablist"></div>
       <div class="canvas" id="canvas"><div id="svgHost"></div></div>
       <div class="hintbar" id="hintbar" data-i18n="hint"></div>
-      <div class="zoom"><button id="zOut" aria-label="Zoom −">−</button><span id="zLbl">100%</span><button id="zIn" aria-label="Zoom +">+</button></div>
+      <div class="zoom"><button id="zOut" aria-label="Zoom −">−</button><button id="zLbl" class="zlbl" data-i18n-title="fitT">100%</button><button id="zIn" aria-label="Zoom +">+</button></div>
       <div class="pop" id="pop" hidden></div>
       <div class="tip" id="tip" hidden></div>
       <div class="errbox" id="errBox" role="alert" hidden></div>

@@ -41,6 +41,7 @@ const I18N = {
     e_cmpmix: op => `Stai confrontando un testo con un numero (${op}). Forse mancano le parentesi, ad esempio "Risultato: " + (x > 5)`, mFile: 'File', mEdit: 'Modifica', mView: 'Visualizza', mHelp: 'Aiuto',
     undoM: 'Annulla', redoM: 'Ripeti', optSymShort: 'Simboli ≥ ≤ ≠', zoomIn: 'Ingrandisci', zoomOut: 'Riduci', zoom100: 'Zoom 100%',
     helpT: 'Guida', language: 'Lingua', offline: 'Offline', offlineT: 'Sei offline: FlussoLab funziona lo stesso e salva tutto su questo dispositivo.',
+    installAsk: 'Vuoi installare FlussoLab come app? Funziona anche offline.', installBtn: 'Installa', installHowBtn: 'Come si fa',
     installM: 'Installa come app…', installT: 'Installa FlussoLab', installed: 'FlussoLab è installato',
     installHow: '<p>FlussoLab si installa come un\'app e poi funziona anche senza internet.</p><ul><li><b>Chrome o Edge (Windows, Chromebook, Android)</b>: menu del browser → «Installa FlussoLab» o «Aggiungi a schermata Home».</li><li><b>iPhone e iPad</b>: apri il sito con Safari, tocca Condividi → «Aggiungi alla schermata Home».</li></ul>',
     updAvail: 'È disponibile una nuova versione.', updNow: 'Aggiorna', aboutM: 'Informazioni su FlussoLab', version: 'Versione',
@@ -109,6 +110,7 @@ const I18N = {
     e_cmpmix: op => `You are comparing text with a number (${op}). Maybe parentheses are missing, for example "Result: " + (x > 5)`, mFile: 'File', mEdit: 'Edit', mView: 'View', mHelp: 'Help',
     undoM: 'Undo', redoM: 'Redo', optSymShort: 'Symbols ≥ ≤ ≠', zoomIn: 'Zoom in', zoomOut: 'Zoom out', zoom100: 'Zoom 100%',
     helpT: 'Guide', language: 'Language', offline: 'Offline', offlineT: 'You are offline: FlussoLab still works and keeps everything on this device.',
+    installAsk: 'Install FlussoLab as an app? It also works offline.', installBtn: 'Install', installHowBtn: 'How to',
     installM: 'Install as app…', installT: 'Install FlussoLab', installed: 'FlussoLab is installed',
     installHow: '<p>FlussoLab installs like an app and then works without internet too.</p><ul><li><b>Chrome or Edge (Windows, Chromebook, Android)</b>: browser menu → “Install FlussoLab” or “Add to Home screen”.</li><li><b>iPhone and iPad</b>: open the site in Safari, tap Share → “Add to Home Screen”.</li></ul>',
     updAvail: 'A new version is available.', updNow: 'Update', aboutM: 'About FlussoLab', version: 'Version',
@@ -1233,8 +1235,23 @@ const net = $('#netPill');
 function syncNet() { if (net) net.hidden = navigator.onLine; }
 addEventListener('online', syncNet); addEventListener('offline', syncNet);
 let installEvt = null;
-addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; });
-addEventListener('appinstalled', () => { installEvt = null; toast(t('installed')); });
+const isStandalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const hasManifest = !!document.querySelector('link[rel="manifest"]');
+function installDismissed() { const v = +store.get('installNo') || 0; return Date.now() - v < 14 * 864e5; }
+function showInstallBar() {
+  if (!hasManifest || isStandalone() || installDismissed()) return;
+  if (!installEvt && !isIOS) return;
+  $('#installMsg').textContent = t('installAsk');
+  $('#installYes').textContent = installEvt ? t('installBtn') : t('installHowBtn');
+  $('#installBar').hidden = false;
+}
+function hideInstallBar() { $('#installBar').hidden = true; }
+$('#installYes').onclick = () => { hideInstallBar(); cmdInstall(); };
+$('#installNo').onclick = () => { store.set('installNo', String(Date.now())); hideInstallBar(); };
+addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; showInstallBar(); });
+addEventListener('appinstalled', () => { installEvt = null; hideInstallBar(); toast(t('installed')); });
+if (isIOS) setTimeout(showInstallBar, 1500);
 async function cmdInstall() {
   if (installEvt) { installEvt.prompt(); try { await installEvt.userChoice; } catch (e) {} installEvt = null; return; }
   openDlg(`<h2>${esc(t('installT'))}</h2><div class="guide">${t('installHow')}</div><div class="foot"><button class="btn primary" data-close>${esc(t('close'))}</button></div>`);

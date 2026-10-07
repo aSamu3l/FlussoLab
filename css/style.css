@@ -43,6 +43,7 @@
   color-scheme:dark;
 }
 html,body{height:100%}
+body{margin:0}
 body{background:var(--surface);color:var(--ink);font:15px/1.45 var(--f-body);-webkit-user-select:none;user-select:none}
 input,textarea{-webkit-user-select:text;user-select:text}
 *{box-sizing:border-box}
@@ -50,7 +51,7 @@ input,textarea{-webkit-user-select:text;user-select:text}
 button,input,textarea,select{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--pen);outline-offset:2px}
 
-.app{display:grid;grid-template-rows:auto 1fr;height:100%;min-height:0}
+.app{display:grid;grid-template-rows:auto auto 1fr;height:100%;min-height:0}
 .bar{display:flex;align-items:center;gap:4px 10px;padding:0 16px;min-height:44px;flex-wrap:wrap;border-bottom:1px solid var(--rule);background:var(--surface);position:relative;z-index:10}
 .brand{display:flex;align-items:center;gap:7px;font:800 16px/1 var(--f-display);letter-spacing:-.01em;white-space:nowrap;margin-right:6px}
 .brand svg{flex:none}
@@ -159,6 +160,14 @@ svg text,.field input,pre.code,.con,.vars td,.tip b,.dlg textarea{font-variant-l
 .netpill{font-size:12px;font-weight:700;color:var(--if-s);background:var(--if-f);border:1px solid var(--if-s);border-radius:999px;padding:2px 9px;white-space:nowrap}
 .netpill::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:currentColor;margin-right:6px;vertical-align:1px}
 .toast .tbtn{margin-left:10px;border:0;border-radius:6px;padding:3px 10px;font-weight:700;background:var(--surface);color:var(--ink);cursor:pointer}
+.bar{grid-row:1}
+.installbar{grid-row:2}
+.main{grid-row:3}
+.installbar{display:flex;align-items:center;gap:10px;padding:6px 16px;background:var(--pen-soft);border-bottom:1px solid var(--rule);font-size:14px}
+.installbar img{border-radius:5px;flex:none}
+.installbar span{flex:1;min-width:0}
+.btn.sm{padding:4px 12px;font-size:13.5px}
+.ibx{border:0;background:transparent;font-size:20px;line-height:1;color:var(--muted);cursor:pointer;padding:0 4px}
 /* diagram */
 .blk{cursor:pointer}
 .blk:hover .shape{filter:brightness(.95)}

@@ -1274,7 +1274,7 @@ window.flussoUpdate = (apply) => {
   let loaded = false;
   const saved = store.get('prog');
   if (saved) { try { loadObj(JSON.parse(saved), false); loaded = true; } catch (e) {} }
-  if (!loaded) { const x = EX[0]; loadObj({ name: x[lang][0], main: JSON.parse(JSON.stringify(x.main)) }, false); }
+  if (!loaded) loadObj({ name: '', main: [] }, false);
   updUndo(); clearConsole(); applyLang(); syncNet();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => renderDiagram());
 })();

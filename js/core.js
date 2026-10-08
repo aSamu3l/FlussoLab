@@ -534,13 +534,27 @@ function toPseudo(main, lang) { return toPseudoLines(main, lang).map(l => l.s).j
 /* ---------- Python ---------- */
 const PYOP = { or: ['or', 1], and: ['and', 2], '=': ['==', 4], '!=': ['!=', 4], '<': ['<', 4], '<=': ['<=', 4], '>': ['>', 4], '>=': ['>=', 4],
   '+': ['+', 5], '-': ['-', 5], '*': ['*', 6], '/': ['/', 6], mod: ['%', 6], div: ['//', 6], '^': ['**', 8] };
-const PYFN = { sqrt: ['math.sqrt', 'math'], abs: ['abs'], int: ['int'], round: ['round_c', 'round_c'], floor: ['math.floor', 'math'], ceil: ['math.ceil', 'math'],
+const PYFN = { sqrt: ['math.sqrt', 'math'], abs: ['abs'], int: ['int'], round: ['round'], floor: ['math.floor', 'math'], ceil: ['math.ceil', 'math'],
   pow: ['pow'], min: ['min'], max: ['max'], sin: ['math.sin', 'math'], cos: ['math.cos', 'math'], tan: ['math.tan', 'math'],
   random: ['random.random', 'random'], randint: ['random.randint', 'random'], len: ['len'], str: ['str'], num: ['float'] };
 const PYKW = new Set(['and', 'as', 'assert', 'break', 'class', 'continue', 'def', 'del', 'elif', 'else', 'except', 'finally', 'for', 'from', 'global',
   'if', 'import', 'in', 'is', 'lambda', 'nonlocal', 'not', 'or', 'pass', 'raise', 'return', 'try', 'while', 'with', 'yield',
-  'print', 'input', 'leggi', 'math', 'random', 'None', 'True', 'False', 'len', 'str', 'int', 'float', 'range', 'list', 'dict']);
+  'print', 'input', 'math', 'random', 'None', 'True', 'False', 'len', 'str', 'int', 'float', 'range', 'list', 'dict']);
 function pyName(n) { return PYKW.has(n) ? n + '_' : n; }
+// true when an expression is surely an int (int literal, variable declared int, (int) cast, int-valued function)
+function pyInt(n, ints) {
+  ints = ints || new Set();
+  switch (n.k) {
+    case 'num': return typeof n.v === 'bigint';
+    case 'var': return ints.has(n.n);
+    case 'idx': { let r = n; while (r.k === 'idx') r = r.o; return r.k === 'var' && ints.has(r.n); }
+    case 'cast': return n.to === 'int';
+    case 'call': return ['int', 'round', 'floor', 'ceil', 'len', 'randint'].includes(n.n) || (['abs', 'min', 'max'].includes(n.n) && n.args.every(a => pyInt(a, ints)));
+    case 'un': return n.op === '-' && pyInt(n.a, ints);
+    case 'bin': return ['+', '-', '*', '/', 'mod', 'div', '^'].includes(n.op) && pyInt(n.a, ints) && pyInt(n.b, ints);
+  }
+  return false;
+}
 function pyE(n, U) {
   switch (n.k) {
     case 'num': return { s: n.t || String(n.v), p: 9 };
@@ -550,6 +564,7 @@ function pyE(n, U) {
     case 'var': return { s: pyName(n.n), p: 9 };
     case 'idx': { const o = pyE(n.o, U); return { s: (o.p < 9 ? `(${o.s})` : o.s) + '[' + pyE(n.i, U).s + ']', p: 9 }; }
     case 'call': {
+      if (n.n === 'round' && n.args.length === 1) { U.add('math'); const a = pyE(n.args[0], U); return { s: `math.floor(${a.s} + 0.5)`, p: 9 }; }
       const m = PYFN[n.n] || [n.n];
       if (m[1]) U.add(m[1]);
       return { s: `${m[0]}(${n.args.map(a => pyE(a, U).s).join(', ')})`, p: 9 };
@@ -560,13 +575,10 @@ function pyE(n, U) {
       return { s: 'not ' + (a.p < 3 ? `(${a.s})` : a.s), p: 3 };
     }
     case 'bin': {
-      // division, remainder and integer division follow C (truncation toward zero), like the diagram
-      if (n.op === '/' || n.op === 'mod' || n.op === 'div') {
-        U.add('div_c'); if (n.op === 'mod') U.add('mod_c');
-        const fa = pyE(n.a, U).s, fb = pyE(n.b, U).s;
-        if (n.op === '/') return { s: `div_c(${fa}, ${fb})`, p: 9 };
-        if (n.op === 'mod') return { s: `mod_c(${fa}, ${fb})`, p: 9 };
-        return { s: `int(div_c(${fa}, ${fb}))`, p: 9 };
+      // between two values known to be int, / is an integer division as in the diagram: int(a / b) truncates like C
+      if (n.op === 'div' || (n.op === '/' && pyInt(n.a, U.ints) && pyInt(n.b, U.ints))) {
+        const fa = pyE(n.a, U), fb = pyE(n.b, U);
+        return { s: `int(${fa.p < 6 ? `(${fa.s})` : fa.s} / ${fb.p <= 6 ? `(${fb.s})` : fb.s})`, p: 9 };
       }
       const [sym, p] = PYOP[n.op];
       const a = pyE(n.a, U), b = pyE(n.b, U);
@@ -591,6 +603,16 @@ function pyPrint(ast, U, ln) {
 }
 function toPython(main, lang) {
   const U = new Set(), arrays = new Set(), L = [];
+  U.ints = new Set();
+  const DK = Object.create(null), declK = n => DK[n] || null;
+  (function scan(seq) {
+    for (const b of seq) {
+      if (b.t === 'decl') { try { parseDecl(b.v).forEach(x => { DK[x.n] = b.k; if (b.k === 'int') U.ints.add(x.n); }); } catch (e) {} }
+      const typed = b.t === 'input' ? splitList(b.v) : (b.t === 'assign' || b.t === 'for') && !b.inc ? [b.v] : [];
+      for (const x of typed) { try { const ty = lvTyped(x); if (ty.k === 'int') U.ints.add(lvRoot(ty.lv).n); } catch (e) {} }
+      if (b.t === 'if') { scan(b.y); scan(b.n); } else if (b.body) scan(b.body);
+    }
+  })(main);
   let hasInput = false;
   const E = (src) => { try { return pyE(parse(src), U).s; } catch (e) { return `...  # ${src}`; } };
   const PYT = { int: 'int', float: 'float', str: 'str', bool: 'bool' };
@@ -605,7 +627,13 @@ function toPython(main, lang) {
       switch (b.t) {
         case 'comment': L.push(`${ind}# ${b.text || ''}`); break;
         case 'input': hasInput = true;
-          for (const nm of splitList(b.v)) { noteArr(nm); let lab = nm; try { lab = lvTyped(nm).src; } catch (e) {} L.push(`${ind}${LVT(nm)} = leggi(${JSON.stringify(lab)})`); }
+          for (const nm of splitList(b.v)) {
+            noteArr(nm); let lab = nm, k = null;
+            try { const ty = lvTyped(nm); lab = ty.src; k = ty.k || declK(lvRoot(ty.lv).n); } catch (e) {}
+            const ask = `input(${JSON.stringify(lab + '? ')})`;
+            const rhs = k === 'str' ? ask : k === 'float' ? `float(${ask})` : k === 'bool' ? `${ask} == "true"` : `int(${ask})`;
+            L.push(`${ind}${LVT(nm)} = ${rhs}`);
+          }
           if (!splitList(b.v).length) L.push(ind + 'pass');
           break;
         case 'output': { let s; try { s = pyPrint(parse(b.e), U, b.ln); } catch (e) { s = `print()  # ${b.e}`; } L.push(ind + s); break; }
@@ -643,20 +671,6 @@ function toPython(main, lang) {
   const H = [lang === 'en' ? '# Generated by FlussoLab' : '# Generato da FlussoLab'];
   if (U.has('math')) H.push('import math');
   if (U.has('random')) H.push('import random');
-  const it = lang !== 'en';
-  if (U.has('div_c')) H.push('', it ? '# divisione come in FlussoLab e in C: tra due int il risultato è un int (7 / 2 = 3, -7 / 2 = -3)' : '# division as in FlussoLab and C: between two ints the result is an int (7 / 2 = 3, -7 / 2 = -3)',
-    'def div_c(a, b):', '    if isinstance(a, int) and isinstance(b, int):', '        q = abs(a) // abs(b)', '        return q if (a >= 0) == (b >= 0) else -q', '    return a / b');
-  if (U.has('mod_c')) H.push('', it ? '# resto come in C: ha il segno del primo numero (-7 % 2 = -1)' : '# remainder as in C: it has the sign of the first number (-7 % 2 = -1)',
-    'def mod_c(a, b):', '    if isinstance(a, int) and isinstance(b, int):', '        return a - b * div_c(a, b)', '    return math.fmod(a, b)');
-  if (U.has('round_c')) H.push('', it ? '# arrotondamento come in FlussoLab: 2.5 diventa 3' : '# rounding as in FlussoLab: 2.5 becomes 3',
-    'def round_c(x):', '    return math.floor(x + 0.5)');
-  if ((U.has('mod_c') || U.has('round_c')) && !U.has('math')) H.splice(1, 0, 'import math');
-  if (hasInput) {
-    H.push('', 'def leggi(nome):',
-      '    testo = input(nome + "? ").strip()',
-      '    try:', '        return int(testo)', '    except ValueError:', '        pass',
-      '    try:', '        return float(testo.replace(",", "."))', '    except ValueError:', '        return testo');
-  }
   if (arrays.size) { H.push(''); for (const a of arrays) H.push(`${a} = {}  # ${lang === 'en' ? 'array' : 'vettore'}`); }
   H.push('');
   return H.join('\n') + '\n' + L.join('\n') + '\n';

@@ -2,7 +2,7 @@
 'use strict';
 /* ====== Project settings ====== */
 const CONFIG = {
-  version: '0.6.2',
+  version: '0.6.3',
   author: 'aSamu3l',
   github: 'https://github.com/aSamu3l',
   repo: 'https://github.com/aSamu3l/FlussoLab',
@@ -86,7 +86,7 @@ const I18N = {
     consoleIdle: 'Premi Esegui per avviare il programma, oppure Passo per seguirlo un blocco alla volta.',
     inputAsk: n => `Inserisci il valore di ${n}`, send: 'Invio', done: 'Programma terminato.', stopped: 'Esecuzione interrotta.',
     errAt: 'Errore', codePseudo: 'Pseudocodice', copyCode: 'Copia codice', copied: 'Copiato negli appunti',
-    pyNote: 'Il codice Python usa una funzione leggi() che converte da sola numeri e testo, come fa il diagramma.',
+    pyNote: 'Codice Python con sole funzioni standard. Attenzione: in Python / tra variabili non dichiarate int dà sempre un risultato con la virgola, e % con i numeri negativi può dare un risultato diverso dal diagramma.',
     pseudoNote: 'Pseudocodice generato dal diagramma. Si aggiorna a ogni modifica.',
     saveTitle: 'Salva il diagramma', fileName: 'Nome del file', download: 'Scarica il file', 
     saveNote: 'Il file .flusso contiene tutto il diagramma: si riapre da File → Apri.',
@@ -170,7 +170,7 @@ const I18N = {
     consoleIdle: 'Press Run to start the program, or Step to follow it one block at a time.',
     inputAsk: n => `Enter the value of ${n}`, send: 'Enter', done: 'Program finished.', stopped: 'Run stopped.',
     errAt: 'Error', codePseudo: 'Pseudocode', copyCode: 'Copy code', copied: 'Copied to clipboard',
-    pyNote: 'The Python code uses a leggi() helper that converts numbers and text automatically, like the diagram does.',
+    pyNote: 'Python code using only standard functions. Note: in Python / between variables not declared int always gives a decimal result, and % with negative numbers may differ from the diagram.',
     pseudoNote: 'Pseudocode generated from the diagram. It updates on every change.',
     saveTitle: 'Save the diagram', fileName: 'File name', download: 'Download file', 
     saveNote: 'The .flusso file holds the whole diagram: reopen it from File → Open.',

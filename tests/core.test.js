@@ -229,8 +229,8 @@ test('Python generato: testi, cicli e vettori', () => {
   const py = FL.toPython([{ t: 'assign', v: 'n', e: '5' }, { t: 'assign', v: 's', e: '"n = " + n' }, { t: 'output', e: 's + 1' },
     { t: 'assign', v: 'k', e: '-1' }, { t: 'for', v: 'i', a: '3', b: '1', s: 'k', body: [] },
     { t: 'assign', v: 'm[0][1]', e: '5' }, { t: 'assign', v: 'float f', e: '3' }], 'it');
-  assert.match(py, /s = "n = " \+ str\(n\)/);
-  assert.match(py, /print\(s \+ str\(1\)\)/);
+  assert.match(py, /s = f"n = \{n\}"/);
+  assert.match(py, /print\(s, 1, sep=""\)/);
   assert.match(py, /while \(k > 0 and i <= 1\) or \(k < 0 and i >= 1\):/);
   assert.match(py, /m\.setdefault\(0, \{\}\)\[1\] = 5/);
   assert.match(py, /f: float = float\(3\)/);

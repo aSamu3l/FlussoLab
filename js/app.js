@@ -2,7 +2,7 @@
 'use strict';
 /* ====== Project settings ====== */
 const CONFIG = {
-  version: '0.6.6',
+  version: '0.6.7',
   author: 'aSamu3l',
   github: 'https://github.com/aSamu3l',
   repo: 'https://github.com/aSamu3l/FlussoLab',

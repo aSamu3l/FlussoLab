@@ -600,13 +600,16 @@ function pyE(n, U) {
         const fa = pyE(n.a, U), fb = pyE(n.b, U);
         return { s: `int(${fa.p < 6 ? `(${fa.s})` : fa.s} / ${fb.p <= 6 ? `(${fb.s})` : fb.s})`, p: 9 };
       }
-      const [sym, p] = PYOP[n.op];
-      let a = pyE(n.a, U), b = pyE(n.b, U);
-      // text + number: Python needs str() on the number, the diagram joins them
-      if (n.op === '+') {
-        const sa = pyStr(n.a, U.strs), sb = pyStr(n.b, U.strs);
-        if (sa && !sb) b = { s: `str(${b.s})`, p: 9 }; else if (sb && !sa) a = { s: `str(${a.s})`, p: 9 };
+      // text + number: in Python an f-string, as the diagram joins them
+      if (n.op === '+' && pyStr(n, U.strs)) {
+        const items = joinParts(n, U.strs);
+        if (items.some(x => !pyStr(x, U.strs))) {
+          const body = items.map(x => x.k === 'str' ? x.v.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/[{}]/g, '$&$&').replace(/\n/g, '\\n') : `{${pyE(x, U).s}}`).join('');
+          if (!/\{[^}]*["\\]/.test(body)) return { s: `f"${body}"`, p: 9 };
+        }
       }
+      const [sym, p] = PYOP[n.op];
+      const a = pyE(n.a, U), b = pyE(n.b, U);
       const ra = n.op === '^', na = p === 4;
       const ls = (a.p < p || ((ra || na) && a.p === p)) ? `(${a.s})` : a.s;
       const rs = (b.p < p || (!ra && b.p === p)) ? `(${b.s})` : b.s;
@@ -615,16 +618,21 @@ function pyE(n, U) {
   }
   return { s: '?', p: 9 };
 }
-function pyPrint(ast, U, ln) {
-  const end = ln === false ? ', end=""' : '';
+// a + chain that becomes text, split in pieces: numbers added before the first text stay together, as in the diagram
+function joinParts(ast, strs) {
   const parts = []; let n = ast;
   while (n.k === 'bin' && n.op === '+') { parts.unshift(n.b); n = n.a; }
   parts.unshift(n);
-  const k = parts.findIndex(x => x.k === 'str');
-  if (k < 0 || parts.length === 1) return `print(${pyE(ast, U).s}${end})`;
-  let items = parts;
-  if (k > 1) { let pre = parts[0]; for (let i = 1; i < k; i++) pre = { k: 'bin', op: '+', a: pre, b: parts[i] }; items = [pre, ...parts.slice(k)]; }
-  return `print(${items.map(x => pyE(x, U).s).join(', ')}, sep=""${end})`;
+  const k = parts.findIndex(x => pyStr(x, strs));
+  if (k <= 1) return parts;
+  let pre = parts[0]; for (let i = 1; i < k; i++) pre = { k: 'bin', op: '+', a: pre, b: parts[i] };
+  return [pre, ...parts.slice(k)];
+}
+function pyPrint(ast, U, ln) {
+  const end = ln === false ? ', end=""' : '';
+  if (!(ast.k === 'bin' && ast.op === '+' && pyStr(ast, U.strs))) return `print(${pyE(ast, U).s}${end})`;
+  // print with commas: Python turns the numbers into text by itself
+  return `print(${joinParts(ast, U.strs).map(x => pyE(x, U).s).join(', ')}, sep=""${end})`;
 }
 function toPython(main, lang) {
   const U = new Set(), arrays = new Set(), L = [];

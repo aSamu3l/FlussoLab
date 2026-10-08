@@ -126,3 +126,26 @@ test('pseudocodice', () => {
   const p = FL.toPseudo([{ t: 'input', v: 'n' }, { t: 'if', c: 'n > 0', y: [{ t: 'output', e: '"positivo"' }], n: [] }], 'it');
   assert.equal(p, 'INIZIO\n    LEGGI n\n    SE n > 0 ALLORA\n        SCRIVI "positivo"\n    FINE SE\nFINE');
 });
+
+test('tipi dichiarati', () => {
+  const D = (k, v) => ({ t: 'decl', k, v });
+  assert.equal(errKey(() => run([D('int', 'n'), { t: 'assign', v: 'n', e: '7 / 2' }])), 'tdecl');
+  assert.equal(run([D('real', 'x'), { t: 'assign', v: 'x', e: '3' }, { t: 'output', e: 'x' }]).out[0], '3');
+  assert.equal(errKey(() => run([D('int', 'n'), { t: 'input', v: 'n' }], ['3,5'])), 'tin');
+  assert.equal(run([D('str', 's'), { t: 'input', v: 's' }, { t: 'output', e: 's + 1' }], ['12']).out[0], '121');
+  assert.equal(run([D('bool', 'b'), { t: 'input', v: 'b' }], ['vero']).env.b, true);
+  assert.equal(errKey(() => run([D('int', 'v[]'), { t: 'assign', v: 'v[0]', e: '"a"' }])), 'tdecl');
+  assert.equal(errKey(() => run([D('int', 'n'), D('real', 'n')])), 'redecl');
+  assert.equal(errKey(() => run([D('int', 'i'), { t: 'for', v: 'i', a: '0', b: '1', s: '0.5', body: [] }])), 'tdecl');
+  assert.equal(FL.staticErr(D('int', '1x')).key, 'declname');
+  // senza dichiarazione resta tutto automatico
+  assert.equal(run([{ t: 'assign', v: 'x', e: '7 / 2' }]).env.x, 3.5);
+});
+
+test('incremento e decremento', () => {
+  assert.deepEqual(run([{ t: 'assign', v: 'i', e: '1' }, { t: 'assign', v: 'i', inc: '++' }, { t: 'assign', v: 'i', inc: '++' },
+    { t: 'assign', v: 'i', inc: '--' }, { t: 'output', e: 'i' }]).out, ['2']);
+  assert.equal(errKey(() => run([{ t: 'assign', v: 'z', e: '1.5' }, { t: 'assign', v: 'z', inc: '++' }])), 'incint');
+  assert.equal(errKey(() => run([{ t: 'decl', k: 'real', v: 'r' }, { t: 'assign', v: 'r', e: '1' }, { t: 'assign', v: 'r', inc: '++' }])), 'incint');
+  assert.equal(FL.toPseudo([{ t: 'assign', v: 'i', inc: '++' }], 'it'), 'INIZIO\n    i = i + 1\nFINE');
+});

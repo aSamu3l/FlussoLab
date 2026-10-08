@@ -2,7 +2,7 @@
 'use strict';
 /* ====== Project settings: fill these in before publishing ====== */
 const CONFIG = {
-  version: '0.3.2',
+  version: '0.4.0',
   author: 'aSamu3l',
   github: 'https://github.com/aSamu3l',
   repo: 'https://github.com/aSamu3l/FlussoLab',
@@ -26,16 +26,16 @@ const I18N = {
     hint: 'Clicca o tocca un + per inserire un blocco. Tasto destro, o tocco prolungato, per altre azioni.',
     START: 'INIZIO', END: 'FINE', READ: 'Leggi', WRITE: 'Scrivi', T: 'V', F: 'F', TRUE: 'VERO', FALSE: 'FALSO',
     forLbl: (v, a, b, s) => `${v} da ${a} a ${b}` + (s && String(s).trim() !== '1' && String(s).trim() !== '' ? `, passo ${s}` : ''),
-    types: { input: 'IN · Input', output: 'OUT · Output', outln: 'OUTLN · Output a capo', assign: 'Assegnazione', comment: 'Commento', if: 'IF · Se', while: 'WHILE · Mentre', do: 'DO WHILE · Ripeti mentre', for: 'FOR · Per' },
+    types: { decl: 'VAR · Dichiarazione', input: 'IN · Input', output: 'OUT · Output', outln: 'OUTLN · Output a capo', assign: 'Assegnazione', comment: 'Commento', if: 'IF · Se', while: 'WHILE · Mentre', do: 'DO WHILE · Ripeti mentre', for: 'FOR · Per' },
     typeHint: {
-      input: 'Legge uno o più valori da tastiera', output: 'Scrive a schermo e resta sulla stessa riga', outln: 'Scrive a schermo e poi va a capo', comment: 'Una nota per chi legge, non viene eseguita', assign: 'Calcola un valore e lo salva in una variabile',
+      decl: 'Facoltativo: fissa il tipo di una o più variabili', input: 'Legge uno o più valori da tastiera', output: 'Scrive a schermo e resta sulla stessa riga', outln: 'Scrive a schermo e poi va a capo', comment: 'Una nota per chi legge, non viene eseguita', assign: 'Calcola un valore e lo salva in una variabile',
       if: 'Due strade, in base a una condizione', while: 'Controlla la condizione, poi ripete finché è vera',
       do: 'Esegue almeno una volta, poi ripete se la condizione è vera', for: 'Ripete contando con una variabile',
     },
     f_vars: 'Variabili da leggere', f_vars_tip: 'Separate da virgola, ad esempio: a, b', f_expr: 'Espressione da mostrare',
     f_expr_tip: 'Testo tra virgolette, unito con +: "Somma: " + s', f_var: 'Variabile', f_val: 'Valore (espressione)', f_cond: 'Condizione',
     f_cond_tip: 'Deve risultare VERO o FALSO, ad esempio: x > 0 AND x < 10', f_from: 'Da', f_to: 'A', f_step: 'Passo',
-    f_ln: 'Vai a capo (OUTLN)', f_assign: 'Assegnazione', e_noeq: 'Manca il segno =: scrivi variabile = espressione', f_comment: 'Testo del commento', n_cm: 'commento: non viene eseguito',
+    f_ln: 'Vai a capo (OUTLN)', f_assign: 'Assegnazione', e_noeq: 'Manca il segno =: scrivi variabile = espressione (oppure i++ / i--)', f_comment: 'Testo del commento', n_cm: 'commento: non viene eseguito',
     loopEnd: 'fine ciclo', trace: 'Traccia', traceT: 'Mostra nella console ogni blocco eseguito', cut: 'Taglia', pasteAfter: 'Incolla dopo',
     insertDots: 'Inserisci', showPy: 'Mostra anche Python', codeLink: 'Collega diagramma e codice',
     e_cmpmix: op => `Stai confrontando un testo con un numero (${op}). Forse mancano le parentesi, ad esempio "Risultato: " + (x > 5)`, mFile: 'File', mEdit: 'Modifica', mView: 'Visualizza', mHelp: 'Aiuto',
@@ -70,6 +70,14 @@ const I18N = {
     insertHere: 'Inserisci qui', pasteHere: 'Incolla il blocco copiato',
     console: 'Console', vars: 'Variabili', noVars: 'Nessuna variabile ancora.', thName: 'Nome', thVal: 'Valore', thType: 'Tipo',
     ty: { num: 'numero', str: 'testo', bool: 'logico', arr: 'vettore' },
+    tyk: { int: 'intero', real: 'reale', str: 'stringa', bool: 'logico' }, f_type: 'Tipo', f_declvars: 'Variabili',
+    n_decl: k => `le variabili saranno di tipo ${k}`, n_inc: (v, op) => op === '++' ? `aumenta ${v} di 1` : `diminuisce ${v} di 1`, vecOf: 'vettore di',
+    e_tdecl: (n, k, v) => `«${n}» è di tipo ${t('tyk')[k]}: non può contenere ${v}`,
+    e_tin: (v, k, n) => `«${v}» non è un valore ${t('tyk')[k]} valido per ${n}`,
+    e_tarr: (n, k) => `«${n}» è un vettore di ${t('tyk')[k]}: assegna i singoli elementi, ad esempio ${n}[0]`,
+    e_incint: (op, n) => `${op} si può usare solo su variabili intere: «${n}» non è un intero`,
+    e_redecl: n => `«${n}» è già stata dichiarata con un altro tipo`,
+    e_declname: x => `«${x}» non è un nome di variabile valido`, e_kind: 'Scegli un tipo',
     consoleIdle: 'Premi Esegui per avviare il programma, oppure Passo per seguirlo un blocco alla volta.',
     inputAsk: n => `Inserisci il valore di ${n}`, send: 'Invio', done: 'Programma terminato.', stopped: 'Esecuzione interrotta.',
     errAt: 'Errore', codePseudo: 'Pseudocodice', copyCode: 'Copia codice', copied: 'Copiato negli appunti',
@@ -98,16 +106,16 @@ const I18N = {
     hint: 'Click or tap a + to insert a block. Right-click, or long-press, for more actions.',
     START: 'START', END: 'END', READ: 'Read', WRITE: 'Write', T: 'T', F: 'F', TRUE: 'TRUE', FALSE: 'FALSE',
     forLbl: (v, a, b, s) => `${v} from ${a} to ${b}` + (s && String(s).trim() !== '1' && String(s).trim() !== '' ? `, step ${s}` : ''),
-    types: { input: 'IN · Input', output: 'OUT · Output', outln: 'OUTLN · Output + new line', assign: 'Assignment', comment: 'Comment', if: 'IF', while: 'WHILE', do: 'DO WHILE', for: 'FOR' },
+    types: { decl: 'VAR · Declaration', input: 'IN · Input', output: 'OUT · Output', outln: 'OUTLN · Output + new line', assign: 'Assignment', comment: 'Comment', if: 'IF', while: 'WHILE', do: 'DO WHILE', for: 'FOR' },
     typeHint: {
-      input: 'Reads one or more values from the keyboard', output: 'Writes on screen and stays on the same line', outln: 'Writes on screen, then starts a new line', comment: 'A note for the reader, never executed', assign: 'Computes a value and stores it in a variable',
+      decl: 'Optional: fixes the type of one or more variables', input: 'Reads one or more values from the keyboard', output: 'Writes on screen and stays on the same line', outln: 'Writes on screen, then starts a new line', comment: 'A note for the reader, never executed', assign: 'Computes a value and stores it in a variable',
       if: 'Two paths, depending on a condition', while: 'Checks the condition, then repeats while it is true',
       do: 'Runs at least once, then repeats if the condition is true', for: 'Repeats while counting with a variable',
     },
     f_vars: 'Variables to read', f_vars_tip: 'Comma separated, for example: a, b', f_expr: 'Expression to show',
     f_expr_tip: 'Text in quotes, joined with +: "Sum: " + s', f_var: 'Variable', f_val: 'Value (expression)', f_cond: 'Condition',
     f_cond_tip: 'Must give TRUE or FALSE, for example: x > 0 AND x < 10', f_from: 'From', f_to: 'To', f_step: 'Step',
-    f_ln: 'New line (OUTLN)', f_assign: 'Assignment', e_noeq: 'The = sign is missing: write variable = expression', f_comment: 'Comment text', n_cm: 'comment: it is not executed',
+    f_ln: 'New line (OUTLN)', f_assign: 'Assignment', e_noeq: 'The = sign is missing: write variable = expression (or i++ / i--)', f_comment: 'Comment text', n_cm: 'comment: it is not executed',
     loopEnd: 'loop ends', trace: 'Trace', traceT: 'Show every executed block in the console', cut: 'Cut', pasteAfter: 'Paste after',
     insertDots: 'Insert', showPy: 'Also show Python', codeLink: 'Link diagram and code',
     e_cmpmix: op => `You are comparing text with a number (${op}). Maybe parentheses are missing, for example "Result: " + (x > 5)`, mFile: 'File', mEdit: 'Edit', mView: 'View', mHelp: 'Help',
@@ -142,6 +150,14 @@ const I18N = {
     insertHere: 'Insert here', pasteHere: 'Paste copied block',
     console: 'Console', vars: 'Variables', noVars: 'No variables yet.', thName: 'Name', thVal: 'Value', thType: 'Type',
     ty: { num: 'number', str: 'text', bool: 'boolean', arr: 'array' },
+    tyk: { int: 'integer', real: 'real', str: 'string', bool: 'boolean' }, f_type: 'Type', f_declvars: 'Variables',
+    n_decl: k => `the variables will be of type ${k}`, n_inc: (v, op) => op === '++' ? `adds 1 to ${v}` : `subtracts 1 from ${v}`, vecOf: 'array of',
+    e_tdecl: (n, k, v) => `“${n}” is of type ${t('tyk')[k]}: it cannot hold ${v}`,
+    e_tin: (v, k, n) => `“${v}” is not a valid ${t('tyk')[k]} value for ${n}`,
+    e_tarr: (n, k) => `“${n}” is an array of ${t('tyk')[k]}: assign single elements, for example ${n}[0]`,
+    e_incint: (op, n) => `${op} works only on integer variables: “${n}” is not an integer`,
+    e_redecl: n => `“${n}” was already declared with another type`,
+    e_declname: x => `“${x}” is not a valid variable name`, e_kind: 'Choose a type',
     consoleIdle: 'Press Run to start the program, or Step to follow it one block at a time.',
     inputAsk: n => `Enter the value of ${n}`, send: 'Enter', done: 'Program finished.', stopped: 'Run stopped.',
     errAt: 'Error', codePseudo: 'Pseudocode', copyCode: 'Copy code', copied: 'Copied to clipboard',
@@ -221,6 +237,7 @@ function mk(type) {
     case 'output': return { t: type, e: '', ln: true };
     case 'outln': return { t: 'output', e: '', ln: true };
     case 'comment': return { t: 'comment', text: '' };
+    case 'decl': return { t: 'decl', k: 'int', v: '' };
     case 'assign': return { t: type, v: '', e: '' };
     case 'if': return { t: type, c: '', y: [], n: [] };
     case 'while': case 'do': return { t: type, c: '', body: [] };
@@ -299,8 +316,8 @@ $('#tabbar').addEventListener('click', e => {
 $('#tabbar').addEventListener('auxclick', e => { const tb = e.target.closest('.tab'); if (tb && e.button === 1) { e.preventDefault(); closeTab(+tb.dataset.i); } });
 addEventListener('beforeunload', e => { if (tabs.some(T => T.dirty)) { e.preventDefault(); e.returnValue = ''; } });
 
-const TYPES = ['input', 'output', 'assign', 'if', 'while', 'do', 'for', 'comment'];
-const MENU = ['input', 'output', 'outln', 'assign', 'if', 'while', 'do', 'for', 'comment'];
+const TYPES = ['decl', 'input', 'output', 'assign', 'if', 'while', 'do', 'for', 'comment'];
+const MENU = ['decl', 'input', 'output', 'outln', 'assign', 'if', 'while', 'do', 'for', 'comment'];
 function validBlock(b) {
   if (!b || typeof b !== 'object' || !TYPES.includes(b.t)) return false;
   const str = k => { if (b[k] == null) b[k] = ''; b[k] = String(b[k]); };
@@ -309,7 +326,8 @@ function validBlock(b) {
     case 'input': str('v'); return true;
     case 'output': str('e'); b.ln = b.ln !== false; return true;
     case 'comment': str('text'); return true;
-    case 'assign': str('v'); str('e'); return true;
+    case 'assign': str('v'); str('e'); if (b.inc !== '++' && b.inc !== '--') delete b.inc; return true;
+    case 'decl': str('v'); if (!FL.KINDS.includes(b.k)) b.k = 'int'; return true;
     case 'if': str('c'); if (!b.n) b.n = []; return arr('y') && arr('n');
     case 'while': case 'do': str('c'); return arr('body');
     case 'for': ['v', 'a', 'b', 's'].forEach(str); return arr('body');
@@ -338,13 +356,14 @@ function label(b) {
   switch (b.t) {
     case 'input': return dots(b.v);
     case 'output': return dots(b.e);
-    case 'assign': return `${dots(b.v)} = ${symz(dots(b.e))}`;
+    case 'assign': return b.inc ? `${dots(b.v)}${b.inc}` : `${dots(b.v)} = ${symz(dots(b.e))}`;
+    case 'decl': return `${t('tyk')[b.k] || ''} ${dots(b.v)}`;
     case 'if': case 'while': case 'do': return symz(dots(b.c));
     case 'comment': return dots(b.text);
     case 'for': { const st = String(b.s ?? '').trim(); return `${dots(b.v)} = ${dots(b.a)} TO ${dots(b.b)}${st && st !== '1' ? ' STEP ' + st : ''}`; }
   }
 }
-function kw(b) { return { input: 'IN', output: b.ln === false ? 'OUT' : 'OUTLN', if: 'IF', while: 'WHILE', do: 'DO WHILE', for: 'FOR' }[b.t] || ''; }
+function kw(b) { return { decl: 'VAR', input: 'IN', output: b.ln === false ? 'OUT' : 'OUTLN', if: 'IF', while: 'WHILE', do: 'DO WHILE', for: 'FOR' }[b.t] || ''; }
 function fullLabel(b) { const k = kw(b); return (k ? k + ' ' : '') + label(b); }
 function noteOf(b) {
   switch (b.t) {
@@ -354,7 +373,8 @@ function noteOf(b) {
       try { const a = FL.parse(b.e); if (a.k === 'str') x = `«${a.v}»`; else if (a.k === 'var') x = t('n_val') + ' ' + a.n; } catch (e) {}
       return t('n_out', x, b.ln !== false);
     }
-    case 'assign': return t('n_as', dots(b.v));
+    case 'assign': return b.inc ? t('n_inc', dots(b.v), b.inc) : t('n_as', dots(b.v));
+    case 'decl': return t('n_decl', t('tyk')[b.k] || '');
     case 'if': return t('n_if');
     case 'while': return t('n_while');
     case 'do': return t('n_do');
@@ -374,6 +394,7 @@ function measure(b) {
   switch (b.t) {
     case 'input': case 'output': b._w = Math.max(lw + 54, 2 * (kW + 30)); b._h = BH; break;
     case 'assign': b._w = lw + 32; b._h = BH; break;
+    case 'decl': b._w = Math.max(lw + 44, 2 * (kW + 30)); b._h = BH; break;
     case 'comment': b._w = tw('// ' + label(b)) + 34; b._h = BH - 6; break;
     case 'if': {
       const dw = Math.max(120, lw + 70), Y = measureSeq(b.y), N = measureSeq(b.n);
@@ -399,14 +420,14 @@ function measure(b) {
 const SCREEN = {
   wire: 'var(--wire)', ink: 'var(--ink)', muted: 'var(--muted)', paper: null,
   io: ['var(--io-f)', 'var(--io-s)'], as: ['var(--as-f)', 'var(--as-s)'], if: ['var(--if-f)', 'var(--if-s)'],
-  lp: ['var(--lp-f)', 'var(--lp-s)'], tm: ['var(--tm-f)', 'var(--tm-s)'], hl: 'var(--hl)', badge: 'var(--surface)', cm: ['var(--paper)', 'var(--faint)'],
+  lp: ['var(--lp-f)', 'var(--lp-s)'], tm: ['var(--tm-f)', 'var(--tm-s)'], hl: 'var(--hl)', badge: 'var(--surface)', cm: ['var(--paper)', 'var(--faint)'], dc: ['var(--dc-f)', 'var(--dc-s)'],
 };
 const PRINT = {
   wire: '#3a4657', ink: '#172230', muted: '#56657a', paper: '#ffffff',
   io: ['#e0f3e7', '#2b8150'], as: ['#e6eefc', '#3960b2'], if: ['#fdf0d3', '#a5720e'],
-  lp: ['#f7e4ef', '#993873'], tm: ['#eceef2', '#4a5362'], hl: '#f2b705', badge: '#ffffff', cm: ['#ffffff', '#8c98a8'],
+  lp: ['#f7e4ef', '#993873'], tm: ['#eceef2', '#4a5362'], hl: '#f2b705', badge: '#ffffff', cm: ['#ffffff', '#8c98a8'], dc: ['#ddf2f2', '#1f7378'],
 };
-const KIND = { input: 'io', output: 'io', assign: 'as', if: 'if', while: 'lp', do: 'lp', for: 'lp', comment: 'cm' };
+const KIND = { decl: 'dc', input: 'io', output: 'io', assign: 'as', if: 'if', while: 'lp', do: 'lp', for: 'lp', comment: 'cm' };
 
 let slotMap = new Map();
 function buildSVG(P, interactive) {
@@ -455,6 +476,15 @@ function buildSVG(P, interactive) {
       o.push(g0, `<path class="shape" d="M${l} ${y}H${l + w - f}L${l + w} ${y + f}V${y + h}H${l}Z" style="fill:${P.cm[0]};stroke:${P.cm[1]};stroke-width:1.3;stroke-dasharray:4 3"/>`,
         `<path d="M${l + w - f} ${y}V${y + f}H${l + w}" style="fill:none;stroke:${P.cm[1]};stroke-width:1.1"/>`);
       o.push(`<text x="${x}" y="${y + h / 2}" text-anchor="middle" dominant-baseline="central" style="fill:${P.muted};font-family:${SVGFONT};font-size:12.5px;font-style:italic;font-variant-ligatures:none">${esc('// ' + label(b))}</text>`);
+      o.push('</g>');
+      return;
+    }
+    if (b.t === 'decl') {
+      const w = b._w, l = x - w / 2;
+      o.push(g0, `<rect class="shape" x="${l}" y="${y}" width="${w}" height="${BH}" rx="2" style="${st(k)}"/>`,
+        `<path d="M${l + 7} ${y}V${y + BH}M${l + w - 7} ${y}V${y + BH}" style="fill:none;stroke:${P[k][1]};stroke-width:1.2"/>`);
+      badge(Math.min(l + 16, x - 14 - bw(kw(b))), y - 7, kw(b), k);
+      text(x, y + BH / 2 + 1, lab);
       o.push('</g>');
       return;
     }
@@ -543,6 +573,7 @@ const ICON = {
 };
 function typeIcon(type) {
   if (type === 'outln') type = 'output';
+  if (type === 'decl') return `<svg width="30" height="20" viewBox="0 0 30 20" aria-hidden="true"><rect x="2" y="3" width="26" height="14" rx="1.5" style="fill:var(--dc-f);stroke:var(--dc-s)" stroke-width="1.4"/><path d="M6 3v14M24 3v14" style="stroke:var(--dc-s)" stroke-width="1.1"/></svg>`;
   if (type === 'comment') return `<svg width="30" height="20" viewBox="0 0 30 20" aria-hidden="true"><path d="M2 3h21l5 5v9H2z" style="fill:var(--paper);stroke:var(--faint)" stroke-width="1.3" stroke-dasharray="3 2"/></svg>`;
   const k = KIND[type], f = `var(--${k}-f)`, s = `var(--${k}-s)`;
   if (type === 'input' || type === 'output') return ICON.io(f, s);
@@ -711,6 +742,7 @@ const FIELDS = {
   while: [['c', 'f_cond', 'x > 0', 'expr']],
   do: [['c', 'f_cond', 'x > 0', 'expr']],
   comment: [['text', 'f_comment', null, 'text']],
+  decl: [['k', 'f_type', null, 'kind'], ['v', 'f_declvars', 'n, i, v[]', 'decl']],
   for: [['v', 'f_var', null, 'lv'], ['a', 'f_from', null, 'expr'], ['b', 'f_to', null, 'expr'], ['s', 'f_step', null, 'opt']],
 };
 function splitAssign(str) {
@@ -723,12 +755,17 @@ function splitAssign(str) {
   }
   return null;
 }
-const fieldVal = (b, key) => key === '_as' ? ((b.v || b.e) ? `${b.v}${b.e !== '' || b.v ? ' = ' : ''}${b.e}` : '') : (b[key] ?? '');
+const INCRE = /^\s*(?:(\+\+|--)\s*([^=+\-][^=]*?)|([^=]*?[^=+\-\s])\s*(\+\+|--))\s*$/;
+function splitInc(str) { const m = INCRE.exec(String(str)); return m ? { v: (m[2] || m[3]).trim(), op: m[1] || m[4] } : null; }
+const fieldVal = (b, key) => key === '_as' ? (b.inc ? `${b.v}${b.inc}` : (b.v || b.e) ? `${b.v}${b.e !== '' || b.v ? ' = ' : ''}${b.e}` : '') : (b[key] ?? '');
 function fieldErr(kind, val) {
   try {
     if (kind === 'text') return '';
+    if (kind === 'kind') return '';
+    if (kind === 'decl') { FL.parseDecl(val); return ''; }
     if (kind === 'assign') {
       if (!String(val).trim()) throw new FL.FErr('empty');
+      const inc = splitInc(val); if (inc) { FL.parseLV(inc.v); return ''; }
       const p = splitAssign(val); if (!p) return t('e_noeq');
       FL.parseLV(p[0]); FL.parse(p[1]); return '';
     }
@@ -751,6 +788,8 @@ function renderPanel() {
   const fieldHTML = ([key, lab, ph, kind]) => {
     const val = fieldVal(b, key);
     const showErr = String(val).trim() ? fieldErr(kind, val) : '';
+    if (kind === 'kind') return `<div class="field"><label for="f-${key}">${esc(t(lab))}</label>
+      <select id="f-${key}" data-k="${key}" data-kind="kind">${FL.KINDS.map(k => `<option value="${k}" ${b.k === k ? 'selected' : ''}>${esc(t('tyk')[k])}</option>`).join('')}</select></div>`;
     return `<div class="field"><label for="f-${key}">${esc(t(lab))}</label>
       <input id="f-${key}" data-k="${key}" data-kind="${kind}" value="${esc(val)}" placeholder="${esc(ph || '')}" spellcheck="false" autocapitalize="off" autocomplete="off" class="${showErr ? 'bad' : ''}">
       <div class="msg" id="m-${key}">${esc(showErr)}</div></div>`;
@@ -782,15 +821,17 @@ function updBlkErr() {
   el.hidden = !err || empty; el.textContent = err && !empty ? emsg(err) : '';
 }
 let editSnapDone = false;
-$('#tab-block').addEventListener('focusin', e => { if (e.target.matches('input[data-k]')) editSnapDone = false; });
+$('#tab-block').addEventListener('focusin', e => { if (e.target.matches('[data-k]')) editSnapDone = false; });
 $('#tab-block').addEventListener('input', e => {
-  const inp = e.target.closest('input[data-k]'); if (!inp) return;
+  const inp = e.target.closest('[data-k]'); if (!inp) return;
   const f = sel && find(sel); if (!f) return;
   if (!editSnapDone) { snap(); editSnapDone = true; stopRun(); }
   if (inp.dataset.k === '_as') {
-    const sp = splitAssign(inp.value);
-    if (sp) { f.b.v = sp[0]; f.b.e = sp[1]; } else { f.b.v = inp.value.trim(); f.b.e = ''; }
+    const inc = splitInc(inp.value), sp = inc ? null : splitAssign(inp.value);
+    if (inc) { f.b.v = inc.v; f.b.e = ''; f.b.inc = inc.op; }
+    else { delete f.b.inc; if (sp) { f.b.v = sp[0]; f.b.e = sp[1]; } else { f.b.v = inp.value.trim(); f.b.e = ''; } }
   } else f.b[inp.dataset.k] = inp.value;
+  if (inp.tagName === 'SELECT') { editSnapDone = false; renderSoon(); updBlkErr(); const h = $('#tab-block .bhead p'); if (h) h.textContent = noteOf(f.b); return; }
   const err = inp.value.trim() ? fieldErr(inp.dataset.kind, inp.value) : '';
   inp.classList.toggle('bad', !!err);
   const m = $('#m-' + inp.dataset.k); if (m) m.textContent = err;
@@ -901,14 +942,17 @@ function conLine(text, cls) {
 let lastVals = {};
 function renderVars() {
   const box = $('#varsBox');
-  const env = R && R.env;
-  if (!env || !Object.keys(env).length) { box.innerHTML = `<p class="empty" style="margin:0">${esc(t('noVars'))}</p>`; lastVals = {}; return; }
-  const rows = Object.keys(env).map(k => {
-    const v = FL.fmt(env[k]); const chg = lastVals[k] !== undefined && lastVals[k] !== v || lastVals[k] === undefined;
-    return `<tr class="${chg && R.mode === 'step' ? 'chg' : ''}"><td>${esc(k)}</td><td>${esc(v)}</td><td class="ty">${esc(t('ty')[FL.typeOf(env[k])])}</td></tr>`;
+  const env = R && R.env, T = (R && R.io && R.io.types) || {};
+  const keys = env ? [...new Set([...Object.keys(T), ...Object.keys(env)])] : [];
+  if (!keys.length) { box.innerHTML = `<p class="empty" style="margin:0">${esc(t('noVars'))}</p>`; lastVals = {}; return; }
+  const rows = keys.map(k => {
+    const has = Object.prototype.hasOwnProperty.call(env, k);
+    const v = has ? FL.fmt(env[k]) : '—'; const chg = lastVals[k] !== undefined && lastVals[k] !== v || lastVals[k] === undefined;
+    const ty = T[k] ? (T[k].arr ? `${t('vecOf')} ${t('tyk')[T[k].k]}` : t('tyk')[T[k].k]) : t('ty')[FL.typeOf(env[k])];
+    return `<tr class="${chg && R.mode === 'step' ? 'chg' : ''}"><td>${esc(k)}</td><td>${esc(v)}</td><td class="ty">${esc(ty)}</td></tr>`;
   });
   box.innerHTML = `<table class="vars"><thead><tr><th>${esc(t('thName'))}</th><th>${esc(t('thVal'))}</th><th>${esc(t('thType'))}</th></tr></thead><tbody>${rows.join('')}</tbody></table>`;
-  lastVals = {}; for (const k of Object.keys(env)) lastVals[k] = FL.fmt(env[k]);
+  lastVals = {}; for (const k of keys) lastVals[k] = Object.prototype.hasOwnProperty.call(env, k) ? FL.fmt(env[k]) : '—';
 }
 function syncTrace() { const c = $('#traceChk'); if (c) c.checked = opts.trace; con.classList.toggle('notrace', !opts.trace); }
 $('#traceChk').addEventListener('change', e => { opts.trace = e.target.checked; saveOpts(); syncTrace(); });
@@ -954,7 +998,8 @@ function startRun(mode) {
   con.innerHTML = ''; delete con.dataset.idle; lastVals = {}; openLine = null;
   const env = Object.create(null);
   R = { env, mode, state: 'run', steps: 0, cur: null, errId: null, timer: 0 };
-  R.gen = FL.exec(prog.main, env, { out: (s, ln) => conOut(s, ln), trace: traceFn });
+  R.io = { out: (s, ln) => conOut(s, ln), trace: traceFn };
+  R.gen = FL.exec(prog.main, env, R.io);
   FL.setBoolNames(t('FALSE'), t('TRUE'));
   renderDiagram();
   switchTab('run');
@@ -1010,7 +1055,8 @@ function traceFn(kind, b, d) {
   let s;
   if (kind === 'in') s = `IN ${d.name} = ${FL.fmt(d.value)}`;
   else if (kind === 'out') s = `${kw(b)} ${b.e}`;
-  else if (kind === 'as') s = `${b.v} = ${b.e}  \u2192  ${FL.fmt(d.value)}`;
+  else if (kind === 'as') s = `${b.inc ? b.v + b.inc : b.v + ' = ' + b.e}  \u2192  ${FL.fmt(d.value)}`;
+  else if (kind === 'decl') s = `VAR ${label(b)}`;
   else if (kind === 'cond') s = `${kw(b)} ${b.c}  \u2192  ${FL.fmt(d.value)}`;
   else if (kind === 'for') s = `FOR ${b.v} = ${FL.fmt(d.value)}${d.go ? '' : '  \u2192  ' + t('loopEnd')}`;
   if (!s) return;
@@ -1139,7 +1185,9 @@ const GUIDE = {
     <tr><td>&lt; &lt;= &gt; &gt;=</td><td>confronti</td></tr>
     <tr><td>AND OR NOT</td><td>anche && || !</td></tr>
     <tr><td>vero, falso</td><td>valori logici</td></tr>
-    <tr><td>v[i]</td><td>elemento di un vettore; si crea assegnando <code>v[0] = 5</code> o leggendo <code>v[i]</code></td></tr></table>
+    <tr><td>v[i]</td><td>elemento di un vettore; si crea assegnando <code>v[0] = 5</code> o leggendo <code>v[i]</code></td></tr>
+    <tr><td>i++  i--</td><td>nel blocco assegnazione: aumenta o diminuisce di 1 una variabile intera</td></tr></table>
+    <h3>Tipi delle variabili</h3><p>Di base il tipo è automatico: lo decide il valore. Con il blocco <b>VAR</b> puoi dichiararlo: <code>intero</code>, <code>reale</code>, <code>stringa</code>, <code>logico</code>. Per un vettore scrivi <code>v[]</code>. FlussoLab poi segnala se metti un valore del tipo sbagliato; con IN, una variabile <code>stringa</code> tiene il testo così com'è, anche se sono cifre.</p>
     <h3>Funzioni</h3><p><code>sqrt abs int round floor ceil pow min max sin cos tan random() randint(a,b) len str num</code></p>
     <h3>Scorciatoie</h3><p><kbd>Canc</kbd> elimina il blocco selezionato · <kbd>Ctrl</kbd>+<kbd>Z</kbd> annulla · <kbd>Ctrl</kbd>+<kbd>C</kbd>/<kbd>V</kbd> copia e incolla dopo il blocco selezionato</p>
     <h3>Il progetto</h3><p>FlussoLab è gratuito e il suo codice è aperto a tutti, ma non può essere usato per guadagnarci. Funziona interamente nel browser: niente da installare, anche su Chromebook e tablet.</p>`,
@@ -1157,7 +1205,9 @@ const GUIDE = {
     <tr><td>&lt; &lt;= &gt; &gt;=</td><td>comparisons</td></tr>
     <tr><td>AND OR NOT</td><td>also && || !</td></tr>
     <tr><td>true, false</td><td>boolean values</td></tr>
-    <tr><td>v[i]</td><td>array element; created by assigning <code>v[0] = 5</code> or reading <code>v[i]</code></td></tr></table>
+    <tr><td>v[i]</td><td>array element; created by assigning <code>v[0] = 5</code> or reading <code>v[i]</code></td></tr>
+    <tr><td>i++  i--</td><td>in the assignment block: adds or subtracts 1 from an integer variable</td></tr></table>
+    <h3>Variable types</h3><p>By default the type is automatic: the value decides it. With the <b>VAR</b> block you can declare it: <code>integer</code>, <code>real</code>, <code>string</code>, <code>boolean</code>. For an array write <code>v[]</code>. FlussoLab then reports a value of the wrong type; with IN, a <code>string</code> variable keeps the text as typed, even if it is digits.</p>
     <h3>Functions</h3><p><code>sqrt abs int round floor ceil pow min max sin cos tan random() randint(a,b) len str num</code></p>
     <h3>Shortcuts</h3><p><kbd>Del</kbd> deletes the selected block · <kbd>Ctrl</kbd>+<kbd>Z</kbd> undo · <kbd>Ctrl</kbd>+<kbd>C</kbd>/<kbd>V</kbd> copy and paste after the selected block</p>
     <h3>The project</h3><p>FlussoLab is free and its code is open to everyone, but it cannot be used to make money. It runs entirely in the browser: nothing to install, Chromebooks and tablets included.</p>`,

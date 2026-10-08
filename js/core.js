@@ -253,6 +253,38 @@ function assign(lv, val, env) {
   const c = container(lv.o, env); const i = ev(lv.i, env); idxOk(i);
   c[i] = val;
 }
+/* ---------- declared types ---------- */
+const KINDS = ['int', 'real', 'str', 'bool'];
+function parseDecl(src) {
+  const items = splitList(src);
+  if (!items.length) throw new FErr('empty');
+  return items.map(x => {
+    const m = /^([A-Za-z_\u00C0-\u024F][A-Za-z0-9_\u00C0-\u024F]*)\s*(\[\s*\])?$/.exec(x);
+    if (!m) throw new FErr('declname', x);
+    return { n: m[1], arr: !!m[2] };
+  });
+}
+function kindOK(k, v) {
+  if (k === 'int') return typeof v === 'number' && Number.isInteger(v);
+  if (k === 'real') return typeof v === 'number';
+  if (k === 'str') return typeof v === 'string';
+  return typeof v === 'boolean';
+}
+function lvRoot(lv) { let n = lv; while (n.k === 'idx') n = n.o; return n; }
+function checkType(lv, val, T) {
+  if (!T) return;
+  const r = lvRoot(lv), d = T[r.n]; if (!d) return;
+  if (lv.k === 'var' && d.arr) { if (!Array.isArray(val)) throw new FErr('tarr', r.n, d.k); return; }
+  if (lv.k === 'var' || d.arr) { if (Array.isArray(val) || !kindOK(d.k, val)) throw new FErr('tdecl', r.n, d.k, fmt(val)); }
+}
+function setVar(lv, val, env, T) { checkType(lv, val, T); assign(lv, val, env); }
+function parseTyped(raw, k, name) {
+  const s = String(raw).trim();
+  if (k === 'str') return String(raw);
+  const v = parseInput(s);
+  if (k === 'bool' ? typeof v !== 'boolean' : (typeof v !== 'number' || (k === 'int' && !Number.isInteger(v)))) throw new FErr('tin', s, k, name);
+  return v;
+}
 function cond(src, env) {
   const v = ev(parse(src), env);
   if (typeof v !== 'boolean') throw new FErr('bool');
@@ -262,6 +294,7 @@ function cond(src, env) {
 /* ---------- interpreter (generator: yields 'at' before each block, 'input' to ask a value) ---------- */
 function* exec(seq, env, io) {
   const tr = io.trace || (() => {});
+  const T = io.types || (io.types = Object.create(null));
   for (const b of seq) {
     if (b.t === 'comment') continue;
     yield { t: 'at', b };
@@ -272,13 +305,33 @@ function* exec(seq, env, io) {
         const lvs = names.map(parseLV);
         for (let k = 0; k < lvs.length; k++) {
           const raw = yield { t: 'input', b, name: names[k] };
-          const v = parseInput(raw);
-          assign(lvs[k], v, env); tr('in', b, { name: names[k], value: v });
+          const r = lvRoot(lvs[k]), d = T[r.n];
+          const v = d ? parseTyped(raw, d.k, names[k]) : parseInput(raw);
+          setVar(lvs[k], v, env, T); tr('in', b, { name: names[k], value: v });
         }
         break;
       }
       case 'output': { const txt = fmt(ev(parse(b.e), env)); tr('out', b, { text: txt }); io.out(txt, b.ln !== false); break; }
-      case 'assign': { const v = ev(parse(b.e), env); assign(parseLV(b.v), v, env); tr('as', b, { value: v }); break; }
+      case 'assign': {
+        const lv = parseLV(b.v);
+        if (b.inc) {
+          const cur = ev(lv, env), r = lvRoot(lv), d = T[r.n];
+          if (typeof cur !== 'number' || !Number.isInteger(cur) || (d && d.k !== 'int')) throw new FErr('incint', b.inc, r.n);
+          const v = cur + (b.inc === '++' ? 1 : -1); setVar(lv, v, env, T); tr('as', b, { value: v }); break;
+        }
+        const v = ev(parse(b.e), env); setVar(lv, v, env, T); tr('as', b, { value: v }); break;
+      }
+      case 'decl': {
+        if (!KINDS.includes(b.k)) throw new FErr('kind');
+        for (const it of parseDecl(b.v)) {
+          const old = T[it.n];
+          if (old && (old.k !== b.k || old.arr !== it.arr)) throw new FErr('redecl', it.n);
+          if (Object.prototype.hasOwnProperty.call(env, it.n)) checkType({ k: 'var', n: it.n }, env[it.n], { [it.n]: { k: b.k, arr: it.arr } });
+          T[it.n] = { k: b.k, arr: it.arr };
+        }
+        tr('decl', b, {});
+        break;
+      }
       case 'if': { const c = cond(b.c, env); tr('cond', b, { value: c }); yield* exec(c ? b.y : b.n, env, io); break; }
       case 'while':
         for (;;) { const c = cond(b.c, env); tr('cond', b, { value: c }); if (!c) break; yield* exec(b.body, env, io); yield { t: 'at', b }; }
@@ -292,7 +345,7 @@ function* exec(seq, env, io) {
         const st = String(b.s ?? '').trim() ? ev(parse(b.s), env) : 1;
         num(from, 'for'); num(to, 'for'); num(st, 'for');
         if (st === 0) throw new FErr('step0');
-        assign(lv, from, env);
+        setVar(lv, from, env, T);
         for (;;) {
           const cur = ev(lv, env); num(cur, 'for');
           const go = st > 0 ? cur <= to : cur >= to;
@@ -300,7 +353,7 @@ function* exec(seq, env, io) {
           if (!go) break;
           yield* exec(b.body, env, io);
           yield { t: 'at', b };
-          assign(lv, ev(lv, env) + st, env);
+          setVar(lv, ev(lv, env) + st, env, T);
         }
         break;
       }
@@ -316,7 +369,7 @@ function knownVars(main) {
     for (const b of seq) {
       if (b.t === 'input') splitList(b.v).forEach(v => { const r = rootName(v); if (r) K.add(r); });
       if (b.t === 'assign' || b.t === 'for') { const r = rootName(b.v); if (r) K.add(r); }
-      if (b.t === 'comment') continue;
+      if (b.t === 'comment' || b.t === 'decl') continue;
       if (b.t === 'if') { walk(b.y); walk(b.n); } else if (b.body) walk(b.body);
     }
   })(main);
@@ -355,7 +408,8 @@ function staticErr(b, known) {
     switch (b.t) {
       case 'input': { const n = splitList(b.v); if (!n.length) throw new FErr('empty'); n.forEach(x => checkLV(x, known)); break; }
       case 'output': checkExpr(b.e, known); break;
-      case 'assign': checkLV(b.v, known); checkExpr(b.e, known); break;
+      case 'assign': checkLV(b.v, known); if (!b.inc) checkExpr(b.e, known); break;
+      case 'decl': if (!KINDS.includes(b.k)) throw new FErr('kind'); parseDecl(b.v); break;
       case 'if': case 'while': case 'do': checkExpr(b.c, known, true); break;
       case 'for': checkLV(b.v, known); checkExpr(b.a, known); checkExpr(b.b, known); if (String(b.s ?? '').trim()) checkExpr(b.s, known); break;
       case 'comment': break;
@@ -379,9 +433,11 @@ function firstError(main) {
 /* ---------- pseudocode ---------- */
 const PK = {
   it: { start: 'INIZIO', end: 'FINE', read: 'LEGGI', write: 'SCRIVI', if: 'SE', then: 'ALLORA', else: 'ALTRIMENTI', endif: 'FINE SE',
-    while: 'MENTRE', do: 'ESEGUI', endwhile: 'FINE MENTRE', repeat: 'RIPETI', repwhile: 'MENTRE', for: 'PER', from: 'DA', to: 'A', step: 'PASSO', endfor: 'FINE PER', noln: '(senza andare a capo)' },
+    while: 'MENTRE', do: 'ESEGUI', endwhile: 'FINE MENTRE', repeat: 'RIPETI', repwhile: 'MENTRE', for: 'PER', from: 'DA', to: 'A', step: 'PASSO', endfor: 'FINE PER', noln: '(senza andare a capo)',
+    vars: 'VARIABILI', kinds: { int: 'INTERO', real: 'REALE', str: 'STRINGA', bool: 'LOGICO' }, arrOf: 'VETTORE DI' },
   en: { start: 'BEGIN', end: 'END', read: 'READ', write: 'WRITE', if: 'IF', then: 'THEN', else: 'ELSE', endif: 'END IF',
-    while: 'WHILE', do: 'DO', endwhile: 'END WHILE', repeat: 'REPEAT', repwhile: 'WHILE', for: 'FOR', from: 'FROM', to: 'TO', step: 'STEP', endfor: 'END FOR', noln: '(no new line)' },
+    while: 'WHILE', do: 'DO', endwhile: 'END WHILE', repeat: 'REPEAT', repwhile: 'WHILE', for: 'FOR', from: 'FROM', to: 'TO', step: 'STEP', endfor: 'END FOR', noln: '(no new line)',
+    vars: 'VARIABLES', kinds: { int: 'INTEGER', real: 'REAL', str: 'STRING', bool: 'BOOLEAN' }, arrOf: 'ARRAY OF' },
 };
 function toPseudoLines(main, lang) {
   const K = PK[lang] || PK.it, L = [{ s: K.start, id: null }];
@@ -393,7 +449,15 @@ function toPseudoLines(main, lang) {
         case 'comment': P(`// ${b.text || ''}`, b); break;
         case 'input': P(`${K.read} ${b.v}`, b); break;
         case 'output': P(`${K.write} ${b.e}${b.ln === false ? ' ' + K.noln : ''}`, b); break;
-        case 'assign': P(`${b.v} = ${b.e}`, b); break;
+        case 'assign': P(b.inc ? `${b.v} = ${b.v} ${b.inc === '++' ? '+' : '-'} 1` : `${b.v} = ${b.e}`, b); break;
+        case 'decl': {
+          let its; try { its = parseDecl(b.v); } catch (e) { its = []; }
+          const kn = K.kinds[b.k] || b.k, plain = its.filter(x => !x.arr).map(x => x.n), arrs = its.filter(x => x.arr).map(x => x.n);
+          if (plain.length) P(`${K.vars} ${plain.join(', ')} : ${kn}`, b);
+          if (arrs.length) P(`${K.vars} ${arrs.join(', ')} : ${K.arrOf} ${kn}`, b);
+          if (!its.length) P(`${K.vars} ${b.v || ''}`, b);
+          break;
+        }
         case 'if': P(`${K.if} ${b.c} ${K.then}`, b); walk(b.y, d + 1);
           if (b.n.length) { P(K.else, b); walk(b.n, d + 1); }
           P(K.endif, b); break;
@@ -479,7 +543,14 @@ function toPython(main, lang) {
           if (!splitList(b.v).length) L.push(ind + 'pass');
           break;
         case 'output': { let s; try { s = pyPrint(parse(b.e), U, b.ln); } catch (e) { s = `print()  # ${b.e}`; } L.push(ind + s); break; }
-        case 'assign': noteArr(b.v); L.push(`${ind}${LV(b.v)} = ${E(b.e)}`); break;
+        case 'assign': noteArr(b.v); L.push(b.inc ? `${ind}${LV(b.v)} ${b.inc === '++' ? '+' : '-'}= 1` : `${ind}${LV(b.v)} = ${E(b.e)}`); break;
+        case 'decl': {
+          let its; try { its = parseDecl(b.v); } catch (e) { its = []; }
+          const pt = { int: 'int', real: 'float', str: 'str', bool: 'bool' }[b.k] || 'object';
+          for (const it of its) { if (it.arr) { arrays.add(pyName(it.n)); L.push(`${ind}# ${pyName(it.n)}: ${lang === 'en' ? 'array of' : 'vettore di'} ${pt}`); } else L.push(`${ind}${pyName(it.n)}: ${pt}`); }
+          if (!its.length) L.push(ind + 'pass');
+          break;
+        }
         case 'if': L.push(`${ind}if ${E(b.c)}:`); walk(b.y, d + 1);
           if (b.n.length) { L.push(`${ind}else:`); walk(b.n, d + 1); } break;
         case 'while': L.push(`${ind}while ${E(b.c)}:`); walk(b.body, d + 1); break;
@@ -552,6 +623,6 @@ function negate(n) {
 }
 function invertCond(src) { return srcE(negate(parse(src))).s; }
 
-return { toPseudoLines, invertCond, knownVars, firstError, FErr, parse, parseLV, splitList, exec, fmt, typeOf, parseInput, staticErr, toPseudo, toPython, setBoolNames, FN };
+return { KINDS, parseDecl, toPseudoLines, invertCond, knownVars, firstError, FErr, parse, parseLV, splitList, exec, fmt, typeOf, parseInput, staticErr, toPseudo, toPython, setBoolNames, FN };
 })();
 if (typeof module !== 'undefined') module.exports = FL;

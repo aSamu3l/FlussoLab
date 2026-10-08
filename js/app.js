@@ -2,7 +2,7 @@
 'use strict';
 /* ====== Project settings: fill these in before publishing ====== */
 const CONFIG = {
-  version: '0.4.0',
+  version: '0.4.1',
   author: 'aSamu3l',
   github: 'https://github.com/aSamu3l',
   repo: 'https://github.com/aSamu3l/FlussoLab',
@@ -767,10 +767,10 @@ function fieldErr(kind, val) {
       if (!String(val).trim()) throw new FL.FErr('empty');
       const inc = splitInc(val); if (inc) { FL.parseLV(inc.v); return ''; }
       const p = splitAssign(val); if (!p) return t('e_noeq');
-      FL.parseLV(p[0]); FL.parse(p[1]); return '';
+      FL.lvTyped(p[0]); FL.parse(p[1]); return '';
     }
-    if (kind === 'list') { const n = FL.splitList(val); if (!n.length) throw new FL.FErr('empty'); n.forEach(FL.parseLV); }
-    else if (kind === 'lv') FL.parseLV(val);
+    if (kind === 'list') { const n = FL.splitList(val); if (!n.length) throw new FL.FErr('empty'); n.forEach(FL.lvTyped); }
+    else if (kind === 'lv') FL.lvTyped(val);
     else if (kind === 'opt') { if (String(val).trim()) FL.parse(val); }
     else FL.parse(val);
     return '';
@@ -1187,7 +1187,7 @@ const GUIDE = {
     <tr><td>vero, falso</td><td>valori logici</td></tr>
     <tr><td>v[i]</td><td>elemento di un vettore; si crea assegnando <code>v[0] = 5</code> o leggendo <code>v[i]</code></td></tr>
     <tr><td>i++  i--</td><td>nel blocco assegnazione: aumenta o diminuisce di 1 una variabile intera</td></tr></table>
-    <h3>Tipi delle variabili</h3><p>Di base il tipo è automatico: lo decide il valore. Con il blocco <b>VAR</b> puoi dichiararlo: <code>intero</code>, <code>reale</code>, <code>stringa</code>, <code>logico</code>. Per un vettore scrivi <code>v[]</code>. FlussoLab poi segnala se metti un valore del tipo sbagliato; con IN, una variabile <code>stringa</code> tiene il testo così com'è, anche se sono cifre.</p>
+    <h3>Tipi delle variabili</h3><p>Di base il tipo è automatico: lo decide il valore. Puoi dichiararlo direttamente dove la variabile nasce, ad esempio <code>IN int n</code>, <code>reale media = s / n</code> o <code>FOR int i = 1 TO 10</code>, oppure con il blocco <b>VAR</b>: <code>intero</code>, <code>reale</code>, <code>stringa</code>, <code>logico</code>. Per un vettore scrivi <code>v[]</code>. FlussoLab poi segnala se metti un valore del tipo sbagliato; con IN, una variabile <code>stringa</code> tiene il testo così com'è, anche se sono cifre.</p>
     <h3>Funzioni</h3><p><code>sqrt abs int round floor ceil pow min max sin cos tan random() randint(a,b) len str num</code></p>
     <h3>Scorciatoie</h3><p><kbd>Canc</kbd> elimina il blocco selezionato · <kbd>Ctrl</kbd>+<kbd>Z</kbd> annulla · <kbd>Ctrl</kbd>+<kbd>C</kbd>/<kbd>V</kbd> copia e incolla dopo il blocco selezionato</p>
     <h3>Il progetto</h3><p>FlussoLab è gratuito e il suo codice è aperto a tutti, ma non può essere usato per guadagnarci. Funziona interamente nel browser: niente da installare, anche su Chromebook e tablet.</p>`,
@@ -1207,7 +1207,7 @@ const GUIDE = {
     <tr><td>true, false</td><td>boolean values</td></tr>
     <tr><td>v[i]</td><td>array element; created by assigning <code>v[0] = 5</code> or reading <code>v[i]</code></td></tr>
     <tr><td>i++  i--</td><td>in the assignment block: adds or subtracts 1 from an integer variable</td></tr></table>
-    <h3>Variable types</h3><p>By default the type is automatic: the value decides it. With the <b>VAR</b> block you can declare it: <code>integer</code>, <code>real</code>, <code>string</code>, <code>boolean</code>. For an array write <code>v[]</code>. FlussoLab then reports a value of the wrong type; with IN, a <code>string</code> variable keeps the text as typed, even if it is digits.</p>
+    <h3>Variable types</h3><p>By default the type is automatic: the value decides it. You can declare it where the variable is born, for example <code>IN int n</code>, <code>real avg = s / n</code> or <code>FOR int i = 1 TO 10</code>, or with the <b>VAR</b> block: <code>integer</code>, <code>real</code>, <code>string</code>, <code>boolean</code>. For an array write <code>v[]</code>. FlussoLab then reports a value of the wrong type; with IN, a <code>string</code> variable keeps the text as typed, even if it is digits.</p>
     <h3>Functions</h3><p><code>sqrt abs int round floor ceil pow min max sin cos tan random() randint(a,b) len str num</code></p>
     <h3>Shortcuts</h3><p><kbd>Del</kbd> deletes the selected block · <kbd>Ctrl</kbd>+<kbd>Z</kbd> undo · <kbd>Ctrl</kbd>+<kbd>C</kbd>/<kbd>V</kbd> copy and paste after the selected block</p>
     <h3>The project</h3><p>FlussoLab is free and its code is open to everyone, but it cannot be used to make money. It runs entirely in the browser: nothing to install, Chromebooks and tablets included.</p>`,

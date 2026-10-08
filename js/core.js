@@ -264,6 +264,21 @@ function parseDecl(src) {
     return { n: m[1], arr: !!m[2] };
   });
 }
+const KALIAS = { int: 'int', intero: 'int', integer: 'int', real: 'real', reale: 'real', float: 'real', double: 'real',
+  str: 'str', string: 'str', stringa: 'str', testo: 'str', bool: 'bool', boolean: 'bool', logico: 'bool' };
+// "int n", "reale media", "v[i]" -> { k: 'int' | null, src: 'n', lv: <ast> }
+function lvTyped(src) {
+  const m = /^\s*([A-Za-z]+)\s+(\S.*)$/.exec(String(src || ''));
+  if (m && KALIAS[m[1].toLowerCase()]) return { k: KALIAS[m[1].toLowerCase()], src: m[2].trim(), lv: parseLV(m[2]) };
+  return { k: null, src: String(src || '').trim(), lv: parseLV(src) };
+}
+function declare(T, env, name, k, arr) {
+  const old = T[name];
+  if (old && (old.k !== k || old.arr !== arr)) throw new FErr('redecl', name);
+  if (!old && Object.prototype.hasOwnProperty.call(env, name)) checkType({ k: 'var', n: name }, env[name], { [name]: { k, arr } });
+  T[name] = { k, arr };
+}
+function declTyped(ty, T, env) { if (ty.k) declare(T, env, lvRoot(ty.lv).n, ty.k, ty.lv.k === 'idx'); return ty.lv; }
 function kindOK(k, v) {
   if (k === 'int') return typeof v === 'number' && Number.isInteger(v);
   if (k === 'real') return typeof v === 'number';
@@ -302,18 +317,19 @@ function* exec(seq, env, io) {
       case 'input': {
         const names = splitList(b.v);
         if (!names.length) throw new FErr('empty');
-        const lvs = names.map(parseLV);
-        for (let k = 0; k < lvs.length; k++) {
-          const raw = yield { t: 'input', b, name: names[k] };
-          const r = lvRoot(lvs[k]), d = T[r.n];
-          const v = d ? parseTyped(raw, d.k, names[k]) : parseInput(raw);
-          setVar(lvs[k], v, env, T); tr('in', b, { name: names[k], value: v });
+        const tys = names.map(lvTyped);
+        for (let k = 0; k < tys.length; k++) {
+          const lv = declTyped(tys[k], T, env), nm = tys[k].src;
+          const raw = yield { t: 'input', b, name: nm };
+          const d = T[lvRoot(lv).n];
+          const v = d ? parseTyped(raw, d.k, nm) : parseInput(raw);
+          setVar(lv, v, env, T); tr('in', b, { name: nm, value: v });
         }
         break;
       }
       case 'output': { const txt = fmt(ev(parse(b.e), env)); tr('out', b, { text: txt }); io.out(txt, b.ln !== false); break; }
       case 'assign': {
-        const lv = parseLV(b.v);
+        const lv = b.inc ? parseLV(b.v) : declTyped(lvTyped(b.v), T, env);
         if (b.inc) {
           const cur = ev(lv, env), r = lvRoot(lv), d = T[r.n];
           if (typeof cur !== 'number' || !Number.isInteger(cur) || (d && d.k !== 'int')) throw new FErr('incint', b.inc, r.n);
@@ -323,12 +339,7 @@ function* exec(seq, env, io) {
       }
       case 'decl': {
         if (!KINDS.includes(b.k)) throw new FErr('kind');
-        for (const it of parseDecl(b.v)) {
-          const old = T[it.n];
-          if (old && (old.k !== b.k || old.arr !== it.arr)) throw new FErr('redecl', it.n);
-          if (Object.prototype.hasOwnProperty.call(env, it.n)) checkType({ k: 'var', n: it.n }, env[it.n], { [it.n]: { k: b.k, arr: it.arr } });
-          T[it.n] = { k: b.k, arr: it.arr };
-        }
+        for (const it of parseDecl(b.v)) declare(T, env, it.n, b.k, it.arr);
         tr('decl', b, {});
         break;
       }
@@ -340,7 +351,7 @@ function* exec(seq, env, io) {
         for (;;) { yield* exec(b.body, env, io); yield { t: 'at', b }; const c = cond(b.c, env); tr('cond', b, { value: c }); if (!c) break; }
         break;
       case 'for': {
-        const lv = parseLV(b.v);
+        const lv = declTyped(lvTyped(b.v), T, env);
         const from = ev(parse(b.a), env), to = ev(parse(b.b), env);
         const st = String(b.s ?? '').trim() ? ev(parse(b.s), env) : 1;
         num(from, 'for'); num(to, 'for'); num(st, 'for');
@@ -362,7 +373,7 @@ function* exec(seq, env, io) {
 }
 
 /* ---------- static checks ---------- */
-function rootName(src) { try { let n = parseLV(src); while (n.k === 'idx') n = n.o; return n.n; } catch (e) { return null; } }
+function rootName(src) { try { let n = lvTyped(src).lv; while (n.k === 'idx') n = n.o; return n.n; } catch (e) { return null; } }
 function knownVars(main) {
   const K = new Set();
   (function walk(seq) {
@@ -399,7 +410,7 @@ function checkExpr(src, known, isCond) {
   return a;
 }
 function checkLV(src, known) {
-  const a = parseLV(src);
+  const a = lvTyped(src).lv;
   if (known && a.k === 'idx') { let n = a; while (n.k === 'idx') { usedVars(n.i).forEach(v => { if (!known.has(v)) throw new FErr('nodef', v); }); n = n.o; } }
   return a;
 }
@@ -447,9 +458,18 @@ function toPseudoLines(main, lang) {
     for (const b of seq) {
       switch (b.t) {
         case 'comment': P(`// ${b.text || ''}`, b); break;
-        case 'input': P(`${K.read} ${b.v}`, b); break;
+        case 'input': {
+          const its = splitList(b.v).map(x => { try { return lvTyped(x); } catch (e) { return { k: null, src: x }; } });
+          its.filter(x => x.k).forEach(x => P(`${K.vars} ${x.src.replace(/\[.*$/, '')} : ${x.lv && x.lv.k === 'idx' ? K.arrOf + ' ' : ''}${K.kinds[x.k]}`, b));
+          P(`${K.read} ${its.map(x => x.src).join(', ')}`, b); break;
+        }
         case 'output': P(`${K.write} ${b.e}${b.ln === false ? ' ' + K.noln : ''}`, b); break;
-        case 'assign': P(b.inc ? `${b.v} = ${b.v} ${b.inc === '++' ? '+' : '-'} 1` : `${b.v} = ${b.e}`, b); break;
+        case 'assign': {
+          if (b.inc) { P(`${b.v} = ${b.v} ${b.inc === '++' ? '+' : '-'} 1`, b); break; }
+          let ty; try { ty = lvTyped(b.v); } catch (e) { ty = { k: null, src: b.v }; }
+          if (ty.k) P(`${K.vars} ${ty.src.replace(/\[.*$/, '')} : ${ty.lv.k === 'idx' ? K.arrOf + ' ' : ''}${K.kinds[ty.k]}`, b);
+          P(`${ty.src} = ${b.e}`, b); break;
+        }
         case 'decl': {
           let its; try { its = parseDecl(b.v); } catch (e) { its = []; }
           const kn = K.kinds[b.k] || b.k, plain = its.filter(x => !x.arr).map(x => x.n), arrs = its.filter(x => x.arr).map(x => x.n);
@@ -465,7 +485,8 @@ function toPseudoLines(main, lang) {
         case 'do': P(K.repeat, b); walk(b.body, d + 1); P(`${K.repwhile} ${b.c}`, b); break;
         case 'for': {
           const st = String(b.s ?? '').trim();
-          P(`${K.for} ${b.v} ${K.from} ${b.a} ${K.to} ${b.b}${st && st !== '1' ? ` ${K.step} ${st}` : ''} ${K.do}`, b);
+          let fv = b.v; try { const ty = lvTyped(b.v); if (ty.k) { P(`${K.vars} ${ty.src} : ${K.kinds[ty.k]}`, b); fv = ty.src; } } catch (e) {}
+          P(`${K.for} ${fv} ${K.from} ${b.a} ${K.to} ${b.b}${st && st !== '1' ? ` ${K.step} ${st}` : ''} ${K.do}`, b);
           walk(b.body, d + 1); P(K.endfor, b); break;
         }
       }
@@ -529,9 +550,11 @@ function toPython(main, lang) {
   const U = new Set(), arrays = new Set(), L = [];
   let hasInput = false;
   const E = (src) => { try { return pyE(parse(src), U).s; } catch (e) { return `...  # ${src}`; } };
-  const LV = (src) => { try { return pyE(parseLV(src), U).s; } catch (e) { return pyName(String(src || 'x').replace(/\W/g, '') || 'x'); } };
+  const PYT = { int: 'int', real: 'float', str: 'str', bool: 'bool' };
+  const LVT = (src) => { try { const ty = lvTyped(src); const n = pyE(ty.lv, U).s; return ty.k && ty.lv.k === 'var' ? `${n}: ${PYT[ty.k]}` : n; } catch (e) { return LV(src); } };
+  const LV = (src) => { try { return pyE(lvTyped(src).lv, U).s; } catch (e) { return pyName(String(src || 'x').replace(/\W/g, '') || 'x'); } };
   const lit = (s) => { try { const a = parse(s); if (a.k === 'num') return a.v; if (a.k === 'un' && a.op === '-' && a.a.k === 'num') return -a.a.v; } catch (e) {} return null; };
-  const noteArr = (src) => { try { let n = parseLV(src); if (n.k !== 'idx') return; while (n.k === 'idx') n = n.o; arrays.add(pyName(n.n)); } catch (e) {} };
+  const noteArr = (src) => { try { let n = lvTyped(src).lv; if (n.k !== 'idx') return; while (n.k === 'idx') n = n.o; arrays.add(pyName(n.n)); } catch (e) {} };
   (function walk(seq, d) {
     const ind = '    '.repeat(d);
     if (!seq.filter(b => b.t !== 'comment').length) { seq.forEach(b => L.push(`${ind}# ${b.text || ''}`)); L.push(ind + 'pass'); return; }
@@ -539,11 +562,11 @@ function toPython(main, lang) {
       switch (b.t) {
         case 'comment': L.push(`${ind}# ${b.text || ''}`); break;
         case 'input': hasInput = true;
-          for (const nm of splitList(b.v)) { noteArr(nm); L.push(`${ind}${LV(nm)} = leggi(${JSON.stringify(nm)})`); }
+          for (const nm of splitList(b.v)) { noteArr(nm); let lab = nm; try { lab = lvTyped(nm).src; } catch (e) {} L.push(`${ind}${LVT(nm)} = leggi(${JSON.stringify(lab)})`); }
           if (!splitList(b.v).length) L.push(ind + 'pass');
           break;
         case 'output': { let s; try { s = pyPrint(parse(b.e), U, b.ln); } catch (e) { s = `print()  # ${b.e}`; } L.push(ind + s); break; }
-        case 'assign': noteArr(b.v); L.push(b.inc ? `${ind}${LV(b.v)} ${b.inc === '++' ? '+' : '-'}= 1` : `${ind}${LV(b.v)} = ${E(b.e)}`); break;
+        case 'assign': noteArr(b.v); L.push(b.inc ? `${ind}${LV(b.v)} ${b.inc === '++' ? '+' : '-'}= 1` : `${ind}${LVT(b.v)} = ${E(b.e)}`); break;
         case 'decl': {
           let its; try { its = parseDecl(b.v); } catch (e) { its = []; }
           const pt = { int: 'int', real: 'float', str: 'str', bool: 'bool' }[b.k] || 'object';
@@ -623,6 +646,6 @@ function negate(n) {
 }
 function invertCond(src) { return srcE(negate(parse(src))).s; }
 
-return { KINDS, parseDecl, toPseudoLines, invertCond, knownVars, firstError, FErr, parse, parseLV, splitList, exec, fmt, typeOf, parseInput, staticErr, toPseudo, toPython, setBoolNames, FN };
+return { KINDS, parseDecl, lvTyped, toPseudoLines, invertCond, knownVars, firstError, FErr, parse, parseLV, splitList, exec, fmt, typeOf, parseInput, staticErr, toPseudo, toPython, setBoolNames, FN };
 })();
 if (typeof module !== 'undefined') module.exports = FL;

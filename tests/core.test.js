@@ -149,3 +149,13 @@ test('incremento e decremento', () => {
   assert.equal(errKey(() => run([{ t: 'decl', k: 'real', v: 'r' }, { t: 'assign', v: 'r', e: '1' }, { t: 'assign', v: 'r', inc: '++' }])), 'incint');
   assert.equal(FL.toPseudo([{ t: 'assign', v: 'i', inc: '++' }], 'it'), 'INIZIO\n    i = i + 1\nFINE');
 });
+
+test('tipo scritto direttamente nel blocco', () => {
+  assert.deepEqual(run([{ t: 'input', v: 'int n' }, { t: 'output', e: 'n' }], ['5']).out, ['5']);
+  assert.equal(errKey(() => run([{ t: 'input', v: 'intero n' }], ['3,5'])), 'tin');
+  assert.equal(run([{ t: 'input', v: 'stringa s' }, { t: 'output', e: 's + 1' }], ['12']).out[0], '121');
+  assert.equal(run([{ t: 'assign', v: 'reale m', e: '7 / 2' }]).env.m, 3.5);
+  assert.equal(errKey(() => run([{ t: 'assign', v: 'int x', e: '7 / 2' }])), 'tdecl');
+  assert.deepEqual(run([{ t: 'for', v: 'int i', a: '1', b: '2', s: '', body: [{ t: 'output', e: 'i' }] }]).out, ['1', '2']);
+  assert.equal(FL.firstError([{ t: 'input', v: 'int n' }, { t: 'output', e: 'n' }]), null);
+});

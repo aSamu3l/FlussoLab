@@ -632,8 +632,7 @@ function toPython(main, lang) {
             try { const ty = lvTyped(nm); lab = ty.src; k = ty.k || declK(lvRoot(ty.lv).n); } catch (e) {}
             const ask = `input(${JSON.stringify(lab + '? ')})`;
             const rhs = k === 'str' || !k ? ask : k === 'float' ? `float(${ask})` : k === 'bool' ? `${ask} == "true"` : `int(${ask})`;
-            const note = k ? '' : `  # ${lang === 'en' ? 'no type: input() gives text, declare int or float for a number' : 'senza tipo: input() dà un testo, dichiara int o float per un numero'}`;
-            L.push(`${ind}${LVT(nm)} = ${rhs}${note}`);
+            L.push(`${ind}${LVT(nm)} = ${rhs}`);
           }
           if (!splitList(b.v).length) L.push(ind + 'pass');
           break;

@@ -196,3 +196,12 @@ test('incremento e decremento', () => {
   assert.equal(errKey(() => run([{ t: 'decl', k: 'float', v: 'r' }, { t: 'assign', v: 'r', e: '1' }, { t: 'assign', v: 'r', inc: '++' }])), 'incint');
   assert.equal(FL.toPseudo([{ t: 'assign', v: 'i', inc: '++' }], 'it'), 'INIZIO\n    i = i + 1\nFINE');
 });
+
+test('Python generato: divisione, resto e arrotondamento come nel diagramma', () => {
+  const py = FL.toPython([{ t: 'output', e: 'a / b' }, { t: 'output', e: 'a % b' }, { t: 'output', e: 'round(x)' }], 'it');
+  assert.match(py, /def div_c\(a, b\):/);
+  assert.match(py, /def mod_c\(a, b\):/);
+  assert.match(py, /def round_c\(x\):/);
+  assert.match(py, /print\(div_c\(a, b\)\)/);
+  assert.doesNotMatch(py, /print\(a \/ b\)/);
+});

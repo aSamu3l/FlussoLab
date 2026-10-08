@@ -1,8 +1,8 @@
 (() => {
 'use strict';
-/* ====== Project settings: fill these in before publishing ====== */
+/* ====== Project settings ====== */
 const CONFIG = {
-  version: '0.6.1',
+  version: '0.6.2',
   author: 'aSamu3l',
   github: 'https://github.com/aSamu3l',
   repo: 'https://github.com/aSamu3l/FlussoLab',
@@ -20,24 +20,23 @@ const store = {
 const I18N = {
   it: {
     new: 'Nuovo', open: 'Apri', save: 'Salva', png: 'Immagine', undo: 'Annulla (Ctrl+Z)', redo: 'Ripeti (Ctrl+Y)', help: 'Guida',
-    run: 'Esegui', cont: 'Continua', step: 'Passo', stop: 'Stop', speed: 'Velocità',
+    run: 'Esegui', step: 'Passo', stop: 'Stop', speed: 'Velocità',
     tabBlock: 'Blocco', tabRun: 'Esecuzione', tabCode: 'Codice',
     progName: 'Nome del programma', untitled: 'Programma senza nome',
     hint: 'Clicca o tocca un + per inserire un blocco. Tasto destro, o tocco prolungato, per altre azioni.',
-    START: 'INIZIO', END: 'FINE', READ: 'Leggi', WRITE: 'Scrivi', T: 'V', F: 'F', TRUE: 'VERO', FALSE: 'FALSO',
-    forLbl: (v, a, b, s) => `${v} da ${a} a ${b}` + (s && String(s).trim() !== '1' && String(s).trim() !== '' ? `, passo ${s}` : ''),
+    START: 'INIZIO', END: 'FINE', T: 'V', F: 'F', TRUE: 'VERO', FALSE: 'FALSO',
     types: { decl: 'VAR · Dichiarazione', input: 'IN · Input', output: 'OUT · Output', outln: 'OUTLN · Output a capo', assign: 'Assegnazione', comment: 'Commento', if: 'IF · Se', while: 'WHILE · Mentre', do: 'DO WHILE · Ripeti mentre', for: 'FOR · Per' },
     typeHint: {
       decl: 'Facoltativo: fissa il tipo di una o più variabili', input: 'Legge uno o più valori da tastiera', output: 'Scrive a schermo e resta sulla stessa riga', outln: 'Scrive a schermo e poi va a capo', comment: 'Una nota per chi legge, non viene eseguita', assign: 'Calcola un valore e lo salva in una variabile',
       if: 'Due strade, in base a una condizione', while: 'Controlla la condizione, poi ripete finché è vera',
       do: 'Esegue almeno una volta, poi ripete se la condizione è vera', for: 'Ripete contando con una variabile',
     },
-    f_vars: 'Variabili da leggere', f_vars_tip: 'Separate da virgola, ad esempio: a, b', f_expr: 'Espressione da mostrare',
-    f_expr_tip: 'Testo tra virgolette, unito con +: "Somma: " + s', f_var: 'Variabile', f_val: 'Valore (espressione)', f_cond: 'Condizione',
-    f_cond_tip: 'Deve risultare VERO o FALSO, ad esempio: x > 0 AND x < 10', f_from: 'Da', f_to: 'A', f_step: 'Passo',
+    f_vars: 'Variabili da leggere', f_expr: 'Espressione da mostrare',
+    f_var: 'Variabile', f_cond: 'Condizione',
+    f_from: 'Da', f_to: 'A', f_step: 'Passo',
     f_ln: 'Vai a capo (OUTLN)', f_assign: 'Assegnazione', e_noeq: 'Manca il segno =: scrivi variabile = espressione (oppure i++ / i--)', f_comment: 'Testo del commento', n_cm: 'commento: non viene eseguito',
     loopEnd: 'fine ciclo', trace: 'Traccia', traceT: 'Mostra nella console ogni blocco eseguito', cut: 'Taglia', pasteAfter: 'Incolla dopo',
-    insertDots: 'Inserisci', showPy: 'Mostra anche Python', codeLink: 'Collega diagramma e codice',
+    showPy: 'Mostra anche Python', codeLink: 'Collega diagramma e codice',
     e_cmpmix: op => `Stai confrontando un testo con un numero (${op}). Forse mancano le parentesi, ad esempio "Risultato: " + (x > 5)`, mFile: 'File', mEdit: 'Modifica', mView: 'Visualizza', mHelp: 'Aiuto',
     undoM: 'Annulla', redoM: 'Ripeti', optSymShort: 'Simboli ≥ ≤ ≠', zoomIn: 'Ingrandisci', zoomOut: 'Riduci', zoom100: 'Zoom 100%',
     helpT: 'Guida', language: 'Lingua', offline: 'Offline', offlineT: 'Sei offline: FlussoLab funziona lo stesso e salva tutto su questo dispositivo.',
@@ -48,6 +47,7 @@ const I18N = {
     zipWho: 'Nome e cognome', zipWhoPh: 'Mario Rossi', zipWhich: 'Diagrammi da includere', zipEmpty: 'vuoto',
     zipFlusso: 'File .flusso', zipPng: 'Immagini PNG', zipGo: 'Scarica ZIP', zipWorking: 'Preparazione…',
     zipNone: 'Scegli almeno un diagramma e un tipo di file', zipDone: n => `ZIP pronto: ${n} file`, zipFail: 'Non è stato possibile creare lo ZIP',
+    inEmpty: 'Scrivi un valore prima di premere Invio',
     installAsk: 'Vuoi installare FlussoLab come app? Funziona anche offline.', installBtn: 'Installa', installHowBtn: 'Come si fa',
     installM: 'Installa come app…', installT: 'Installa FlussoLab', installed: 'FlussoLab è installato',
     installHow: '<p>FlussoLab si installa come un\'app e poi funziona anche senza internet.</p><ul><li><b>Chrome o Edge (Windows, Chromebook, Android)</b>: menu del browser → «Installa FlussoLab» o «Aggiungi a schermata Home».</li><li><b>iPhone e iPad</b>: apri il sito con Safari, tocca Condividi → «Aggiungi alla schermata Home».</li></ul>',
@@ -58,10 +58,9 @@ const I18N = {
     e_nodef: n => `Nessuna variabile trovata con il nome «${n}»`,
     e_notcond: 'Questa non è una condizione: serve un confronto, ad esempio x > 0', invert: 'Inverti condizione', swap: 'Scambia rami V e F',
     inverted: 'Condizione invertita', swapped: 'Rami scambiati',
-    explain: 'Spiegazione', explainT: 'Mostra accanto a ogni blocco cosa fa, in parole semplici',
-    options: 'Opzioni', optTitle: 'Opzioni', optSym: 'Scrivi ≥ ≤ ≠ come simbolo unico nel diagramma',
-    optSymTip: 'Il testo resta scritto come >=, <=, !=; cambia solo come appare nel disegno.',
-    optExplain: 'Modalità spiegazione', optExplainTip: 'Ogni blocco mostra una frase che spiega cosa fa.',
+    explain: 'Spiegazione', 
+    
+    optExplain: 'Modalità spiegazione', 
     optTheme: 'Aspetto', thAuto: 'Automatico', thLight: 'Chiaro', thDark: 'Scuro',
     n_in: v => `legge da tastiera ${v}`,
     n_out: (x, ln) => `scrive a schermo ${x}` + (ln ? ' e va a capo' : ''),
@@ -89,13 +88,12 @@ const I18N = {
     errAt: 'Errore', codePseudo: 'Pseudocodice', copyCode: 'Copia codice', copied: 'Copiato negli appunti',
     pyNote: 'Il codice Python usa una funzione leggi() che converte da sola numeri e testo, come fa il diagramma.',
     pseudoNote: 'Pseudocodice generato dal diagramma. Si aggiorna a ogni modifica.',
-    saveTitle: 'Salva il diagramma', fileName: 'Nome del file', download: 'Scarica il file', copyText: 'Copia il testo',
+    saveTitle: 'Salva il diagramma', fileName: 'Nome del file', download: 'Scarica il file', 
     saveNote: 'Il file .flusso contiene tutto il diagramma: si riapre da File → Apri.',
     openTitle: 'Apri un diagramma', pickFile: 'Scegli un file…', dropHere: 'oppure trascina qui un file .flusso',
-    pasteLbl: 'Oppure incolla il testo del file', load: 'Carica il testo', examples: 'Esempi pronti',
+    examples: 'Esempi pronti',
     pngTitle: 'Esporta come immagine', pngDl: 'Scarica PNG', pngNote: 'Se il download non parte, tieni premuto sull\'immagine (o clic destro) e scegli «Salva immagine».',
-    newTitle: 'Nuovo diagramma', newConfirm: 'Il diagramma attuale verrà sostituito da uno vuoto. Puoi tornare indietro con Annulla.',
-    confirmNew: 'Crea diagramma vuoto', cancel: 'Annulla', close: 'Chiudi',
+    cancel: 'Annulla', close: 'Chiudi',
     loadedOk: 'Diagramma caricato', badFile: 'Questo file non contiene un diagramma valido.', deleted: 'Blocco eliminato', copiedBlk: 'Blocco copiato',
     e_syntax: x => `Non capisco «${x}» in questo punto`, e_end: 'L\'espressione è incompleta', e_str: 'Manca la virgoletta di chiusura',
     e_empty: 'Il campo è vuoto', e_undef: n => `La variabile ${n} non ha ancora un valore`, e_div0: 'Divisione per zero',
@@ -106,24 +104,23 @@ const I18N = {
   },
   en: {
     new: 'New', open: 'Open', save: 'Save', png: 'Image', undo: 'Undo (Ctrl+Z)', redo: 'Redo (Ctrl+Y)', help: 'Guide',
-    run: 'Run', cont: 'Continue', step: 'Step', stop: 'Stop', speed: 'Speed',
+    run: 'Run', step: 'Step', stop: 'Stop', speed: 'Speed',
     tabBlock: 'Block', tabRun: 'Run', tabCode: 'Code',
     progName: 'Program name', untitled: 'Untitled program',
     hint: 'Click or tap a + to insert a block. Right-click, or long-press, for more actions.',
-    START: 'START', END: 'END', READ: 'Read', WRITE: 'Write', T: 'T', F: 'F', TRUE: 'TRUE', FALSE: 'FALSE',
-    forLbl: (v, a, b, s) => `${v} from ${a} to ${b}` + (s && String(s).trim() !== '1' && String(s).trim() !== '' ? `, step ${s}` : ''),
+    START: 'START', END: 'END', T: 'T', F: 'F', TRUE: 'TRUE', FALSE: 'FALSE',
     types: { decl: 'VAR · Declaration', input: 'IN · Input', output: 'OUT · Output', outln: 'OUTLN · Output + new line', assign: 'Assignment', comment: 'Comment', if: 'IF', while: 'WHILE', do: 'DO WHILE', for: 'FOR' },
     typeHint: {
       decl: 'Optional: fixes the type of one or more variables', input: 'Reads one or more values from the keyboard', output: 'Writes on screen and stays on the same line', outln: 'Writes on screen, then starts a new line', comment: 'A note for the reader, never executed', assign: 'Computes a value and stores it in a variable',
       if: 'Two paths, depending on a condition', while: 'Checks the condition, then repeats while it is true',
       do: 'Runs at least once, then repeats if the condition is true', for: 'Repeats while counting with a variable',
     },
-    f_vars: 'Variables to read', f_vars_tip: 'Comma separated, for example: a, b', f_expr: 'Expression to show',
-    f_expr_tip: 'Text in quotes, joined with +: "Sum: " + s', f_var: 'Variable', f_val: 'Value (expression)', f_cond: 'Condition',
-    f_cond_tip: 'Must give TRUE or FALSE, for example: x > 0 AND x < 10', f_from: 'From', f_to: 'To', f_step: 'Step',
+    f_vars: 'Variables to read', f_expr: 'Expression to show',
+    f_var: 'Variable', f_cond: 'Condition',
+    f_from: 'From', f_to: 'To', f_step: 'Step',
     f_ln: 'New line (OUTLN)', f_assign: 'Assignment', e_noeq: 'The = sign is missing: write variable = expression (or i++ / i--)', f_comment: 'Comment text', n_cm: 'comment: it is not executed',
     loopEnd: 'loop ends', trace: 'Trace', traceT: 'Show every executed block in the console', cut: 'Cut', pasteAfter: 'Paste after',
-    insertDots: 'Insert', showPy: 'Also show Python', codeLink: 'Link diagram and code',
+    showPy: 'Also show Python', codeLink: 'Link diagram and code',
     e_cmpmix: op => `You are comparing text with a number (${op}). Maybe parentheses are missing, for example "Result: " + (x > 5)`, mFile: 'File', mEdit: 'Edit', mView: 'View', mHelp: 'Help',
     undoM: 'Undo', redoM: 'Redo', optSymShort: 'Symbols ≥ ≤ ≠', zoomIn: 'Zoom in', zoomOut: 'Zoom out', zoom100: 'Zoom 100%',
     helpT: 'Guide', language: 'Language', offline: 'Offline', offlineT: 'You are offline: FlussoLab still works and keeps everything on this device.',
@@ -134,6 +131,7 @@ const I18N = {
     zipWho: 'Full name', zipWhoPh: 'Jane Smith', zipWhich: 'Diagrams to include', zipEmpty: 'empty',
     zipFlusso: '.flusso files', zipPng: 'PNG images', zipGo: 'Download ZIP', zipWorking: 'Preparing…',
     zipNone: 'Choose at least one diagram and one file type', zipDone: n => `ZIP ready: ${n} files`, zipFail: 'The ZIP could not be created',
+    inEmpty: 'Type a value before pressing Enter',
     installAsk: 'Install FlussoLab as an app? It also works offline.', installBtn: 'Install', installHowBtn: 'How to',
     installM: 'Install as app…', installT: 'Install FlussoLab', installed: 'FlussoLab is installed',
     installHow: '<p>FlussoLab installs like an app and then works without internet too.</p><ul><li><b>Chrome or Edge (Windows, Chromebook, Android)</b>: browser menu → “Install FlussoLab” or “Add to Home screen”.</li><li><b>iPhone and iPad</b>: open the site in Safari, tap Share → “Add to Home Screen”.</li></ul>',
@@ -144,10 +142,9 @@ const I18N = {
     e_nodef: n => `No variable found with the name “${n}”`,
     e_notcond: 'This is not a condition: it needs a comparison, for example x > 0', invert: 'Invert condition', swap: 'Swap T and F branches',
     inverted: 'Condition inverted', swapped: 'Branches swapped',
-    explain: 'Explain', explainT: 'Show next to each block what it does, in plain words',
-    options: 'Options', optTitle: 'Options', optSym: 'Draw ≥ ≤ ≠ as single symbols in the diagram',
-    optSymTip: 'The text stays written as >=, <=, !=; only the drawing changes.',
-    optExplain: 'Explain mode', optExplainTip: 'Every block shows a sentence explaining what it does.',
+    explain: 'Explain', 
+    
+    optExplain: 'Explain mode', 
     optTheme: 'Appearance', thAuto: 'Automatic', thLight: 'Light', thDark: 'Dark',
     n_in: v => `reads ${v} from the keyboard`,
     n_out: (x, ln) => `writes ${x} on screen` + (ln ? ' and starts a new line' : ''),
@@ -175,13 +172,12 @@ const I18N = {
     errAt: 'Error', codePseudo: 'Pseudocode', copyCode: 'Copy code', copied: 'Copied to clipboard',
     pyNote: 'The Python code uses a leggi() helper that converts numbers and text automatically, like the diagram does.',
     pseudoNote: 'Pseudocode generated from the diagram. It updates on every change.',
-    saveTitle: 'Save the diagram', fileName: 'File name', download: 'Download file', copyText: 'Copy text',
+    saveTitle: 'Save the diagram', fileName: 'File name', download: 'Download file', 
     saveNote: 'The .flusso file holds the whole diagram: reopen it from File → Open.',
     openTitle: 'Open a diagram', pickFile: 'Choose a file…', dropHere: 'or drop a .flusso file here',
-    pasteLbl: 'Or paste the file text', load: 'Load text', examples: 'Ready-made examples',
+    examples: 'Ready-made examples',
     pngTitle: 'Export as image', pngDl: 'Download PNG', pngNote: 'If the download does not start, long-press (or right-click) the image and choose “Save image”.',
-    newTitle: 'New diagram', newConfirm: 'The current diagram will be replaced by an empty one. You can go back with Undo.',
-    confirmNew: 'Create empty diagram', cancel: 'Cancel', close: 'Close',
+    cancel: 'Cancel', close: 'Close',
     loadedOk: 'Diagram loaded', badFile: 'This file does not contain a valid diagram.', deleted: 'Block deleted', copiedBlk: 'Block copied',
     e_syntax: x => `I don't understand “${x}” here`, e_end: 'The expression is incomplete', e_str: 'Missing closing quote',
     e_empty: 'The field is empty', e_undef: n => `Variable ${n} has no value yet`, e_div0: 'Division by zero',
@@ -262,7 +258,6 @@ function snap() { hist.push(ser()); if (hist.length > 150) hist.shift(); fut.len
 function restore(s) { const o = JSON.parse(s); prog = { name: o.name || '', main: o.main }; assignIds(prog.main); sel = null; $('#pname').value = prog.name; }
 function undo() { if (!hist.length) return; stopRun(); fut.push(ser()); restore(hist.pop()); markDirty(); afterChange(true); }
 function redo() { if (!fut.length) return; stopRun(); hist.push(ser()); restore(fut.pop()); markDirty(); afterChange(true); }
-function updUndo() {}
 
 /* ================= tabs ================= */
 const MAXTABS = 10;
@@ -874,9 +869,9 @@ function deleteSel(f) {
   sel = f.arr[Math.min(f.idx, f.arr.length - 1)]?.id || null;
   afterChange(true); toast(t('deleted'));
 }
-function afterChange(panel) { renderDiagram(); if (panel) { renderPanel(); updBlkErr(); } renderCode(); updUndo(); persist(); }
+function afterChange(panel) { renderDiagram(); if (panel) { renderPanel(); updBlkErr(); } renderCode(); persist(); }
 
-/* ================= tabs ================= */
+/* ================= side panel tabs ================= */
 let curTab = 'block';
 function switchTab(name) {
   curTab = name;
@@ -1057,6 +1052,7 @@ $('#inForm').addEventListener('submit', e => {
   e.preventDefault();
   if (!R || R.state !== 'input') return;
   const v = $('#inVal').value;
+  if (!v.trim()) { toast(t('inEmpty')); $('#inVal').focus(); return; }
   if (openLine) { const sp = document.createElement('span'); sp.className = 'ln-in'; sp.textContent = v; openLine.appendChild(sp); openLine = null; }
   else conLine(v, 'ln-in');
   $('#inForm').hidden = true; R.state = 'run';
@@ -1545,7 +1541,7 @@ window.flussoUpdate = (apply) => {
   }
   { const T = tabs[cur], o = JSON.parse(T.data); loadObj(o, false); }
   renderTabs();
-  updUndo(); clearConsole(); applyLang(); syncNet();
+  clearConsole(); applyLang(); syncNet();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => renderDiagram());
 })();
 })();

@@ -2,7 +2,7 @@
 'use strict';
 /* ====== Project settings ====== */
 const CONFIG = {
-  version: '0.6.8',
+  version: '0.6.9',
   author: 'aSamu3l',
   github: 'https://github.com/aSamu3l',
   repo: 'https://github.com/aSamu3l/FlussoLab',
@@ -403,7 +403,7 @@ function measure(b) {
     case 'input': case 'output': b._w = Math.max(lw + 54, 2 * (kW + 30)); b._h = BH; break;
     case 'assign': b._w = lw + 32; b._h = BH; break;
     case 'decl': b._w = Math.max(lw + 44, 2 * (kW + 30)); b._h = BH; break;
-    case 'comment': b._w = tw('// ' + label(b)) + 34; b._h = BH - 6; break;
+    case 'comment': b._w = tw('// ' + label(b)) + 34; b._h = BH; break;
     case 'if': {
       const dw = Math.max(120, lw + 70), Y = measureSeq(b.y), N = measureSeq(b.n);
       const col = Math.max(Y.w, N.w, 70);
@@ -419,7 +419,7 @@ function measure(b) {
       b._w = Math.max(dw, B.w) + 2 * LM; b._h = 20 + dh + B.h + 26; break;
     }
     case 'do': {
-      const dw = Math.max(140, lw + 70), B = measureSeq(b.body);
+      const dw = Math.max(130, lw + 70), B = measureSeq(b.body);
       Object.assign(b, { _dw: dw, _dh: DH, _bh: B.h });
       b._w = Math.max(dw, B.w) + 2 * LM; b._h = 10 + B.h + DH + 14; break;
     }
@@ -575,14 +575,14 @@ function renderSoon() { if (rafPending) return; rafPending = true; requestAnimat
 /* ================= insertion popover ================= */
 const ICON = {
   io: (f, s) => `<svg width="30" height="20" viewBox="0 0 30 20" aria-hidden="true"><polygon points="6,3 29,3 24,17 1,17" style="fill:${f};stroke:${s}" stroke-width="1.4"/></svg>`,
-  as: (f, s) => `<svg width="30" height="20" viewBox="0 0 30 20" aria-hidden="true"><rect x="2" y="3" width="26" height="14" rx="2.5" style="fill:${f};stroke:${s}" stroke-width="1.4"/></svg>`,
+  as: (f, s) => `<svg width="30" height="20" viewBox="0 0 30 20" aria-hidden="true"><rect x="1" y="3" width="28" height="14" rx="2.5" style="fill:${f};stroke:${s}" stroke-width="1.4"/></svg>`,
   dia: (f, s) => `<svg width="30" height="20" viewBox="0 0 30 20" aria-hidden="true"><polygon points="15,1 29,10 15,19 1,10" style="fill:${f};stroke:${s}" stroke-width="1.4"/></svg>`,
   hex: (f, s) => `<svg width="30" height="20" viewBox="0 0 30 20" aria-hidden="true"><polygon points="7,3 23,3 29,10 23,17 7,17 1,10" style="fill:${f};stroke:${s}" stroke-width="1.4"/></svg>`,
 };
 function typeIcon(type) {
   if (type === 'outln') type = 'output';
-  if (type === 'decl') return `<svg width="30" height="20" viewBox="0 0 30 20" aria-hidden="true"><rect x="2" y="3" width="26" height="14" rx="1.5" style="fill:var(--dc-f);stroke:var(--dc-s)" stroke-width="1.4"/><path d="M6 3v14M24 3v14" style="stroke:var(--dc-s)" stroke-width="1.1"/></svg>`;
-  if (type === 'comment') return `<svg width="30" height="20" viewBox="0 0 30 20" aria-hidden="true"><path d="M2 3h21l5 5v9H2z" style="fill:var(--paper);stroke:var(--faint)" stroke-width="1.3" stroke-dasharray="3 2"/></svg>`;
+  if (type === 'decl') return `<svg width="30" height="20" viewBox="0 0 30 20" aria-hidden="true"><rect x="1" y="3" width="28" height="14" rx="1.5" style="fill:var(--dc-f);stroke:var(--dc-s)" stroke-width="1.4"/><path d="M5 3v14M25 3v14" style="stroke:var(--dc-s)" stroke-width="1.1"/></svg>`;
+  if (type === 'comment') return `<svg width="30" height="20" viewBox="0 0 30 20" aria-hidden="true"><path d="M1 3h23l5 5v9H1z" style="fill:var(--paper);stroke:var(--faint)" stroke-width="1.3" stroke-dasharray="3 2"/></svg>`;
   const k = KIND[type], f = `var(--${k}-f)`, s = `var(--${k}-s)`;
   if (type === 'input' || type === 'output') return ICON.io(f, s);
   if (type === 'assign') return ICON.as(f, s);

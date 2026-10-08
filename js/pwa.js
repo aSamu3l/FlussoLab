@@ -9,5 +9,7 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
     });
   }).catch(() => {});
   let reloaded = false;
-  navigator.serviceWorker.addEventListener('controllerchange', () => { if (!reloaded) { reloaded = true; location.reload(); } });
+  // reload only when a new version replaces an old one, not on the very first visit
+  const hadCtrl = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener('controllerchange', () => { if (hadCtrl && !reloaded) { reloaded = true; location.reload(); } });
 }

@@ -28,8 +28,8 @@ function lex(s) {
       if (j >= s.length) throw new FErr('str');
       out.push({ k: 'str', v: s.slice(i + 1, j) }); i = j + 1; continue;
     }
-    if (/[A-Za-z_À-ɏ]/.test(c)) {
-      let j = i; while (j < s.length && /[A-Za-z0-9_À-ɏ]/.test(s[j])) j++;
+    if (/[A-Za-z_\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u024F]/.test(c)) {
+      let j = i; while (j < s.length && /[A-Za-z0-9_\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u024F]/.test(s[j])) j++;
       const w = s.slice(i, j), lw = w.toLowerCase();
       if (['and', 'or', 'not', 'mod', 'div'].includes(lw)) out.push({ k: 'op', v: lw });
       else if (lw === 'true' || lw === 'vero') out.push({ k: 'bool', v: true });
@@ -141,8 +141,8 @@ function fmt(v) {
   if (typeof v === 'bigint') return String(v);
   if (typeof v === 'number') {
     if (!isFinite(v)) return String(v);
-    if (Number.isInteger(v)) return Math.abs(v) < 1e16 ? v.toFixed(1) : String(v);
-    return String(parseFloat(v.toPrecision(12)));
+    const t = Number.isInteger(v) && Math.abs(v) < 1e16 ? v.toFixed(1) : String(parseFloat(v.toPrecision(12)));
+    return /^-?\d+$/.test(t) ? t + '.0' : t;
   }
   if (typeof v === 'boolean') return v ? BOOLN[1] : BOOLN[0];
   if (Array.isArray(v)) return '[' + Array.from(v, x => x === undefined ? '·' : fmtIn(x)).join(', ') + ']';
@@ -168,14 +168,22 @@ function toInt(x, op) {
   if (!isFinite(x)) throw new FErr('num', fmt(x));
   return BigInt(Math.trunc(x));
 }
+const MAXBITS = 20000; // about 6000 digits: more would freeze the page
+const bits = x => (x < 0n ? -x : x).toString(16).length * 4;
 function arith(op, a, b) {
   num(a, op); num(b, op);
   if (typeof a === 'bigint' && typeof b === 'bigint') {
     switch (op) {
-      case '+': return a + b; case '-': return a - b; case '*': return a * b;
+      case '+': return a + b; case '-': return a - b;
+      case '*': if (bits(a) + bits(b) > MAXBITS) throw new FErr('big'); return a * b;
       case '/': case 'div': if (b === 0n) throw new FErr('div0'); return a / b;
       case 'mod': if (b === 0n) throw new FErr('div0'); return a % b;
-      case '^': return (b >= 0n && b <= 4096n) ? a ** b : Number(a) ** Number(b);
+      case '^':
+        if (b < 0n) return Number(a) ** Number(b);
+        if (a === 0n || a === 1n) return b === 0n ? 1n : a;
+        if (a === -1n) return b % 2n === 0n ? 1n : -1n;
+        if (b > BigInt(MAXBITS) || bits(a) * Number(b) > MAXBITS) throw new FErr('big');
+        return a ** b;
     }
   }
   const x = Number(a), y = Number(b);
@@ -201,7 +209,7 @@ const FN = {
   max: [2, (a, b) => { num(a, 'max'); num(b, 'max'); return b > a ? b : a; }],
   sin: F1('sin', Math.sin), cos: F1('cos', Math.cos), tan: F1('tan', Math.tan),
   random: [0, () => Math.random()],
-  randint: [2, (a, b) => { const lo = toInt(a, 'randint'), hi = toInt(b, 'randint'); return lo + BigInt(Math.floor(Math.random() * (Number(hi - lo) + 1))); }],
+  randint: [2, (a, b) => { let lo = toInt(a, 'randint'), hi = toInt(b, 'randint'); if (hi < lo) [lo, hi] = [hi, lo]; return lo + BigInt(Math.floor(Math.random() * (Number(hi - lo) + 1))); }],
   len: [1, a => { if (Array.isArray(a) || typeof a === 'string') return BigInt(a.length); throw new FErr('type', 'len'); }],
   str: [1, a => fmt(a)],
   num: [1, a => { if (isNum(a)) return a; const v = parseInput(fmt(a)); if (!isNum(v)) throw new FErr('num', fmt(a)); return v; }],
@@ -539,7 +547,8 @@ const PYFN = { sqrt: ['math.sqrt', 'math'], abs: ['abs'], int: ['int'], round: [
   random: ['random.random', 'random'], randint: ['random.randint', 'random'], len: ['len'], str: ['str'], num: ['float'] };
 const PYKW = new Set(['and', 'as', 'assert', 'break', 'class', 'continue', 'def', 'del', 'elif', 'else', 'except', 'finally', 'for', 'from', 'global',
   'if', 'import', 'in', 'is', 'lambda', 'nonlocal', 'not', 'or', 'pass', 'raise', 'return', 'try', 'while', 'with', 'yield',
-  'print', 'input', 'math', 'random', 'None', 'True', 'False', 'len', 'str', 'int', 'float', 'range', 'list', 'dict']);
+  'async', 'await', 'print', 'input', 'math', 'random', 'None', 'True', 'False', 'len', 'str', 'int', 'float', 'range', 'list', 'dict',
+  'abs', 'round', 'min', 'max', 'pow', 'sum', 'type']);
 function pyName(n) { return PYKW.has(n) ? n + '_' : n; }
 // true when an expression is surely an int (int literal, variable declared int, (int) cast, int-valued function)
 function pyInt(n, ints) {
@@ -552,6 +561,17 @@ function pyInt(n, ints) {
     case 'call': return ['int', 'round', 'floor', 'ceil', 'len', 'randint'].includes(n.n) || (['abs', 'min', 'max'].includes(n.n) && n.args.every(a => pyInt(a, ints)));
     case 'un': return n.op === '-' && pyInt(n.a, ints);
     case 'bin': return ['+', '-', '*', '/', 'mod', 'div', '^'].includes(n.op) && pyInt(n.a, ints) && pyInt(n.b, ints);
+  }
+  return false;
+}
+// true when an expression is surely a text
+function pyStr(n, strs) {
+  switch (n.k) {
+    case 'str': return true;
+    case 'var': return strs.has(n.n);
+    case 'idx': { let r = n; while (r.k === 'idx') r = r.o; return r.k === 'str' || (r.k === 'var' && strs.has(r.n) && n.o.k !== 'idx'); }
+    case 'call': return n.n === 'str';
+    case 'bin': return n.op === '+' && (pyStr(n.a, strs) || pyStr(n.b, strs));
   }
   return false;
 }
@@ -581,7 +601,12 @@ function pyE(n, U) {
         return { s: `int(${fa.p < 6 ? `(${fa.s})` : fa.s} / ${fb.p <= 6 ? `(${fb.s})` : fb.s})`, p: 9 };
       }
       const [sym, p] = PYOP[n.op];
-      const a = pyE(n.a, U), b = pyE(n.b, U);
+      let a = pyE(n.a, U), b = pyE(n.b, U);
+      // text + number: Python needs str() on the number, the diagram joins them
+      if (n.op === '+') {
+        const sa = pyStr(n.a, U.strs), sb = pyStr(n.b, U.strs);
+        if (sa && !sb) b = { s: `str(${b.s})`, p: 9 }; else if (sb && !sa) a = { s: `str(${a.s})`, p: 9 };
+      }
       const ra = n.op === '^', na = p === 4;
       const ls = (a.p < p || ((ra || na) && a.p === p)) ? `(${a.s})` : a.s;
       const rs = (b.p < p || (!ra && b.p === p)) ? `(${b.s})` : b.s;
@@ -603,21 +628,30 @@ function pyPrint(ast, U, ln) {
 }
 function toPython(main, lang) {
   const U = new Set(), arrays = new Set(), L = [];
-  U.ints = new Set();
+  U.ints = new Set(); U.strs = new Set();
   const DK = Object.create(null), declK = n => DK[n] || null;
+  const KS = { int: U.ints, str: U.strs };
+  const txt = new Set(), notTxt = new Set();
   (function scan(seq) {
     for (const b of seq) {
-      if (b.t === 'decl') { try { parseDecl(b.v).forEach(x => { DK[x.n] = b.k; if (b.k === 'int') U.ints.add(x.n); }); } catch (e) {} }
+      if (b.t === 'decl') { try { parseDecl(b.v).forEach(x => { DK[x.n] = b.k; if (KS[b.k]) KS[b.k].add(x.n); }); } catch (e) {} }
       const typed = b.t === 'input' ? splitList(b.v) : (b.t === 'assign' || b.t === 'for') && !b.inc ? [b.v] : [];
-      for (const x of typed) { try { const ty = lvTyped(x); if (ty.k === 'int') U.ints.add(lvRoot(ty.lv).n); } catch (e) {} }
+      for (const x of typed) { try { const ty = lvTyped(x), n = lvRoot(ty.lv).n; if (ty.k) DK[n] = ty.k; if (KS[ty.k]) KS[ty.k].add(n); } catch (e) {} }
+      // untyped variable that only ever receives text: treat it as text
+      if (b.t === 'assign' && !b.inc) { try { const ty = lvTyped(b.v); if (!ty.k && ty.lv.k === 'var') (pyStr(parse(b.e), U.strs) ? txt : notTxt).add(ty.lv.n); } catch (e) {} }
+      if (b.t === 'input' || b.t === 'for') splitList(b.v).forEach(v => { try { notTxt.add(lvRoot(lvTyped(v).lv).n); } catch (e) {} });
       if (b.t === 'if') { scan(b.y); scan(b.n); } else if (b.body) scan(b.body);
     }
   })(main);
+  for (const n of txt) if (!notTxt.has(n) && !DK[n]) U.strs.add(n);
   let hasInput = false;
   const E = (src) => { try { return pyE(parse(src), U).s; } catch (e) { return `...  # ${src}`; } };
   const PYT = { int: 'int', float: 'float', str: 'str', bool: 'bool' };
-  const LVT = (src) => { try { const ty = lvTyped(src); const n = pyE(ty.lv, U).s; return ty.k && ty.lv.k === 'var' ? `${n}: ${PYT[ty.k]}` : n; } catch (e) { return LV(src); } };
-  const LV = (src) => { try { return pyE(lvTyped(src).lv, U).s; } catch (e) { return pyName(String(src || 'x').replace(/\W/g, '') || 'x'); } };
+  const nest = (lv) => lv.k === 'idx' ? `${nest(lv.o)}.setdefault(${pyE(lv.i, U).s}, {})` : pyE(lv, U).s;
+  const pyLV = (lv) => lv.k === 'idx' && lv.o.k === 'idx' ? `${nest(lv.o)}[${pyE(lv.i, U).s}]` : pyE(lv, U).s;
+  const kindOf = (src) => { try { const ty = lvTyped(src); return ty.k || (ty.lv.k === 'var' ? declK(ty.lv.n) : null); } catch (e) { return null; } };
+  const LVT = (src) => { try { const ty = lvTyped(src); const n = pyLV(ty.lv); return ty.k && ty.lv.k === 'var' ? `${n}: ${PYT[ty.k]}` : n; } catch (e) { return LV(src); } };
+  const LV = (src) => { try { return pyLV(lvTyped(src).lv); } catch (e) { return pyName(String(src || 'x').replace(/\W/g, '') || 'x'); } };
   const lit = (s) => { try { const a = parse(s); if (a.k === 'num') return Number(a.v); if (a.k === 'un' && a.op === '-' && a.a.k === 'num') return -Number(a.a.v); } catch (e) {} return null; };
   const noteArr = (src) => { try { let n = lvTyped(src).lv; if (n.k !== 'idx') return; while (n.k === 'idx') n = n.o; arrays.add(pyName(n.n)); } catch (e) {} };
   (function walk(seq, d) {
@@ -631,13 +665,20 @@ function toPython(main, lang) {
             noteArr(nm); let lab = nm, k = null;
             try { const ty = lvTyped(nm); lab = ty.src; k = ty.k || declK(lvRoot(ty.lv).n); } catch (e) {}
             const ask = `input(${JSON.stringify(lab + '? ')})`;
-            const rhs = k === 'str' || !k ? ask : k === 'float' ? `float(${ask})` : k === 'bool' ? `${ask} == "true"` : `int(${ask})`;
+            const rhs = k === 'str' || !k ? ask : k === 'float' ? `float(${ask}.replace(",", "."))` : k === 'bool' ? `${ask}.strip().lower() in ("true", "vero")` : `int(${ask})`;
             L.push(`${ind}${LVT(nm)} = ${rhs}`);
           }
           if (!splitList(b.v).length) L.push(ind + 'pass');
           break;
         case 'output': { let s; try { s = pyPrint(parse(b.e), U, b.ln); } catch (e) { s = `print()  # ${b.e}`; } L.push(ind + s); break; }
-        case 'assign': noteArr(b.v); L.push(b.inc ? `${ind}${LV(b.v)} ${b.inc === '++' ? '+' : '-'}= 1` : `${ind}${LVT(b.v)} = ${E(b.e)}`); break;
+        case 'assign': {
+          noteArr(b.v);
+          if (b.inc) { L.push(`${ind}${LV(b.v)} ${b.inc === '++' ? '+' : '-'}= 1`); break; }
+          let rhs = E(b.e);
+          // a float variable turns an int into a float, as in the diagram (7 -> 7.0)
+          if (kindOf(b.v) === 'float') { try { if (pyInt(parse(b.e), U.ints)) rhs = `float(${rhs})`; } catch (e) {} }
+          L.push(`${ind}${LVT(b.v)} = ${rhs}`); break;
+        }
         case 'decl': {
           let its; try { its = parseDecl(b.v); } catch (e) { its = []; }
           const pt = { int: 'int', float: 'float', str: 'str', bool: 'bool' }[b.k] || 'object';
@@ -652,14 +693,20 @@ function toPython(main, lang) {
           L.push(`${ind}    if not (${E(b.c)}):`, `${ind}        break`); break;
         case 'for': {
           const ss = String(b.s ?? '').trim(); const st = ss === '' ? 1 : lit(ss);
-          if (st !== null && Number.isInteger(st) && st !== 0) {
+          const isI = (src) => { try { return pyInt(parse(src), U.ints); } catch (e) { return false; } };
+          let lvn = null; try { lvn = lvRoot(lvTyped(b.v).lv).n; } catch (e) {}
+          const touches = (seq) => seq.some(x => (['assign', 'for'].includes(x.t) && (() => { try { return lvRoot(lvTyped(x.v).lv).n === lvn; } catch (e) { return false; } })())
+            || (x.t === 'input' && splitList(x.v).some(v => { try { return lvRoot(lvTyped(v).lv).n === lvn; } catch (e) { return false; } }))
+            || (x.t === 'if' ? touches(x.y) || touches(x.n) : x.body ? touches(x.body) : false));
+          if (st !== null && Number.isInteger(st) && st !== 0 && ss.indexOf('.') < 0 && isI(b.a) && isI(b.b) && !touches(b.body)) {
             const bl = lit(b.b);
             const end = st > 0 ? (bl !== null ? String(bl + 1) : `${E(b.b)} + 1`) : (bl !== null ? String(bl - 1) : `${E(b.b)} - 1`);
             L.push(`${ind}for ${LV(b.v)} in range(${E(b.a)}, ${end}${st === 1 ? '' : ', ' + st}):`);
             walk(b.body, d + 1);
           } else {
-            const v = LV(b.v);
-            L.push(`${ind}${v} = ${E(b.a)}`, `${ind}while ${v} <= ${E(b.b)}:`);
+            const v = LV(b.v), to = E(b.b), sv = E(ss || '1');
+            const cond = st === null ? `(${sv} > 0 and ${v} <= ${to}) or (${sv} < 0 and ${v} >= ${to})` : st < 0 ? `${v} >= ${to}` : `${v} <= ${to}`;
+            L.push(`${ind}${LVT(b.v)} = ${E(b.a)}`, `${ind}while ${cond}:`);
             walk(b.body, d + 1);
             L.push(`${ind}    ${v} = ${v} + ${E(ss || '1')}`);
           }
@@ -682,7 +729,7 @@ const SRC = { or: ['OR', 1], and: ['AND', 2], '=': ['==', 4], '!=': ['!=', 4], '
 function srcE(n) {
   switch (n.k) {
     case 'num': return { s: n.t || String(n.v), p: 9 };
-    case 'str': return { s: '"' + n.v + '"', p: 9 };
+    case 'str': { const q = n.v.includes('"') ? "'" : '"'; return { s: q + n.v + q, p: 9 }; }
     case 'bool': return { s: n.v ? 'true' : 'false', p: 9 };
     case 'cast': { const a = srcE(n.a); return { s: `(${n.to}) ` + (a.p < 7 ? `(${a.s})` : a.s), p: 7 }; }
     case 'var': return { s: n.n, p: 9 };

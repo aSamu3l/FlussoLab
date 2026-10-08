@@ -209,6 +209,29 @@ test('Python generato: solo funzioni standard', () => {
   assert.match(py, /print\(int\(7 \/ 2\)\)/);
   const py2 = FL.toPython([{ t: 'input', v: 'n, float m, string s' }], 'it');
   assert.match(py2, /^n = input\("n\? "\)$/m);
-  assert.match(py2, /m: float = float\(input\("m\? "\)\)/);
+  assert.match(py2, /m: float = float\(input\("m\? "\)\.replace\(",", "\."\)\)/);
   assert.match(py2, /s: str = input\("s\? "\)$/m);
+});
+
+test('numeri con la virgola sempre riconoscibili, × e ÷, numeri enormi', () => {
+  assert.equal(show('0.1 * 3 * 10'), '3.0');
+  assert.equal(show('99999999999.99'), '100000000000.0');
+  assert.equal(show('3×4'), '12');
+  assert.equal(show('12÷4'), '3');
+  assert.equal(show('1^5000'), '1');
+  assert.equal(errKey(() => show('2^40000')), 'big');
+  assert.equal(errKey(() => run([{ t: 'assign', v: 'x', e: '3' }, { t: 'while', c: 'true', body: [{ t: 'assign', v: 'x', e: 'x * x' }] }])), 'big');
+  assert.equal(show('randint(5, 1) >= 1 and randint(5, 1) <= 5'), 'VERO');
+  assert.equal(FL.invertCond('s == \'di "x"\''), 's != \'di "x"\'');
+});
+
+test('Python generato: testi, cicli e vettori', () => {
+  const py = FL.toPython([{ t: 'assign', v: 'n', e: '5' }, { t: 'assign', v: 's', e: '"n = " + n' }, { t: 'output', e: 's + 1' },
+    { t: 'assign', v: 'k', e: '-1' }, { t: 'for', v: 'i', a: '3', b: '1', s: 'k', body: [] },
+    { t: 'assign', v: 'm[0][1]', e: '5' }, { t: 'assign', v: 'float f', e: '3' }], 'it');
+  assert.match(py, /s = "n = " \+ str\(n\)/);
+  assert.match(py, /print\(s \+ str\(1\)\)/);
+  assert.match(py, /while \(k > 0 and i <= 1\) or \(k < 0 and i >= 1\):/);
+  assert.match(py, /m\.setdefault\(0, \{\}\)\[1\] = 5/);
+  assert.match(py, /f: float = float\(3\)/);
 });

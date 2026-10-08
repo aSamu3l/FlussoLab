@@ -2,7 +2,7 @@
 'use strict';
 /* ====== Project settings ====== */
 const CONFIG = {
-  version: '0.6.5',
+  version: '0.6.6',
   author: 'aSamu3l',
   github: 'https://github.com/aSamu3l',
   repo: 'https://github.com/aSamu3l/FlussoLab',
@@ -92,11 +92,11 @@ const I18N = {
     saveNote: 'Il file .flusso contiene tutto il diagramma: si riapre da File → Apri.',
     openTitle: 'Apri un diagramma', pickFile: 'Scegli un file…', dropHere: 'oppure trascina qui un file .flusso',
     examples: 'Esempi pronti',
-    pngTitle: 'Esporta come immagine', pngDl: 'Scarica PNG', pngNote: 'Se il download non parte, tieni premuto sull\'immagine (o clic destro) e scegli «Salva immagine».',
+    pngTitle: 'Esporta come immagine', pngErr: 'Impossibile creare l\'immagine: il diagramma è troppo grande', pngDl: 'Scarica PNG', pngNote: 'Se il download non parte, tieni premuto sull\'immagine (o clic destro) e scegli «Salva immagine».',
     cancel: 'Annulla', close: 'Chiudi',
     loadedOk: 'Diagramma caricato', badFile: 'Questo file non contiene un diagramma valido.', deleted: 'Blocco eliminato', copiedBlk: 'Blocco copiato',
     e_syntax: x => `Non capisco «${x}» in questo punto`, e_end: 'L\'espressione è incompleta', e_str: 'Manca la virgoletta di chiusura',
-    e_empty: 'Il campo è vuoto', e_undef: n => `La variabile ${n} non ha ancora un valore`, e_div0: 'Divisione per zero',
+    e_empty: 'Il campo è vuoto', e_undef: n => `La variabile ${n} non ha ancora un valore`, e_div0: 'Divisione per zero', e_big: 'Numero troppo grande',
     e_type: op => `Tipi di dato non adatti all'operazione ${op}`, e_fn: n => `Funzione sconosciuta: ${n}`, e_args: (n, k) => `${n} vuole ${k} argomenti`,
     e_idx: i => `Indice non valido: ${i}`, e_notarr: n => `${n} non è un vettore`, e_lv: 'Qui serve il nome di una variabile',
     e_bool: 'La condizione deve risultare VERO o FALSO (ad esempio x > 0)', e_loop: 'Troppi passi: forse è un ciclo infinito?',
@@ -176,11 +176,11 @@ const I18N = {
     saveNote: 'The .flusso file holds the whole diagram: reopen it from File → Open.',
     openTitle: 'Open a diagram', pickFile: 'Choose a file…', dropHere: 'or drop a .flusso file here',
     examples: 'Ready-made examples',
-    pngTitle: 'Export as image', pngDl: 'Download PNG', pngNote: 'If the download does not start, long-press (or right-click) the image and choose “Save image”.',
+    pngTitle: 'Export as image', pngErr: 'Could not create the image: the diagram is too large', pngDl: 'Download PNG', pngNote: 'If the download does not start, long-press (or right-click) the image and choose “Save image”.',
     cancel: 'Cancel', close: 'Close',
     loadedOk: 'Diagram loaded', badFile: 'This file does not contain a valid diagram.', deleted: 'Block deleted', copiedBlk: 'Block copied',
     e_syntax: x => `I don't understand “${x}” here`, e_end: 'The expression is incomplete', e_str: 'Missing closing quote',
-    e_empty: 'The field is empty', e_undef: n => `Variable ${n} has no value yet`, e_div0: 'Division by zero',
+    e_empty: 'The field is empty', e_undef: n => `Variable ${n} has no value yet`, e_div0: 'Division by zero', e_big: 'Number too large',
     e_type: op => `Wrong data types for ${op}`, e_fn: n => `Unknown function: ${n}`, e_args: (n, k) => `${n} takes ${k} arguments`,
     e_idx: i => `Invalid index: ${i}`, e_notarr: n => `${n} is not an array`, e_lv: 'A variable name is needed here',
     e_bool: 'The condition must give TRUE or FALSE (for example x > 0)', e_loop: 'Too many steps: maybe an infinite loop?',
@@ -252,10 +252,11 @@ function mk(type) {
     case 'for': return { t: type, v: 'i', a: '1', b: '10', s: '1', body: [] };
   }
 }
+const nameOf = o => typeof (o && o.name) === 'string' ? o.name : '';
 const replacer = (k, v) => (k === 'id' || k[0] === '_') ? undefined : v;
 const ser = () => JSON.stringify({ name: prog.name, main: prog.main }, replacer);
 function snap() { hist.push(ser()); if (hist.length > 150) hist.shift(); fut.length = 0; markDirty(); }
-function restore(s) { const o = JSON.parse(s); prog = { name: o.name || '', main: o.main }; assignIds(prog.main); sel = null; $('#pname').value = prog.name; }
+function restore(s) { closePop(); hideCtx(); ctxSlot = null; const o = JSON.parse(s); prog = { name: nameOf(o), main: o.main }; assignIds(prog.main); sel = null; $('#pname').value = prog.name; }
 function undo() { if (!hist.length) return; stopRun(); fut.push(ser()); restore(hist.pop()); markDirty(); afterChange(true); }
 function redo() { if (!fut.length) return; stopRun(); hist.push(ser()); restore(fut.pop()); markDirty(); afterChange(true); }
 
@@ -269,7 +270,7 @@ function activate(i) {
   stopRun(true); closePop(); if (typeof tip !== 'undefined') tip.hidden = true;
   tabSnapshot();
   cur = i; const T = tabs[i], o = JSON.parse(T.data);
-  prog = { name: o.name || '', main: o.main }; assignIds(prog.main);
+  prog = { name: nameOf(o), main: o.main }; assignIds(prog.main);
   hist = T.hist || []; fut = T.fut || []; zoom = T.zoom || 1; sel = null;
   $('#pname').value = prog.name; $('#errBox').hidden = true;
   clearConsole(); renderTabs(); afterChange(true);
@@ -278,7 +279,7 @@ function activate(i) {
 function addTab(o, dirty) {
   if (tabs.length >= MAXTABS) { toast(t('tooMany', MAXTABS)); return false; }
   tabSnapshot();
-  tabs.push({ id: ++tabSeq, data: JSON.stringify({ name: o.name || '', main: o.main }, replacer), hist: [], fut: [], dirty: !!dirty, zoom: 1 });
+  tabs.push({ id: ++tabSeq, data: JSON.stringify({ name: nameOf(o), main: o.main }, replacer), hist: [], fut: [], dirty: !!dirty, zoom: 1 });
   activate(tabs.length - 1);
   requestAnimationFrame(() => { const el = $('#tabbar .tab.on'); if (el) el.scrollIntoView({ block: 'nearest', inline: 'nearest' }); });
   return true;
@@ -306,7 +307,7 @@ function closeTab(i, force) {
 }
 function tabLabel(i) {
   if (i === cur) return prog.name.trim() || t('untitled');
-  try { return JSON.parse(tabs[i].data).name.trim() || t('untitled'); } catch (e) { return t('untitled'); }
+  try { return nameOf(JSON.parse(tabs[i].data)).trim() || t('untitled'); } catch (e) { return t('untitled'); }
 }
 function renderTabs() {
   const bar = $('#tabbar'); if (!bar) return;
@@ -345,7 +346,7 @@ function loadObj(o, fromUser) {
   if (!o || !Array.isArray(o.main) || !o.main.every(validBlock)) throw new Error('bad');
   if (fromUser) snap();
   stopRun();
-  prog = { name: String(o.name || ''), main: o.main };
+  prog = { name: nameOf(o), main: o.main };
   assignIds(prog.main); sel = null;
   $('#pname').value = prog.name;
   clearConsole();
@@ -1164,7 +1165,7 @@ function diagramPng(doc, author) {
   const saved = prog, savedSel = sel;
   let W, H, inner;
   try {
-    if (doc) { prog = { name: doc.name || '', main: JSON.parse(JSON.stringify(doc.main)) }; assignIds(prog.main); sel = null; }
+    if (doc) { prog = { name: nameOf(doc), main: JSON.parse(JSON.stringify(doc.main)) }; assignIds(prog.main); sel = null; }
     ({ W, H, inner } = buildSVG(PRINT, false));
   } finally { if (doc) { prog = saved; sel = savedSel; } }
   const name = doc ? doc.name : prog.name;
@@ -1176,7 +1177,7 @@ function diagramPng(doc, author) {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
-      const sc = 2, c = document.createElement('canvas'); c.width = Math.ceil(W * sc); c.height = Math.ceil(H * sc);
+      const sc = Math.max(0.5, Math.min(2, Math.sqrt(16e6 / (W * H)))), c = document.createElement('canvas'); c.width = Math.ceil(W * sc); c.height = Math.ceil(H * sc);
       const x = c.getContext('2d'); x.scale(sc, sc); x.drawImage(img, 0, 0);
       c.toBlob(bl => bl ? resolve({ blob: bl, W }) : reject(new Error('png')), 'image/png');
     };
@@ -1191,7 +1192,7 @@ function cmdPng() {
       <p>${esc(t('pngNote'))}</p>
       <div class="foot"><button class="btn" data-close>${esc(t('close'))}</button><button class="btn primary" id="pngDl">${esc(t('pngDl'))}</button></div>`);
     $('#pngDl').onclick = () => triggerDownload(url, name, bl);
-  });
+  }).catch(() => toast(t('pngErr')));
 }
 
 /* ---------- ZIP (stored, no compression: PNGs are already compressed) ---------- */
@@ -1473,7 +1474,7 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') { closePop(); hideMenu(); hideCtx(); return; }
   if ((e.ctrlKey || e.metaKey) && !dlg.open && ['s', 'o'].includes(e.key.toLowerCase())) { e.preventDefault(); e.key.toLowerCase() === 's' ? cmdSave() : cmdOpen(); return; }
   if (e.key === 'F1') { e.preventDefault(); cmdHelp(); return; }
-  const typing = e.target.closest('input,textarea,[contenteditable]') || dlg.open;
+  const typing = e.target.closest('input,textarea,select,[contenteditable]') || dlg.open;
   const mod = e.ctrlKey || e.metaKey;
   if (typing) return;
   if (mod && e.key.toLowerCase() === 'z' && !e.shiftKey) { e.preventDefault(); undo(); return; }
@@ -1529,8 +1530,10 @@ window.flussoUpdate = (apply) => {
   try {
     const st = JSON.parse(store.get('tabs') || 'null');
     if (st && Array.isArray(st.tabs)) st.tabs.slice(0, MAXTABS).forEach(x => {
-      const o = JSON.parse(x.data);
-      if (o && Array.isArray(o.main) && o.main.every(validBlock)) tabs.push({ id: ++tabSeq, data: JSON.stringify(o), hist: [], fut: [], dirty: !!x.dirty, zoom: 1 });
+      try {
+        const o = JSON.parse(x.data);
+        if (o && Array.isArray(o.main) && o.main.every(validBlock)) tabs.push({ id: ++tabSeq, data: JSON.stringify({ name: nameOf(o), main: o.main }), hist: [], fut: [], dirty: !!x.dirty, zoom: 1 });
+      } catch (e) {}
     });
     if (tabs.length) cur = Math.min(Math.max(0, st.cur | 0), tabs.length - 1);
   } catch (e) { tabs = []; }

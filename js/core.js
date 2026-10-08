@@ -120,8 +120,10 @@ function parseLV(src) {
   const a = parse(src);
   let n = a; while (n.k === 'idx') n = n.o;
   if (n.k !== 'var') throw new FErr('lv');
+  if (RESERVED.has(n.n.toLowerCase())) throw new FErr('reserved', n.n);
   return a;
 }
+const RESERVED = new Set(['int', 'integer', 'real', 'float', 'double', 'string', 'str', 'bool', 'boolean']);
 function splitList(s) { return String(s || '').split(',').map(x => x.trim()).filter(Boolean); }
 
 /* ---------- values ---------- */
@@ -261,11 +263,12 @@ function parseDecl(src) {
   return items.map(x => {
     const m = /^([A-Za-z_\u00C0-\u024F][A-Za-z0-9_\u00C0-\u024F]*)\s*(\[\s*\])?$/.exec(x);
     if (!m) throw new FErr('declname', x);
+    if (RESERVED.has(m[1].toLowerCase())) throw new FErr('reserved', m[1]);
     return { n: m[1], arr: !!m[2] };
   });
 }
-const KALIAS = { int: 'int', intero: 'int', integer: 'int', real: 'real', reale: 'real', float: 'real', double: 'real',
-  str: 'str', string: 'str', stringa: 'str', testo: 'str', bool: 'bool', boolean: 'bool', logico: 'bool' };
+const KALIAS = { int: 'int', integer: 'int', real: 'real', float: 'real', double: 'real',
+  string: 'str', str: 'str', bool: 'bool', boolean: 'bool' };
 // "int n", "reale media", "v[i]" -> { k: 'int' | null, src: 'n', lv: <ast> }
 function lvTyped(src) {
   const m = /^\s*([A-Za-z]+)\s+(\S.*)$/.exec(String(src || ''));
@@ -445,10 +448,10 @@ function firstError(main) {
 const PK = {
   it: { start: 'INIZIO', end: 'FINE', read: 'LEGGI', write: 'SCRIVI', if: 'SE', then: 'ALLORA', else: 'ALTRIMENTI', endif: 'FINE SE',
     while: 'MENTRE', do: 'ESEGUI', endwhile: 'FINE MENTRE', repeat: 'RIPETI', repwhile: 'MENTRE', for: 'PER', from: 'DA', to: 'A', step: 'PASSO', endfor: 'FINE PER', noln: '(senza andare a capo)',
-    vars: 'VARIABILI', kinds: { int: 'INTERO', real: 'REALE', str: 'STRINGA', bool: 'LOGICO' }, arrOf: 'VETTORE DI' },
+    vars: 'VARIABILI', kinds: { int: 'int', real: 'real', str: 'string', bool: 'bool' }, arrOf: 'VETTORE DI' },
   en: { start: 'BEGIN', end: 'END', read: 'READ', write: 'WRITE', if: 'IF', then: 'THEN', else: 'ELSE', endif: 'END IF',
     while: 'WHILE', do: 'DO', endwhile: 'END WHILE', repeat: 'REPEAT', repwhile: 'WHILE', for: 'FOR', from: 'FROM', to: 'TO', step: 'STEP', endfor: 'END FOR', noln: '(no new line)',
-    vars: 'VARIABLES', kinds: { int: 'INTEGER', real: 'REAL', str: 'STRING', bool: 'BOOLEAN' }, arrOf: 'ARRAY OF' },
+    vars: 'VARIABLES', kinds: { int: 'int', real: 'real', str: 'string', bool: 'bool' }, arrOf: 'ARRAY OF' },
 };
 function toPseudoLines(main, lang) {
   const K = PK[lang] || PK.it, L = [{ s: K.start, id: null }];

@@ -152,10 +152,19 @@ test('incremento e decremento', () => {
 
 test('tipo scritto direttamente nel blocco', () => {
   assert.deepEqual(run([{ t: 'input', v: 'int n' }, { t: 'output', e: 'n' }], ['5']).out, ['5']);
-  assert.equal(errKey(() => run([{ t: 'input', v: 'intero n' }], ['3,5'])), 'tin');
-  assert.equal(run([{ t: 'input', v: 'stringa s' }, { t: 'output', e: 's + 1' }], ['12']).out[0], '121');
-  assert.equal(run([{ t: 'assign', v: 'reale m', e: '7 / 2' }]).env.m, 3.5);
+  assert.equal(errKey(() => run([{ t: 'input', v: 'integer n' }], ['3,5'])), 'tin');
+  assert.equal(run([{ t: 'input', v: 'string s' }, { t: 'output', e: 's + 1' }], ['12']).out[0], '121');
+  assert.equal(run([{ t: 'assign', v: 'real m', e: '7 / 2' }]).env.m, 3.5);
   assert.equal(errKey(() => run([{ t: 'assign', v: 'int x', e: '7 / 2' }])), 'tdecl');
   assert.deepEqual(run([{ t: 'for', v: 'int i', a: '1', b: '2', s: '', body: [{ t: 'output', e: 'i' }] }]).out, ['1', '2']);
   assert.equal(FL.firstError([{ t: 'input', v: 'int n' }, { t: 'output', e: 'n' }]), null);
+});
+
+test('nomi dei tipi riservati e solo in inglese', () => {
+  assert.equal(FL.staticErr({ t: 'input', v: 'int int' }).key, 'reserved');
+  assert.equal(FL.staticErr({ t: 'input', v: 'int' }).key, 'reserved');
+  assert.equal(FL.staticErr({ t: 'assign', v: 'string', e: '1' }).key, 'reserved');
+  assert.equal(FL.staticErr({ t: 'decl', k: 'int', v: 'bool' }).key, 'reserved');
+  // le parole italiane non sono tipi: "intero n" non e' una variabile valida
+  assert.notEqual(FL.staticErr({ t: 'input', v: 'intero n' }), null);
 });

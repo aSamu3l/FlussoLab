@@ -2,7 +2,7 @@
 'use strict';
 /* ====== Project settings: fill these in before publishing ====== */
 const CONFIG = {
-  version: '0.4.1',
+  version: '0.4.2',
   author: 'aSamu3l',
   github: 'https://github.com/aSamu3l',
   repo: 'https://github.com/aSamu3l/FlussoLab',
@@ -70,12 +70,13 @@ const I18N = {
     insertHere: 'Inserisci qui', pasteHere: 'Incolla il blocco copiato',
     console: 'Console', vars: 'Variabili', noVars: 'Nessuna variabile ancora.', thName: 'Nome', thVal: 'Valore', thType: 'Tipo',
     ty: { num: 'numero', str: 'testo', bool: 'logico', arr: 'vettore' },
-    tyk: { int: 'intero', real: 'reale', str: 'stringa', bool: 'logico' }, f_type: 'Tipo', f_declvars: 'Variabili',
+    tyk: { int: 'int', real: 'real', str: 'string', bool: 'bool' }, f_type: 'Tipo', f_declvars: 'Variabili',
     n_decl: k => `le variabili saranno di tipo ${k}`, n_inc: (v, op) => op === '++' ? `aumenta ${v} di 1` : `diminuisce ${v} di 1`, vecOf: 'vettore di',
     e_tdecl: (n, k, v) => `«${n}» è di tipo ${t('tyk')[k]}: non può contenere ${v}`,
     e_tin: (v, k, n) => `«${v}» non è un valore ${t('tyk')[k]} valido per ${n}`,
     e_tarr: (n, k) => `«${n}» è un vettore di ${t('tyk')[k]}: assegna i singoli elementi, ad esempio ${n}[0]`,
     e_incint: (op, n) => `${op} si può usare solo su variabili intere: «${n}» non è un intero`,
+    e_reserved: n => `«${n}» è il nome di un tipo: non si può usare come nome di variabile`,
     e_redecl: n => `«${n}» è già stata dichiarata con un altro tipo`,
     e_declname: x => `«${x}» non è un nome di variabile valido`, e_kind: 'Scegli un tipo',
     consoleIdle: 'Premi Esegui per avviare il programma, oppure Passo per seguirlo un blocco alla volta.',
@@ -150,12 +151,13 @@ const I18N = {
     insertHere: 'Insert here', pasteHere: 'Paste copied block',
     console: 'Console', vars: 'Variables', noVars: 'No variables yet.', thName: 'Name', thVal: 'Value', thType: 'Type',
     ty: { num: 'number', str: 'text', bool: 'boolean', arr: 'array' },
-    tyk: { int: 'integer', real: 'real', str: 'string', bool: 'boolean' }, f_type: 'Type', f_declvars: 'Variables',
+    tyk: { int: 'int', real: 'real', str: 'string', bool: 'bool' }, f_type: 'Type', f_declvars: 'Variables',
     n_decl: k => `the variables will be of type ${k}`, n_inc: (v, op) => op === '++' ? `adds 1 to ${v}` : `subtracts 1 from ${v}`, vecOf: 'array of',
     e_tdecl: (n, k, v) => `“${n}” is of type ${t('tyk')[k]}: it cannot hold ${v}`,
     e_tin: (v, k, n) => `“${v}” is not a valid ${t('tyk')[k]} value for ${n}`,
     e_tarr: (n, k) => `“${n}” is an array of ${t('tyk')[k]}: assign single elements, for example ${n}[0]`,
     e_incint: (op, n) => `${op} works only on integer variables: “${n}” is not an integer`,
+    e_reserved: n => `“${n}” is a type name: it cannot be used as a variable name`,
     e_redecl: n => `“${n}” was already declared with another type`,
     e_declname: x => `“${x}” is not a valid variable name`, e_kind: 'Choose a type',
     consoleIdle: 'Press Run to start the program, or Step to follow it one block at a time.',
@@ -1187,7 +1189,7 @@ const GUIDE = {
     <tr><td>vero, falso</td><td>valori logici</td></tr>
     <tr><td>v[i]</td><td>elemento di un vettore; si crea assegnando <code>v[0] = 5</code> o leggendo <code>v[i]</code></td></tr>
     <tr><td>i++  i--</td><td>nel blocco assegnazione: aumenta o diminuisce di 1 una variabile intera</td></tr></table>
-    <h3>Tipi delle variabili</h3><p>Di base il tipo è automatico: lo decide il valore. Puoi dichiararlo direttamente dove la variabile nasce, ad esempio <code>IN int n</code>, <code>reale media = s / n</code> o <code>FOR int i = 1 TO 10</code>, oppure con il blocco <b>VAR</b>: <code>intero</code>, <code>reale</code>, <code>stringa</code>, <code>logico</code>. Per un vettore scrivi <code>v[]</code>. FlussoLab poi segnala se metti un valore del tipo sbagliato; con IN, una variabile <code>stringa</code> tiene il testo così com'è, anche se sono cifre.</p>
+    <h3>Tipi delle variabili</h3><p>Di base il tipo è automatico: lo decide il valore. Puoi dichiararlo dove la variabile nasce, ad esempio <code>IN int n</code>, <code>real media = s / n</code> o <code>FOR int i = 1 TO 10</code>, oppure con il blocco <b>VAR</b>. I tipi sono <code>int</code>, <code>real</code>, <code>string</code>, <code>bool</code> (vanno bene anche <code>integer</code>, <code>float</code>, <code>double</code>, <code>str</code>, <code>boolean</code>). Per un vettore scrivi <code>v[]</code>. Le parole dei tipi non si possono usare come nomi di variabile. FlussoLab segnala se metti un valore del tipo sbagliato; con IN, una variabile <code>string</code> tiene il testo così com'è, anche se sono cifre.</p>
     <h3>Funzioni</h3><p><code>sqrt abs int round floor ceil pow min max sin cos tan random() randint(a,b) len str num</code></p>
     <h3>Scorciatoie</h3><p><kbd>Canc</kbd> elimina il blocco selezionato · <kbd>Ctrl</kbd>+<kbd>Z</kbd> annulla · <kbd>Ctrl</kbd>+<kbd>C</kbd>/<kbd>V</kbd> copia e incolla dopo il blocco selezionato</p>
     <h3>Il progetto</h3><p>FlussoLab è gratuito e il suo codice è aperto a tutti, ma non può essere usato per guadagnarci. Funziona interamente nel browser: niente da installare, anche su Chromebook e tablet.</p>`,
@@ -1207,7 +1209,7 @@ const GUIDE = {
     <tr><td>true, false</td><td>boolean values</td></tr>
     <tr><td>v[i]</td><td>array element; created by assigning <code>v[0] = 5</code> or reading <code>v[i]</code></td></tr>
     <tr><td>i++  i--</td><td>in the assignment block: adds or subtracts 1 from an integer variable</td></tr></table>
-    <h3>Variable types</h3><p>By default the type is automatic: the value decides it. You can declare it where the variable is born, for example <code>IN int n</code>, <code>real avg = s / n</code> or <code>FOR int i = 1 TO 10</code>, or with the <b>VAR</b> block: <code>integer</code>, <code>real</code>, <code>string</code>, <code>boolean</code>. For an array write <code>v[]</code>. FlussoLab then reports a value of the wrong type; with IN, a <code>string</code> variable keeps the text as typed, even if it is digits.</p>
+    <h3>Variable types</h3><p>By default the type is automatic: the value decides it. You can declare it where the variable is born, for example <code>IN int n</code>, <code>real avg = s / n</code> or <code>FOR int i = 1 TO 10</code>, or with the <b>VAR</b> block. The types are <code>int</code>, <code>real</code>, <code>string</code>, <code>bool</code> (<code>integer</code>, <code>float</code>, <code>double</code>, <code>str</code>, <code>boolean</code> work too). For an array write <code>v[]</code>. Type words cannot be used as variable names. FlussoLab reports a value of the wrong type; with IN, a <code>string</code> variable keeps the text as typed, even if it is digits.</p>
     <h3>Functions</h3><p><code>sqrt abs int round floor ceil pow min max sin cos tan random() randint(a,b) len str num</code></p>
     <h3>Shortcuts</h3><p><kbd>Del</kbd> deletes the selected block · <kbd>Ctrl</kbd>+<kbd>Z</kbd> undo · <kbd>Ctrl</kbd>+<kbd>C</kbd>/<kbd>V</kbd> copy and paste after the selected block</p>
     <h3>The project</h3><p>FlussoLab is free and its code is open to everyone, but it cannot be used to make money. It runs entirely in the browser: nothing to install, Chromebooks and tablets included.</p>`,

@@ -231,7 +231,8 @@ dialog{overscroll-behavior:contain}
 .tabpane{flex:1;overflow:auto;padding:16px;min-height:0}
 .empty{color:var(--muted);font-size:14px;line-height:1.5}
 .empty .legend{display:grid;gap:8px;margin-top:18px}
-.legend div{display:flex;align-items:center;gap:10px;font-size:13.5px;color:var(--ink)}
+.legend div{display:flex;align-items:flex-start;gap:10px;font-size:13.5px;line-height:20px;color:var(--ink)}
+.legend svg{flex:none}
 .bhead{display:flex;align-items:center;gap:10px;margin-bottom:14px}
 .bhead h3{margin:0;font:800 18px/1.1 var(--f-display)}
 .bhead p{margin:2px 0 0;color:var(--muted);font-size:13px}

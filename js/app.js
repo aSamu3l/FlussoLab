@@ -2,7 +2,7 @@
 'use strict';
 /* ====== Project settings ====== */
 const CONFIG = {
-  version: '0.6.9',
+  version: '0.6.10',
   author: 'aSamu3l',
   github: 'https://github.com/aSamu3l',
   repo: 'https://github.com/aSamu3l/FlussoLab',
@@ -27,7 +27,7 @@ const I18N = {
     START: 'INIZIO', END: 'FINE', T: 'V', F: 'F', TRUE: 'VERO', FALSE: 'FALSO',
     types: { decl: 'VAR · Dichiarazione', input: 'IN · Input', output: 'OUT · Output', outln: 'OUTLN · Output a capo', assign: 'Assegnazione', comment: 'Commento', if: 'IF · Se', while: 'WHILE · Mentre', do: 'DO WHILE · Ripeti mentre', for: 'FOR · Per' },
     typeHint: {
-      decl: 'Facoltativo: fissa il tipo di una o più variabili', input: 'Legge uno o più valori da tastiera', output: 'Scrive a schermo e resta sulla stessa riga', outln: 'Scrive a schermo e poi va a capo', comment: 'Una nota per chi legge, non viene eseguita', assign: 'Calcola un valore e lo salva in una variabile',
+      decl: 'Facoltativo: fissa il tipo di una o più variabili', input: 'Legge uno o più valori da tastiera', out: 'Scrive a schermo; nel blocco scegli se andare a capo', output: 'Scrive a schermo e resta sulla stessa riga', outln: 'Scrive a schermo e poi va a capo', comment: 'Una nota per chi legge, non viene eseguita', assign: 'Calcola un valore e lo salva in una variabile',
       if: 'Due strade, in base a una condizione', while: 'Controlla la condizione, poi ripete finché è vera',
       do: 'Esegue almeno una volta, poi ripete se la condizione è vera', for: 'Ripete contando con una variabile',
     },
@@ -111,7 +111,7 @@ const I18N = {
     START: 'START', END: 'END', T: 'T', F: 'F', TRUE: 'TRUE', FALSE: 'FALSE',
     types: { decl: 'VAR · Declaration', input: 'IN · Input', output: 'OUT · Output', outln: 'OUTLN · Output + new line', assign: 'Assignment', comment: 'Comment', if: 'IF', while: 'WHILE', do: 'DO WHILE', for: 'FOR' },
     typeHint: {
-      decl: 'Optional: fixes the type of one or more variables', input: 'Reads one or more values from the keyboard', output: 'Writes on screen and stays on the same line', outln: 'Writes on screen, then starts a new line', comment: 'A note for the reader, never executed', assign: 'Computes a value and stores it in a variable',
+      decl: 'Optional: fixes the type of one or more variables', input: 'Reads one or more values from the keyboard', out: 'Writes on screen; in the block you choose whether to start a new line', output: 'Writes on screen and stays on the same line', outln: 'Writes on screen, then starts a new line', comment: 'A note for the reader, never executed', assign: 'Computes a value and stores it in a variable',
       if: 'Two paths, depending on a condition', while: 'Checks the condition, then repeats while it is true',
       do: 'Runs at least once, then repeats if the condition is true', for: 'Repeats while counting with a variable',
     },
@@ -786,7 +786,7 @@ function fieldErr(kind, val) {
 }
 function legendHTML() {
   return `<div class="legend"><b style="font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)">${esc(t('legendT'))}</b>` +
-    MENU.map(ty => `<div>${typeIcon(ty)}<span><b>${esc(t('types')[ty])}</b> · <span style="color:var(--muted)">${esc(t('typeHint')[ty])}</span></span></div>`).join('') + '</div>';
+    MENU.filter(ty => ty !== 'outln').map(ty => `<div>${typeIcon(ty)}<span><b>${esc(t('types')[ty].split(' · ')[0])}</b> · <span style="color:var(--muted)">${esc(t('typeHint')[ty === 'output' ? 'out' : ty])}</span></span></div>`).join('') + '</div>';
 }
 function renderPanel() {
   const box = $('#tab-block');

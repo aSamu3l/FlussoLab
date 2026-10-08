@@ -279,3 +279,35 @@ test('valori logici nella lingua scelta', () => {
   FL.setBoolNames('FALSO', 'VERO');
   assert.equal(show('vrai == vrai', { vrai: '1' }), 'VERO');
 });
+
+// I link condivisibili contengono tutto il diagramma: devono tornare identici e restare corti.
+test('link condivisibili: andata e ritorno senza perdite', () => {
+  const EN = require('../lang/en.json');
+  const norm = seq => seq.map(b => {
+    const s = x => String(x ?? '');
+    switch (b.t) {
+      case 'input': return { t: b.t, v: s(b.v) };
+      case 'output': return { t: b.t, e: s(b.e), ln: b.ln !== false };
+      case 'assign': return b.inc ? { t: b.t, v: s(b.v), e: '', inc: b.inc } : { t: b.t, v: s(b.v), e: s(b.e) };
+      case 'if': return { t: b.t, c: s(b.c), y: norm(b.y || []), n: norm(b.n || []) };
+      case 'while': case 'do': return { t: b.t, c: s(b.c), body: norm(b.body || []) };
+      case 'for': return { t: b.t, v: s(b.v), a: s(b.a), b: s(b.b), s: s(b.s), body: norm(b.body || []) };
+      case 'comment': return { t: b.t, text: s(b.text) };
+      case 'decl': return { t: b.t, k: s(b.k), v: s(b.v) };
+    }
+  });
+  const docs = [...IT.examples, ...EN.examples].map(x => ({ name: x.name, main: x.main }));
+  docs.push({ name: 'Strano | {x} \\ "a"\nb', main: [{ t: 'comment', text: 'a|b{c}d\\e\nf 😀 è «»' }, { t: 'decl', k: 'str', v: 's, v[]' },
+    { t: 'assign', v: 'i', e: '', inc: '--' }, { t: 'for', v: 'int i', a: '10', b: '1', s: '-1', body: [] },
+    { t: 'if', c: 'x == "}"', y: [], n: [{ t: 'while', c: 'a', body: [{ t: 'do', c: 'b', body: [{ t: 'output', e: '"|"', ln: false }] }] }] }] });
+  docs.push({ name: '', main: [] });
+  for (const d of docs) {
+    const code = FL.shareEncode(d);
+    assert.match(code, /^a[A-Za-z0-9_-]*$/);
+    const back = FL.shareDecode(code);
+    assert.equal(back.name, d.name);
+    assert.deepEqual(back.main, norm(d.main));
+  }
+  assert.ok(FL.shareEncode({ name: IT.examples[1].name, main: IT.examples[1].main }).length < 50, 'la tabellina deve stare sotto i 50 caratteri');
+  for (const bad of ['', 'b123', 'a!!', 'aZZZZZZZZZZZZZZZZZZZZ']) assert.equal(errKey(() => FL.shareDecode(bad)), 'badlink');
+});

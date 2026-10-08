@@ -733,6 +733,139 @@ function negate(n) {
 }
 function invertCond(src) { return srcE(negate(parse(src))).s; }
 
-return { KINDS, parseDecl, lvTyped, toPseudoLines, invertCond, knownVars, firstError, FErr, parse, parseLV, splitList, exec, fmt, typeOf, parseInput, staticErr, toPseudo, toPython, setBoolNames, FN };
+/* ---------- share links ----------
+   A diagram fits in the link itself (after #), so nothing is stored on a server.
+   1. compact text: one letter per block, fields split by |, nested blocks in { }
+   2. compression made for diagrams: a small model (PPM, order 2) that has already read PRIME,
+      a text with typical blocks, plus arithmetic coding
+   3. the bits are written with the 64 characters A-Z a-z 0-9 - _ that no app cuts or changes
+   The first character is the format version. PRIME must NEVER change for version "a",
+   or the links already shared would stop opening: a new PRIME means a new version letter. */
+const B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+const SHARE_V = 'a';
+const PRIME = 'Media dei voti\no"Quanti numeri? "\nIn\nAs|0\nFi|1|n|1{o"Numero "\noi\nIx\nAs|s + x}\nAfloat media|(float) s / n\no"Media: "\nOmedia\n' +
+  '?media >= 6{O"Promosso"}{O"Bocciato"}\nPari o dispari\nIint n\n?n mod 2 == 0{On + " è pari"}{O"dispari"}\nConta\nAi|0\nWi < 10{Oi\n+i}\n' +
+  'Fattoriale\nIn\nAf|1\nFi|1|n|{Af|f * i}\no"Fattoriale: "\nOf\nSomma\nAs|0\nDx != 0{Ix\nAs|s + x}\nO"Totale: " + str(s)\nVint|n, i\n' +
+  'Vfloat|media\n#commento\nIa, b, c\n?a > b and a > c{Oa}{?b > c{Ob}{Oc}}\nInome\nO"Ciao " + nome\nAcont|cont + 1\n-n\nWtrue{Ix}\n' +
+  'Fi|0|n - 1|1{Iv[i]}\nAmax|v[0]\n?v[i] > max{Amax|v[i]}{}\nOlen(s)\nOsqrt(x)\nAr|round(x)\nAd|randint(1, 6)\nAprimo|vero\nWd * d <= n AND primo{Ad|d + 1}\n' +
+  'Area\nIbase, altezza\nAarea|base * altezza / 2\no"Area: "\nOarea\nAverage\nAsum|0\nAcount|0\nIgrade\nAsum|sum + grade\nO"Average: "\nOsum / count\n' +
+  '?x mod 2 == 0{O"even"}{O"odd"}\nAtotal|total + x\nO"Total: " + str(total)\nIstring s\nAok|false\nVbool|ok\n?ok OR NOT trovato{O"si"}{O"no"}\n';
+function packDoc(doc) {
+  const q = x => String(x ?? '').replace(/[\\|{}\n]/g, c => '\\' + (c === '\n' ? 'n' : c));
+  const seq = arr => (arr || []).map(b => {
+    switch (b.t) {
+      case 'input': return 'I' + q(b.v);
+      case 'output': return (b.ln === false ? 'o' : 'O') + q(b.e);
+      case 'assign': return b.inc ? (b.inc === '++' ? '+' : '-') + q(b.v) : 'A' + q(b.v) + '|' + q(b.e);
+      case 'if': return '?' + q(b.c) + '{' + seq(b.y) + '}{' + seq(b.n) + '}';
+      case 'while': return 'W' + q(b.c) + '{' + seq(b.body) + '}';
+      case 'do': return 'D' + q(b.c) + '{' + seq(b.body) + '}';
+      case 'for': return 'F' + [b.v, b.a, b.b, b.s].map(q).join('|') + '{' + seq(b.body) + '}';
+      case 'comment': return '#' + q(b.text);
+      case 'decl': return 'V' + q(b.k) + '|' + q(b.v);
+    }
+    return '';
+  }).filter(Boolean).join('\n');
+  return q(doc.name) + '\n' + seq(doc.main);
+}
+function unpackDoc(txt) {
+  let i = 0;
+  const field = () => { let o = ''; while (i < txt.length && !'|{}\n'.includes(txt[i])) { if (txt[i] === '\\') { i++; o += txt[i] === 'n' ? '\n' : (txt[i] ?? ''); i++; } else o += txt[i++]; } return o; };
+  const bar = () => { if (txt[i] !== '|') throw new Error('share'); i++; };
+  const open = () => { if (txt[i] !== '{') throw new Error('share'); i++; const s = seq(); if (txt[i] !== '}') throw new Error('share'); i++; return s; };
+  function block() {
+    const c = txt[i++];
+    switch (c) {
+      case 'I': return { t: 'input', v: field() };
+      case 'O': case 'o': return { t: 'output', e: field(), ln: c === 'O' };
+      case 'A': { const v = field(); bar(); return { t: 'assign', v, e: field() }; }
+      case '+': case '-': return { t: 'assign', v: field(), e: '', inc: c + c };
+      case '?': { const c2 = field(); return { t: 'if', c: c2, y: open(), n: open() }; }
+      case 'W': case 'D': { const c2 = field(); return { t: c === 'W' ? 'while' : 'do', c: c2, body: open() }; }
+      case 'F': { const v = field(); bar(); const a = field(); bar(); const b = field(); bar(); const s2 = field(); return { t: 'for', v, a, b, s: s2, body: open() }; }
+      case '#': return { t: 'comment', text: field() };
+      case 'V': { const k = field(); bar(); return { t: 'decl', k, v: field() }; }
+    }
+    throw new Error('share');
+  }
+  function seq() { const out = []; while (i < txt.length && txt[i] !== '}') { out.push(block()); if (txt[i] === '\n') i++; } return out; }
+  const name = field(); if (txt[i] === '\n') i++;
+  const main = seq(); if (i !== txt.length) throw new Error('share');
+  return { name, main };
+}
+// PPM model: counts of the next byte after the last 2 bytes, the last byte, and none (order 2, 1, 0)
+function ppmModel() {
+  const m = [new Map(), new Map(), new Map()];
+  const keys = (a, b) => [a * 512 + b, b, 0];
+  const add = (a, b, s) => { const k = keys(a, b); for (let j = 0; j < 3; j++) { let t = m[j].get(k[j]); if (!t) m[j].set(k[j], t = new Map()); t.set(s, (t.get(s) || 0) + 1); } };
+  let a = 256, b = 256; for (const s of new TextEncoder().encode(PRIME)) { add(a, b, s); a = b; b = s; }
+  return { m, keys, add };
+}
+const AC_TOP = 2 ** 32, AC_HALF = 2 ** 31, AC_Q1 = 2 ** 30, AC_Q3 = 3 * 2 ** 30, AC_N = 257; // 256 = end of text
+function shareEncode(doc) {
+  const M = ppmModel(), bits = [];
+  let low = 0, high = AC_TOP - 1, pend = 0;
+  const out = x => { bits.push(x); for (; pend; pend--) bits.push(1 - x); };
+  const code = (lo, hi, tot) => {
+    const r = high - low + 1; high = low + Math.floor(r * hi / tot) - 1; low = low + Math.floor(r * lo / tot);
+    for (;;) {
+      if (high < AC_HALF) out(0); else if (low >= AC_HALF) { out(1); low -= AC_HALF; high -= AC_HALF; }
+      else if (low >= AC_Q1 && high < AC_Q3) { pend++; low -= AC_Q1; high -= AC_Q1; } else break;
+      low *= 2; high = high * 2 + 1;
+    }
+  };
+  let a = 256, b = 256;
+  for (const s of [...new TextEncoder().encode(packDoc(doc)), 256]) {
+    const k = M.keys(a, b); let done = false;
+    for (let j = 0; j < 3 && !done; j++) {
+      const t = M.m[j].get(k[j]); if (!t) continue;
+      const syms = [...t.keys()].sort((x, y) => x - y); let tot = 0, lo = -1;
+      for (const x of syms) { if (x === s) lo = tot; tot += t.get(x); }
+      if (lo >= 0) { code(lo, lo + t.get(s), tot + syms.length); done = true; } else code(tot, tot + syms.length, tot + syms.length);
+    }
+    if (!done) code(s, s + 1, AC_N);
+    if (s < 256) M.add(a, b, s); a = b; b = s;
+  }
+  pend++; out(low < AC_Q1 ? 0 : 1);
+  let str = '';
+  for (let i = 0; i < bits.length; i += 6) { let v = 0; for (let j = 0; j < 6; j++) v = v * 2 + (bits[i + j] || 0); str += B64[v]; }
+  return SHARE_V + str.replace(/A+$/, '');
+}
+function shareDecode(code) {
+  code = String(code || '').trim().replace(/^#/, '');
+  if (code[0] !== SHARE_V || !/^[A-Za-z0-9_-]+$/.test(code)) throw new FErr('badlink');
+  const body = code.slice(1);
+  const bit = i => { const c = i / 6 | 0; return c < body.length ? (B64.indexOf(body[c]) >> (5 - i % 6)) & 1 : 0; };
+  const M = ppmModel();
+  let low = 0, high = AC_TOP - 1, val = 0, pos = 0;
+  for (let i = 0; i < 32; i++) val = val * 2 + bit(pos++);
+  const narrow = (lo, hi, tot) => {
+    const r = high - low + 1; high = low + Math.floor(r * hi / tot) - 1; low = low + Math.floor(r * lo / tot);
+    for (;;) {
+      if (high < AC_HALF) { /* nothing */ } else if (low >= AC_HALF) { low -= AC_HALF; high -= AC_HALF; val -= AC_HALF; }
+      else if (low >= AC_Q1 && high < AC_Q3) { low -= AC_Q1; high -= AC_Q1; val -= AC_Q1; } else break;
+      low *= 2; high = high * 2 + 1; val = val * 2 + bit(pos++);
+    }
+  };
+  const target = tot => Math.floor(((val - low + 1) * tot - 1) / (high - low + 1));
+  const bytes = []; let a = 256, b = 256;
+  for (;;) {
+    const k = M.keys(a, b); let s = -1;
+    for (let j = 0; j < 3 && s < 0; j++) {
+      const t = M.m[j].get(k[j]); if (!t) continue;
+      const syms = [...t.keys()].sort((x, y) => x - y); let tot = 0; for (const x of syms) tot += t.get(x);
+      const v = target(tot + syms.length);
+      if (v >= tot) { narrow(tot, tot + syms.length, tot + syms.length); continue; }
+      let c = 0; for (const x of syms) { const f = t.get(x); if (v < c + f) { narrow(c, c + f, tot + syms.length); s = x; break; } c += f; }
+    }
+    if (s < 0) { s = target(AC_N); if (s < 0 || s >= AC_N) throw new FErr('badlink'); narrow(s, s + 1, AC_N); }
+    if (s === 256) break;
+    bytes.push(s); if (bytes.length > 200000 || pos > body.length * 6 + 64) throw new FErr('badlink');
+    M.add(a, b, s); a = b; b = s;
+  }
+  try { return unpackDoc(new TextDecoder('utf-8', { fatal: true }).decode(new Uint8Array(bytes))); } catch (e) { throw new FErr('badlink'); }
+}
+
+return { shareEncode, shareDecode, packDoc, KINDS, parseDecl, lvTyped, toPseudoLines, invertCond, knownVars, firstError, FErr, parse, parseLV, splitList, exec, fmt, typeOf, parseInput, staticErr, toPseudo, toPython, setBoolNames, FN };
 })();
 if (typeof module !== 'undefined') module.exports = FL;

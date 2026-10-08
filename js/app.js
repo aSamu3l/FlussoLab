@@ -2,7 +2,7 @@
 'use strict';
 /* ====== Project settings ====== */
 const CONFIG = {
-  version: '0.8.0',
+  version: '0.9.0',
   author: 'aSamu3l',
   github: 'https://github.com/aSamu3l',
   repo: 'https://github.com/aSamu3l/FlussoLab',
@@ -958,6 +958,33 @@ async function triggerDownload(href, name, data) {
   const a = document.createElement('a'); a.href = href; a.download = name; document.body.appendChild(a); a.click(); a.remove();
 }
 
+/* ---------- share link: the whole diagram is inside the link (see shareEncode in core.js) ---------- */
+function shareBase() {
+  return /^https?:$/.test(location.protocol) ? new URL('./', document.baseURI).href : 'https://flussolab.s3l.it/';
+}
+function cmdShare() {
+  const link = shareBase() + '#' + FL.shareEncode(JSON.parse(ser()));
+  openDlg(`<h2>${esc(t('shareT'))}</h2>
+    <div class="field" style="margin:0"><input type="text" id="shareLink" readonly value="${esc(link)}" aria-label="${esc(t('shareT'))}"></div>
+    <p>${esc(t('shareNote'))}</p>${link.length > 2000 ? `<p>${esc(t('shareLong', link.length))}</p>` : ''}
+    <div class="foot"><button class="btn" data-close>${esc(t('close'))}</button>${navigator.share ? `<button class="btn" id="shareSys">${esc(t('shareSys'))}</button>` : ''}<button class="btn primary" id="shareCopy">${esc(t('copyLink'))}</button></div>`);
+  const inp = $('#shareLink'); inp.addEventListener('focus', () => inp.select());
+  $('#shareCopy').onclick = async () => {
+    try { await navigator.clipboard.writeText(link); } catch (e) { inp.focus(); inp.select(); try { document.execCommand('copy'); } catch (e2) { return; } }
+    toast(t('copied'));
+  };
+  if ($('#shareSys')) $('#shareSys').onclick = () => navigator.share({ title: prog.name || 'FlussoLab', url: link }).catch(() => {});
+}
+// a link with a diagram after # opens it in a tab, then the address goes back to normal
+function openFromLink() {
+  const h = location.hash.slice(1);
+  if (!h) return;
+  history.replaceState(null, '', location.pathname + location.search);
+  let doc; try { doc = FL.shareDecode(h); } catch (e) { toast(t('badLink')); return; }
+  try { if (openDoc(doc)) toast(t('linkOpened')); } catch (e) { toast(t('badLink')); }
+}
+addEventListener('hashchange', () => { if (booted) openFromLink(); });
+
 function cmdSave() {
   const json = JSON.stringify({ format: 'flussolab', version: 1, name: prog.name, main: prog.main }, replacer, 2);
   openDlg(`<h2>${esc(t('saveTitle'))}</h2>
@@ -1130,7 +1157,7 @@ function pasteBlock() {
 /* ================= menu bar ================= */
 const MENUS = {
   file: () => [
-    ['new', t('new'), ''], ['open', t('open') + '…', 'Ctrl+O'], ['save', t('save') + '…', 'Ctrl+S'], ['png', t('png') + '…', ''], ['zip', t('zipM'), ''], '-',
+    ['new', t('new'), ''], ['open', t('open') + '…', 'Ctrl+O'], ['save', t('save') + '…', 'Ctrl+S'], ['share', t('shareM'), ''], ['png', t('png') + '…', ''], ['zip', t('zipM'), ''], '-',
     ['install', t('installM'), ''], '-',
     { head: t('examples') }, ...langPart('examples').map((x, i) => ['ex:' + i, x.name, '']),
   ],
@@ -1208,6 +1235,7 @@ function runCmd(c) {
   if (c === 'new') return cmdNew();
   if (c === 'open') return cmdOpen();
   if (c === 'save') return cmdSave();
+  if (c === 'share') return cmdShare();
   if (c === 'png') return cmdPng();
   if (c === 'zip') return cmdExportZip();
   if (c === 'install') return cmdInstall();
@@ -1345,6 +1373,7 @@ let booted = false;
   renderTabs();
   booted = true;
   clearConsole(); applyLang(); syncNet();
+  openFromLink();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => renderDiagram());
 })();
 })();

@@ -207,4 +207,8 @@ test('Python generato: solo funzioni standard', () => {
   assert.match(py, /print\(a % b\)/);
   assert.match(py, /print\(math\.floor\(z \+ 0\.5\)\)/);
   assert.match(py, /print\(int\(7 \/ 2\)\)/);
+  const py2 = FL.toPython([{ t: 'input', v: 'n, float m, string s' }], 'it');
+  assert.match(py2, /^n = input\("n\? "\)  # senza tipo/m);
+  assert.match(py2, /m: float = float\(input\("m\? "\)\)/);
+  assert.match(py2, /s: str = input\("s\? "\)$/m);
 });

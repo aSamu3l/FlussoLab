@@ -1,42 +1,44 @@
-# Contribuire a FlussoLab
+# Contributing to FlussoLab
 
-Grazie per l'interesse! FlussoLab è mantenuto da [aSamu3l](https://github.com/aSamu3l).
+[Italiano](CONTRIBUTING.it.md) · **English**
 
-## Come contribuire
+Thanks for your interest! FlussoLab is maintained by [aSamu3l](https://github.com/aSamu3l).
 
-- **Hai trovato un problema o hai un'idea?** Apri una [issue](https://github.com/aSamu3l/FlussoLab/issues).
-- **Vuoi proporre una modifica?** Fai un fork, crea un ramo, poi apri una pull request verso questo repository.
-  Descrivi cosa cambia e perché.
+## How to contribute
 
-Il modo migliore per migliorare FlussoLab è contribuire qui, al progetto principale,
-così il lavoro arriva a tutte le scuole che lo usano.
+- **Found a problem or have an idea?** Open an [issue](https://github.com/aSamu3l/FlussoLab/issues).
+- **Want to propose a change?** Fork the repository, create a branch, then open a pull request to this repository.
+  Describe what changes and why.
 
-## Aggiungere una lingua
+The best way to improve FlussoLab is to contribute here, to the main project,
+so the work reaches every school that uses it.
 
-Tutti i testi di FlussoLab sono nella cartella [`lang/`](lang): un file per lingua.
-Per aggiungerne una non serve toccare il codice:
+## Adding a language
 
-1. Copia `lang/en.json` (o `lang/it.json`) e chiamalo con il codice della lingua, ad esempio `lang/fr.json`.
-2. Nel file nuovo cambia `"code"` (es. `"fr"`) e `"name"` (il nome della lingua scritto nella lingua stessa, es. `"Français"`).
-3. Traduci i testi. Lascia uguali le chiavi a sinistra e i segnaposto come `{0}`, `{1}` o `{1:tyk}`:
-   vengono sostituiti dal programma. Le parole chiave dei blocchi (`IN`, `OUT`, `IF`, `WHILE`…) restano in inglese.
-   - `ui`: menu, pulsanti e messaggi di errore
-   - `pseudo`: le parole dello pseudocodice
-   - `python`: i commenti del codice Python
-   - `guide`: la guida (in HTML)
-   - `examples`: gli esempi pronti; puoi tradurre i testi tra virgolette e i nomi delle variabili
-4. Aggiungi la lingua in `lang/languages.json`, ad esempio `{ "code": "fr", "name": "Français" }`.
-5. Apri una pull request.
+All of FlussoLab's texts are in the [`lang/`](lang) folder, one file per language.
+You don't need to touch the code to add one:
 
-I test automatici controllano che il file non abbia voci mancanti o segnaposto sbagliati
-(si avviano anche in locale con `node --test tests/*.test.js`). Una volta accettata, la lingua compare da sola
-nel menu **Aiuto** e viene scelta in automatico per chi ha il browser in quella lingua.
+1. Copy `lang/en.json` and name it after the language code, for example `lang/fr.json`.
+2. In the new file change `"code"` (e.g. `"fr"`) and `"name"` (the language's name in that language, e.g. `"Français"`).
+3. Translate the texts. Keep the keys on the left and placeholders such as `{0}`, `{1}` or `{1:tyk}` unchanged:
+   the program fills them in. Block keywords (`IN`, `OUT`, `IF`, `WHILE`…) stay in English.
+   - `ui`: menus, buttons and error messages
+   - `pseudo`: the pseudocode words
+   - `python`: the comments in the Python code
+   - `guide`: the guide (in HTML)
+   - `examples`: the ready-made examples; you can translate the quoted texts and the variable names
+4. Add the language to `lang/languages.json`, for example `{ "code": "fr", "name": "Français" }`.
+5. Open a pull request.
 
-## Riconoscimenti
+The automatic tests check that the file has no missing entries or wrong placeholders
+(you can also run them locally with `node --test tests/*.test.js`). Once accepted, the language appears by itself
+in the **Help** menu and is picked automatically for people whose browser uses that language.
 
-Chi contribuisce con una modifica accettata viene aggiunto all'elenco dei contributori nel README.
+## Credits
 
-## Licenza dei contributi
+Everyone whose change is accepted is added to the list of contributors in the README.
 
-Inviando un contributo dichiari che è un tuo lavoro e accetti che venga distribuito
-con la licenza del progetto ([CC BY-NC-SA 4.0](LICENSE)).
+## License of contributions
+
+By sending a contribution you state that it is your own work and agree that it is distributed
+under the project's license ([CC BY-NC-SA 4.0](LICENSE)).

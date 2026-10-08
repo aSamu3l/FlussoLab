@@ -1,53 +1,56 @@
 # FlussoLab
 
-Editor di diagrammi di flusso che funziona nel browser, pensato per la scuola.
-Niente da installare: va su PC, Mac, Chromebook e tablet.
+[Italiano](README.it.md) · **English**
 
-**[Apri FlussoLab](https://flussolab.s3l.it/)**
+A flowchart editor that runs in the browser, made for school.
+Nothing to install: it works on PC, Mac, Chromebook and tablets.
 
-![Il diagramma "Media dei voti" in FlussoLab](docs/editor.png)
+**[Open FlussoLab](https://flussolab.s3l.it/)**
 
-## Cosa fa
+![The "Average of grades" diagram in FlussoLab](docs/en/editor.png)
 
-- Blocchi `IN`, `OUT`, `OUTLN`, assegnazione, `IF`, `WHILE`, `DO WHILE`, `FOR` e commento
-- Esecuzione completa o passo passo, con le variabili
-- Errori spiegati in modo semplice
-- Pseudocodice generato in automatico
-- Salvataggio in file `.flusso` ed esportazione in PNG
-- Italiano e inglese, tema chiaro e scuro
+## What it does
 
-## Come si presenta
+- Blocks `IN`, `OUT`, `OUTLN`, assignment, `IF`, `WHILE`, `DO WHILE`, `FOR`, `VAR` and comment
+- Types like in C (`int`, `float`, `string`, `bool`), automatic or declared
+- Run the whole program or step by step, with the variables
+- Errors explained in plain words
+- Pseudocode and Python code generated automatically
+- Several diagrams open in tabs, `.flusso` files, PNG export and a single ZIP to hand in
+- Italian and English (more languages welcome), light and dark theme
 
-**Esecuzione passo passo**: il blocco attivo è evidenziato e a destra si vedono le variabili.
+## How it looks
 
-![Esecuzione passo passo del programma "Numero primo"](docs/esecuzione.png)
+**Step-by-step run**: the current block is highlighted and the variables are shown on the right.
 
-**Errori chiari**: il blocco sbagliato viene segnalato prima di eseguire, con un messaggio che spiega cosa correggere.
+![Step-by-step run of the "Prime number" program](docs/en/run.png)
 
-![Errore su un blocco OUT con un testo senza virgolette](docs/errore.png)
+**Clear errors**: the wrong block is marked before running, with a message that explains what to fix.
 
-**Anche su telefono e tablet**, con il tema scuro.
+![Error on an OUTLN block with text missing its quotes](docs/en/error.png)
 
-<img src="docs/telefono.png" alt="FlussoLab su telefono, tema scuro" width="300">
+**On phones and tablets too**, with the dark theme.
 
-## Installare come app
+<img src="docs/en/phone.png" alt="FlussoLab on a phone, dark theme" width="300">
 
-FlussoLab si può installare e funziona anche senza internet:
+## Install it as an app
 
-- **Chrome o Edge** (Windows, Chromebook, Android): menu del browser → «Installa FlussoLab».
-- **iPhone e iPad**: Safari → Condividi → «Aggiungi alla schermata Home».
+FlussoLab can be installed and also works without internet:
 
-## Contribuire
+- **Chrome or Edge** (Windows, Chromebook, Android): browser menu → “Install FlussoLab”.
+- **iPhone and iPad**: Safari → Share → “Add to Home Screen”.
 
-Segnalazioni e proposte sono benvenute: leggi [CONTRIBUTING.md](CONTRIBUTING.md).
-Vuoi FlussoLab nella tua lingua? Basta aggiungere un file nella cartella [`lang/`](lang): trovi i passaggi in CONTRIBUTING.md.
+## Contributing
 
-## Autore
+Reports and ideas are welcome: read [CONTRIBUTING.md](CONTRIBUTING.md).
+Want FlussoLab in your language? Just add one file to the [`lang/`](lang) folder: the steps are in CONTRIBUTING.md.
 
-Sviluppato e mantenuto da [aSamu3l](https://github.com/aSamu3l).
+## Author
 
-## Licenza
+Developed and maintained by [aSamu3l](https://github.com/aSamu3l).
 
-[CC BY-NC-SA 4.0](LICENSE): gratuito e aperto a tutti, vietato l'uso commerciale.
-Le versioni modificate devono citare l'autore, restare pubbliche con la stessa licenza
-e usare un nome diverso da "FlussoLab".
+## License
+
+[CC BY-NC-SA 4.0](LICENSE): free and open to everyone, commercial use is not allowed.
+Modified versions must credit the author, stay public under the same license
+and use a name other than "FlussoLab".

@@ -82,7 +82,11 @@ test('il singolo = non è un confronto', () => {
 
 test('testi', () => {
   assert.equal(show('"Ciao " + "mondo"'), 'Ciao mondo');
-  assert.equal(show('"x = " + 7 / 2'), 'x = 3');
+  assert.equal(show('"x = " + str(7 / 2)'), 'x = 3');
+  assert.equal(errKey(() => show('"x = " + 7')), 'strmix');
+  assert.equal(errKey(() => show('1 + a + " e "', { a: '2' })), 'strmix');
+  assert.equal(show('"1" + str(a) + " e "', { a: '2' }), '12 e ');
+  assert.equal(errKey(() => show('"ok: " + vero')), 'strmix');
   assert.equal(show('len("ciao")'), '4');
 });
 
@@ -162,7 +166,7 @@ test('tipi dichiarati (blocco VAR)', () => {
   assert.equal(run([D('float', 'x'), { t: 'assign', v: 'x', e: '3' }, { t: 'output', e: 'x' }]).out[0], '3.0');
   assert.equal(run([D('float', 'x'), { t: 'assign', v: 'x', e: '7' }, { t: 'output', e: 'x / 2' }]).out[0], '3.5');
   assert.equal(errKey(() => run([D('int', 'n'), { t: 'input', v: 'n' }], ['3,5'])), 'tin');
-  assert.equal(run([D('string', 's'), { t: 'input', v: 's' }, { t: 'output', e: 's + 1' }].map(b => b.k === 'string' ? { ...b, k: 'str' } : b), ['12']).out[0], '121');
+  assert.equal(run([D('string', 's'), { t: 'input', v: 's' }, { t: 'output', e: 's + "1"' }].map(b => b.k === 'string' ? { ...b, k: 'str' } : b), ['12']).out[0], '121');
   assert.equal(run([D('bool', 'b'), { t: 'input', v: 'b' }], ['true']).env.b, true);
   assert.equal(errKey(() => run([D('int', 'v[]'), { t: 'assign', v: 'v[0]', e: '"a"' }])), 'tdecl');
   assert.equal(errKey(() => run([D('int', 'n'), D('float', 'n')])), 'redecl');
@@ -173,7 +177,8 @@ test('tipi dichiarati (blocco VAR)', () => {
 test('tipo scritto direttamente nel blocco', () => {
   assert.deepEqual(run([{ t: 'input', v: 'int n' }, { t: 'output', e: 'n' }], ['5']).out, ['5']);
   assert.equal(errKey(() => run([{ t: 'input', v: 'int n' }], ['3,5'])), 'tin');
-  assert.equal(run([{ t: 'input', v: 'string s' }, { t: 'output', e: 's + 1' }], ['12']).out[0], '121');
+  assert.equal(run([{ t: 'input', v: 'string s' }, { t: 'output', e: 's + "1"' }], ['12']).out[0], '121');
+  assert.equal(errKey(() => run([{ t: 'input', v: 'string s' }, { t: 'output', e: 's + 1' }], ['12'])), 'strmix');
   assert.equal(run([{ t: 'assign', v: 'float m', e: '(float) 7 / 2' }]).env.m, 3.5);
   assert.equal(run([{ t: 'assign', v: 'double m', e: '1' }]).env.m, 1);
   assert.equal(errKey(() => run([{ t: 'assign', v: 'int x', e: '7.0 / 2' }])), 'tdecl');
@@ -226,11 +231,11 @@ test('numeri con la virgola sempre riconoscibili, × e ÷, numeri enormi', () =>
 });
 
 test('Python generato: testi, cicli e vettori', () => {
-  const py = FL.toPython([{ t: 'assign', v: 'n', e: '5' }, { t: 'assign', v: 's', e: '"n = " + n' }, { t: 'output', e: 's + 1' },
+  const py = FL.toPython([{ t: 'assign', v: 'n', e: '5' }, { t: 'assign', v: 's', e: '"n = " + str(n)' }, { t: 'output', e: 's + "1"' },
     { t: 'assign', v: 'k', e: '-1' }, { t: 'for', v: 'i', a: '3', b: '1', s: 'k', body: [] },
     { t: 'assign', v: 'm[0][1]', e: '5' }, { t: 'assign', v: 'float f', e: '3' }], 'it');
-  assert.match(py, /s = f"n = \{n\}"/);
-  assert.match(py, /print\(s, 1, sep=""\)/);
+  assert.match(py, /s = "n = " \+ str\(n\)/);
+  assert.match(py, /print\(s \+ "1"\)/);
   assert.match(py, /while \(k > 0 and i <= 1\) or \(k < 0 and i >= 1\):/);
   assert.match(py, /m\.setdefault\(0, \{\}\)\[1\] = 5/);
   assert.match(py, /f: float = float\(3\)/);

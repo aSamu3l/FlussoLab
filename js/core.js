@@ -255,7 +255,9 @@ function ev(n, env) {
       const a = ev(n.a, env), b = ev(n.b, env);
       switch (n.op) {
         case '+':
-          if (typeof a === 'string' || typeof b === 'string') return fmt(a) + fmt(b);
+          if (typeof a === 'string' && typeof b === 'string') return a + b;
+          // like Python: text joins only text, a number needs str()
+          if (typeof a === 'string' || typeof b === 'string') throw new FErr('strmix', typeOf(typeof a === 'string' ? b : a));
           return arith('+', a, b);
         case '-': case '*': case '/': case 'mod': case 'div': case '^': return arith(n.op, a, b);
         case '=': return eq(a, b);
@@ -564,17 +566,6 @@ function pyInt(n, ints) {
   }
   return false;
 }
-// true when an expression is surely a text
-function pyStr(n, strs) {
-  switch (n.k) {
-    case 'str': return true;
-    case 'var': return strs.has(n.n);
-    case 'idx': { let r = n; while (r.k === 'idx') r = r.o; return r.k === 'str' || (r.k === 'var' && strs.has(r.n) && n.o.k !== 'idx'); }
-    case 'call': return n.n === 'str';
-    case 'bin': return n.op === '+' && (pyStr(n.a, strs) || pyStr(n.b, strs));
-  }
-  return false;
-}
 function pyE(n, U) {
   switch (n.k) {
     case 'num': return { s: n.t || String(n.v), p: 9 };
@@ -600,14 +591,6 @@ function pyE(n, U) {
         const fa = pyE(n.a, U), fb = pyE(n.b, U);
         return { s: `int(${fa.p < 6 ? `(${fa.s})` : fa.s} / ${fb.p <= 6 ? `(${fb.s})` : fb.s})`, p: 9 };
       }
-      // text + number: in Python an f-string, as the diagram joins them
-      if (n.op === '+' && pyStr(n, U.strs)) {
-        const items = joinParts(n, U.strs);
-        if (items.some(x => !pyStr(x, U.strs))) {
-          const body = items.map(x => x.k === 'str' ? x.v.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/[{}]/g, '$&$&').replace(/\n/g, '\\n') : `{${pyE(x, U).s}}`).join('');
-          if (!/\{[^}]*["\\]/.test(body)) return { s: `f"${body}"`, p: 9 };
-        }
-      }
       const [sym, p] = PYOP[n.op];
       const a = pyE(n.a, U), b = pyE(n.b, U);
       const ra = n.op === '^', na = p === 4;
@@ -618,40 +601,19 @@ function pyE(n, U) {
   }
   return { s: '?', p: 9 };
 }
-// a + chain that becomes text, split in pieces: numbers added before the first text stay together, as in the diagram
-function joinParts(ast, strs) {
-  const parts = []; let n = ast;
-  while (n.k === 'bin' && n.op === '+') { parts.unshift(n.b); n = n.a; }
-  parts.unshift(n);
-  const k = parts.findIndex(x => pyStr(x, strs));
-  if (k <= 1) return parts;
-  let pre = parts[0]; for (let i = 1; i < k; i++) pre = { k: 'bin', op: '+', a: pre, b: parts[i] };
-  return [pre, ...parts.slice(k)];
-}
-function pyPrint(ast, U, ln) {
-  const end = ln === false ? ', end=""' : '';
-  if (!(ast.k === 'bin' && ast.op === '+' && pyStr(ast, U.strs))) return `print(${pyE(ast, U).s}${end})`;
-  // print with commas: Python turns the numbers into text by itself
-  return `print(${joinParts(ast, U.strs).map(x => pyE(x, U).s).join(', ')}, sep=""${end})`;
-}
+function pyPrint(ast, U, ln) { return `print(${pyE(ast, U).s}${ln === false ? ', end=""' : ''})`; }
 function toPython(main, lang) {
   const U = new Set(), arrays = new Set(), L = [];
-  U.ints = new Set(); U.strs = new Set();
+  U.ints = new Set();
   const DK = Object.create(null), declK = n => DK[n] || null;
-  const KS = { int: U.ints, str: U.strs };
-  const txt = new Set(), notTxt = new Set();
   (function scan(seq) {
     for (const b of seq) {
-      if (b.t === 'decl') { try { parseDecl(b.v).forEach(x => { DK[x.n] = b.k; if (KS[b.k]) KS[b.k].add(x.n); }); } catch (e) {} }
+      if (b.t === 'decl') { try { parseDecl(b.v).forEach(x => { DK[x.n] = b.k; if (b.k === 'int') U.ints.add(x.n); }); } catch (e) {} }
       const typed = b.t === 'input' ? splitList(b.v) : (b.t === 'assign' || b.t === 'for') && !b.inc ? [b.v] : [];
-      for (const x of typed) { try { const ty = lvTyped(x), n = lvRoot(ty.lv).n; if (ty.k) DK[n] = ty.k; if (KS[ty.k]) KS[ty.k].add(n); } catch (e) {} }
-      // untyped variable that only ever receives text: treat it as text
-      if (b.t === 'assign' && !b.inc) { try { const ty = lvTyped(b.v); if (!ty.k && ty.lv.k === 'var') (pyStr(parse(b.e), U.strs) ? txt : notTxt).add(ty.lv.n); } catch (e) {} }
-      if (b.t === 'input' || b.t === 'for') splitList(b.v).forEach(v => { try { notTxt.add(lvRoot(lvTyped(v).lv).n); } catch (e) {} });
+      for (const x of typed) { try { const ty = lvTyped(x), n = lvRoot(ty.lv).n; if (ty.k) DK[n] = ty.k; if (ty.k === 'int') U.ints.add(n); } catch (e) {} }
       if (b.t === 'if') { scan(b.y); scan(b.n); } else if (b.body) scan(b.body);
     }
   })(main);
-  for (const n of txt) if (!notTxt.has(n) && !DK[n]) U.strs.add(n);
   let hasInput = false;
   const E = (src) => { try { return pyE(parse(src), U).s; } catch (e) { return `...  # ${src}`; } };
   const PYT = { int: 'int', float: 'float', str: 'str', bool: 'bool' };

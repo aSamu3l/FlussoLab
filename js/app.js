@@ -2,7 +2,7 @@
 'use strict';
 /* ====== Project settings ====== */
 const CONFIG = {
-  version: '0.6.7',
+  version: '0.6.8',
   author: 'aSamu3l',
   github: 'https://github.com/aSamu3l',
   repo: 'https://github.com/aSamu3l/FlussoLab',
@@ -37,7 +37,7 @@ const I18N = {
     f_ln: 'Vai a capo (OUTLN)', f_assign: 'Assegnazione', e_noeq: 'Manca il segno =: scrivi variabile = espressione (oppure i++ / i--)', f_comment: 'Testo del commento', n_cm: 'commento: non viene eseguito',
     loopEnd: 'fine ciclo', trace: 'Traccia', traceT: 'Mostra nella console ogni blocco eseguito', cut: 'Taglia', pasteAfter: 'Incolla dopo',
     showPy: 'Mostra anche Python', codeLink: 'Collega diagramma e codice',
-    e_cmpmix: op => `Stai confrontando un testo con un numero (${op}). Forse mancano le parentesi, ad esempio "Risultato: " + (x > 5)`, mFile: 'File', mEdit: 'Modifica', mView: 'Visualizza', mHelp: 'Aiuto',
+    e_cmpmix: op => `Stai confrontando un testo con un numero (${op}). Forse mancano le parentesi, ad esempio "Risultato: " + str(x > 5)`, mFile: 'File', mEdit: 'Modifica', mView: 'Visualizza', mHelp: 'Aiuto',
     undoM: 'Annulla', redoM: 'Ripeti', optSymShort: 'Simboli ≥ ≤ ≠', zoomIn: 'Ingrandisci', zoomOut: 'Riduci', zoom100: 'Zoom 100%',
     helpT: 'Guida', language: 'Lingua', offline: 'Offline', offlineT: 'Sei offline: FlussoLab funziona lo stesso e salva tutto su questo dispositivo.',
     tooMany: n => `Puoi tenere aperti al massimo ${n} diagrammi: chiudine uno.`, newTab: 'Nuovo diagramma', closeTab: 'Chiudi',
@@ -97,7 +97,7 @@ const I18N = {
     loadedOk: 'Diagramma caricato', badFile: 'Questo file non contiene un diagramma valido.', deleted: 'Blocco eliminato', copiedBlk: 'Blocco copiato',
     e_syntax: x => `Non capisco «${x}» in questo punto`, e_end: 'L\'espressione è incompleta', e_str: 'Manca la virgoletta di chiusura',
     e_empty: 'Il campo è vuoto', e_undef: n => `La variabile ${n} non ha ancora un valore`, e_div0: 'Divisione per zero', e_big: 'Numero troppo grande',
-    e_type: op => `Tipi di dato non adatti all'operazione ${op}`, e_fn: n => `Funzione sconosciuta: ${n}`, e_args: (n, k) => `${n} vuole ${k} argomenti`,
+    e_type: op => `Tipi di dato non adatti all'operazione ${op}`, e_strmix: k => `Non si può unire un testo con ${k === 'bool' ? 'un valore logico' : k === 'arr' ? 'un vettore' : 'un numero'}: usa str(), ad esempio "Totale: " + str(n)`, e_fn: n => `Funzione sconosciuta: ${n}`, e_args: (n, k) => `${n} vuole ${k} argomenti`,
     e_idx: i => `Indice non valido: ${i}`, e_notarr: n => `${n} non è un vettore`, e_lv: 'Qui serve il nome di una variabile',
     e_bool: 'La condizione deve risultare VERO o FALSO (ad esempio x > 0)', e_loop: 'Troppi passi: forse è un ciclo infinito?',
     e_step0: 'Il passo del ciclo non può essere 0', e_sqrt: 'Radice quadrata di un numero negativo', e_num: x => `«${x}» non è un numero`,
@@ -121,7 +121,7 @@ const I18N = {
     f_ln: 'New line (OUTLN)', f_assign: 'Assignment', e_noeq: 'The = sign is missing: write variable = expression (or i++ / i--)', f_comment: 'Comment text', n_cm: 'comment: it is not executed',
     loopEnd: 'loop ends', trace: 'Trace', traceT: 'Show every executed block in the console', cut: 'Cut', pasteAfter: 'Paste after',
     showPy: 'Also show Python', codeLink: 'Link diagram and code',
-    e_cmpmix: op => `You are comparing text with a number (${op}). Maybe parentheses are missing, for example "Result: " + (x > 5)`, mFile: 'File', mEdit: 'Edit', mView: 'View', mHelp: 'Help',
+    e_cmpmix: op => `You are comparing text with a number (${op}). Maybe parentheses are missing, for example "Result: " + str(x > 5)`, mFile: 'File', mEdit: 'Edit', mView: 'View', mHelp: 'Help',
     undoM: 'Undo', redoM: 'Redo', optSymShort: 'Symbols ≥ ≤ ≠', zoomIn: 'Zoom in', zoomOut: 'Zoom out', zoom100: 'Zoom 100%',
     helpT: 'Guide', language: 'Language', offline: 'Offline', offlineT: 'You are offline: FlussoLab still works and keeps everything on this device.',
     tooMany: n => `You can keep at most ${n} diagrams open: close one.`, newTab: 'New diagram', closeTab: 'Close',
@@ -181,7 +181,7 @@ const I18N = {
     loadedOk: 'Diagram loaded', badFile: 'This file does not contain a valid diagram.', deleted: 'Block deleted', copiedBlk: 'Block copied',
     e_syntax: x => `I don't understand “${x}” here`, e_end: 'The expression is incomplete', e_str: 'Missing closing quote',
     e_empty: 'The field is empty', e_undef: n => `Variable ${n} has no value yet`, e_div0: 'Division by zero', e_big: 'Number too large',
-    e_type: op => `Wrong data types for ${op}`, e_fn: n => `Unknown function: ${n}`, e_args: (n, k) => `${n} takes ${k} arguments`,
+    e_type: op => `Wrong data types for ${op}`, e_strmix: k => `Text cannot be joined with ${k === 'bool' ? 'a logical value' : k === 'arr' ? 'an array' : 'a number'}: use str(), for example "Total: " + str(n)`, e_fn: n => `Unknown function: ${n}`, e_args: (n, k) => `${n} takes ${k} arguments`,
     e_idx: i => `Invalid index: ${i}`, e_notarr: n => `${n} is not an array`, e_lv: 'A variable name is needed here',
     e_bool: 'The condition must give TRUE or FALSE (for example x > 0)', e_loop: 'Too many steps: maybe an infinite loop?',
     e_step0: 'The loop step cannot be 0', e_sqrt: 'Square root of a negative number', e_num: x => `“${x}” is not a number`,
@@ -1277,7 +1277,7 @@ const GUIDE = {
     <li><b>Salva</b> crea un file <code>.flusso</code> da consegnare. <b>File → Esporta consegna (ZIP)</b> mette in un unico file tutti i diagrammi aperti, come <code>.flusso</code> e come immagine. <b>Apri</b> lo ricarica. <b>Immagine</b> esporta il diagramma in PNG.</li>
     <li>Il lavoro resta salvato in questo browser anche se chiudi la pagina.</li></ul>
     <h3>Espressioni</h3><table>
-    <tr><td>+ − *</td><td>operazioni; con un testo, + unisce: <code>"Ciao " + nome</code></td></tr>
+    <tr><td>+ − *</td><td>operazioni; tra due testi, + li unisce: <code>"Ciao " + nome</code>, per un numero usa <code>str(n)</code></td></tr>
     <tr><td>/</td><td>divisione, come in C: tra due <code>int</code> il risultato è un <code>int</code> (<code>7 / 2</code> → 3); se uno dei due è <code>float</code> il risultato è <code>float</code> (<code>7.0 / 2</code> → 3.5)</td></tr>
     <tr><td>(float) (int)</td><td>conversione di tipo: <code>(float) s / n</code> → divisione con i decimali; <code>(int) 3.9</code> → 3</td></tr>
     <tr><td>mod  %</td><td>resto della divisione: <code>7 mod 3</code> e <code>7 % 3</code> sono uguali</td></tr>
@@ -1300,7 +1300,7 @@ const GUIDE = {
     <li><b>Save</b> creates a <code>.flusso</code> file to hand in. <b>File → Export submission (ZIP)</b> puts all open diagrams in one file, as <code>.flusso</code> and as images. <b>Open</b> loads it back. <b>Image</b> exports the diagram as PNG.</li>
     <li>Your work stays saved in this browser even if you close the page.</li></ul>
     <h3>Expressions</h3><table>
-    <tr><td>+ − *</td><td>arithmetic; with text, + joins: <code>"Hi " + name</code></td></tr>
+    <tr><td>+ − *</td><td>arithmetic; between two texts, + joins them: <code>"Hi " + name</code>, for a number use <code>str(n)</code></td></tr>
     <tr><td>/</td><td>division, as in C: between two <code>int</code> the result is an <code>int</code> (<code>7 / 2</code> → 3); if one is <code>float</code> the result is <code>float</code> (<code>7.0 / 2</code> → 3.5)</td></tr>
     <tr><td>(float) (int)</td><td>type cast: <code>(float) s / n</code> → division with decimals; <code>(int) 3.9</code> → 3</td></tr>
     <tr><td>mod  %</td><td>remainder: <code>7 mod 3</code> and <code>7 % 3</code> are the same</td></tr>

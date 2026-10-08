@@ -2,111 +2,78 @@
 <html lang="it">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>FlussoLab</title>
-<meta name="description" content="FlussoLab: editor gratuito di diagrammi di flusso (flowchart) per la scuola. Funziona nel browser, anche su Chromebook e tablet, senza installare nulla: esecuzione passo passo, variabili, pseudocodice, consegna in ZIP.">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FlussoLab: diagrammi di flusso online per la scuola, gratis</title>
+<meta name="description" content="Editor gratuito di diagrammi di flusso (flowchart) per imparare a programmare. Funziona nel browser, anche su Chromebook e tablet, senza installare nulla: esecuzione passo passo, variabili, pseudocodice e Python, consegna in ZIP.">
 <link rel="canonical" href="https://flussolab.s3l.it/">
+<link rel="alternate" hreflang="it" href="https://flussolab.s3l.it/">
+<link rel="alternate" hreflang="en" href="https://flussolab.s3l.it/en/">
+<link rel="alternate" hreflang="x-default" href="https://flussolab.s3l.it/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="FlussoLab">
-<meta property="og:title" content="FlussoLab · diagrammi di flusso nel browser">
-<meta property="og:description" content="Editor gratuito di diagrammi di flusso per la scuola: nessuna installazione, funziona anche offline e su Chromebook.">
+<meta property="og:title" content="FlussoLab: diagrammi di flusso online per la scuola, gratis">
+<meta property="og:description" content="Editor gratuito di diagrammi di flusso (flowchart) per imparare a programmare. Funziona nel browser, anche su Chromebook e tablet, senza installare nulla: esecuzione passo passo, variabili, pseudocodice e Python, consegna in ZIP.">
 <meta property="og:url" content="https://flussolab.s3l.it/">
 <meta property="og:image" content="https://flussolab.s3l.it/icons/social.png">
 <meta property="og:image:width" content="1280">
 <meta property="og:image:height" content="640">
 <meta property="og:locale" content="it_IT">
 <meta name="twitter:card" content="summary_large_image">
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"FlussoLab","url":"https://flussolab.s3l.it/","applicationCategory":"EducationalApplication","operatingSystem":"Any (web browser)","inLanguage":["it","en"],"isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"EUR"},"description":"Editor gratuito di diagrammi di flusso per la scuola, nel browser: blocchi IN, OUT, IF, WHILE, FOR, esecuzione passo passo, tipi int/float/string/bool, pseudocodice, esportazione PNG e consegna in ZIP.","author":{"@type":"Person","name":"aSamu3l","url":"https://github.com/aSamu3l"},"license":"https://creativecommons.org/licenses/by-nc-sa/4.0/"}</script>
 <meta name="theme-color" content="#2350c4">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" href="icons/favicon-64.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="FlussoLab">
-
-<link rel="stylesheet" href="css/style.css">
+<link rel="preload" href="fonts/gabarito-800.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="css/home.css">
+<script>
+// an installed app opens straight on the editor, not on this page
+if (matchMedia('(display-mode: standalone)').matches || navigator.standalone) location.replace('app/');
+</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebApplication", "name": "FlussoLab", "url": "https://flussolab.s3l.it/app/", "applicationCategory": "EducationalApplication", "operatingSystem": "Any (web browser)", "inLanguage": ["it", "en"], "isAccessibleForFree": true, "offers": {"@type": "Offer", "price": "0", "priceCurrency": "EUR"}, "description": "Editor gratuito di diagrammi di flusso (flowchart) per imparare a programmare. Funziona nel browser, anche su Chromebook e tablet, senza installare nulla: esecuzione passo passo, variabili, pseudocodice e Python, consegna in ZIP.", "image": "https://flussolab.s3l.it/icons/social.png", "screenshot": "https://flussolab.s3l.it/img/editor-it.webp", "softwareVersion": "0.8.0", "author": {"@type": "Person", "name": "aSamu3l", "url": "https://github.com/aSamu3l"}, "license": "https://creativecommons.org/licenses/by-nc-sa/4.0/"}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "È davvero gratis?", "acceptedAnswer": {"@type": "Answer", "text": "Sì, sempre. FlussoLab è distribuito con licenza CC BY-NC-SA 4.0: chiunque può usarlo e studiarne il codice, ma nessuno può venderlo o guadagnarci."}}, {"@type": "Question", "name": "Serve registrarsi?", "acceptedAnswer": {"@type": "Answer", "text": "No. I diagrammi restano salvati nel browser del dispositivo; per consegnarli o spostarli si salva un file .flusso."}}, {"@type": "Question", "name": "Funziona su Chromebook e iPad?", "acceptedAnswer": {"@type": "Answer", "text": "Sì. Basta un browser aggiornato: Chrome, Edge, Safari o Firefox. Su telefono e tablet l'interfaccia si adatta allo schermo."}}, {"@type": "Question", "name": "Funziona senza internet?", "acceptedAnswer": {"@type": "Answer", "text": "Sì, dopo la prima apertura. Puoi anche installarlo come app: dal menu del browser in Chrome ed Edge, oppure con «Aggiungi alla schermata Home» in Safari."}}, {"@type": "Question", "name": "Come consegnano i lavori gli studenti?", "acceptedAnswer": {"@type": "Answer", "text": "Con File → Salva si crea un file .flusso. Con File → Esporta consegna (ZIP) si ottiene un unico file con tutti i diagrammi aperti, sia da riaprire sia come immagini, con il nome dello studente."}}, {"@type": "Question", "name": "In quali linguaggi traduce il diagramma?", "acceptedAnswer": {"@type": "Answer", "text": "In pseudocodice, in italiano o in inglese, e in Python, che si attiva dalle opzioni."}}, {"@type": "Question", "name": "Posso proporre modifiche o tradurlo?", "acceptedAnswer": {"@type": "Answer", "text": "Sì. Il progetto è su GitHub: puoi segnalare problemi, proporre modifiche o aggiungere una lingua con un solo file."}}]}</script>
 </head>
 <body>
-<noscript><h1>FlussoLab</h1><p>Editor gratuito di diagrammi di flusso per la scuola, che funziona nel browser. Per usarlo serve JavaScript attivo.</p></noscript>
-<div class="app">
-  <header class="bar">
-    <div class="brand" aria-label="FlussoLab">
-      <svg width="22" height="22" viewBox="0 0 26 26" aria-hidden="true"><rect x="7" y="1.5" width="12" height="6" rx="3" style="fill:var(--tm-f);stroke:var(--tm-s)" stroke-width="1.5"/><path d="M13 7.5v3" style="stroke:var(--wire)" stroke-width="1.5"/><path d="M13 10.5l6 4.5-6 4.5-6-4.5z" style="fill:var(--if-f);stroke:var(--if-s)" stroke-width="1.5"/><path d="M13 19.5v3.5" style="stroke:var(--wire)" stroke-width="1.5"/></svg>
-      <span>FlussoLab</span>
-    </div>
-    <nav class="menubar" role="menubar">
-      <div class="mwrap"><button class="mbtn" data-menu="file" aria-haspopup="true" aria-expanded="false" data-i18n="mFile">File</button><div class="menu" id="m-file" role="menu" hidden></div></div>
-      <div class="mwrap"><button class="mbtn" data-menu="edit" aria-haspopup="true" aria-expanded="false" data-i18n="mEdit">Modifica</button><div class="menu" id="m-edit" role="menu" hidden></div></div>
-      <div class="mwrap"><button class="mbtn" data-menu="view" aria-haspopup="true" aria-expanded="false" data-i18n="mView">Visualizza</button><div class="menu" id="m-view" role="menu" hidden></div></div>
-      <div class="mwrap"><button class="mbtn" data-menu="help" aria-haspopup="true" aria-expanded="false" data-i18n="mHelp">Aiuto</button><div class="menu menu-r" id="m-help" role="menu" hidden></div></div>
-    </nav>
-    <span class="vsep" aria-hidden="true"></span>
-    <span class="netpill" id="netPill" data-i18n="offline" data-i18n-title="offlineT" hidden>Offline</span>
-    <input id="pname" class="pname" data-i18n-ph="untitled" data-i18n-title="progName" autocomplete="off" spellcheck="false">
-    <div class="spacer"></div>
-    <div class="runbar">
-      <button class="rb run" id="bRun" aria-pressed="false"><svg viewBox="0 0 16 16"><path d="M4 2.5v11l9-5.5z" fill="currentColor"/></svg><span data-i18n="run">Esegui</span></button>
-      <button class="rb" id="bStep"><svg viewBox="0 0 16 16"><path d="M3 2.5v11l7-5.5z" fill="currentColor"/><rect x="11" y="2.5" width="2.2" height="11" rx=".6" fill="currentColor"/></svg><span data-i18n="step">Passo</span></button>
-      <button class="rb stop" id="bStop" disabled><svg viewBox="0 0 16 16"><rect x="3" y="3" width="10" height="10" rx="1" fill="currentColor"/></svg><span data-i18n="stop">Stop</span></button>
-      <label class="speed" data-i18n-title="speed"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M2.5 11a5.5 5.5 0 0111 0" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M8 11l2.6-3.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><input type="range" id="speed" min="0" max="4" step="1" value="2"></label>
-    </div>
-  </header>
-
-  <div class="installbar" id="installBar" hidden>
-    <img src="icons/icon-192.png" alt="" width="22" height="22">
-    <span id="installMsg"></span>
-    <button class="btn primary sm" id="installYes"></button>
-    <button class="ibx" id="installNo" aria-label="Chiudi">×</button>
+<header class="top">
+  <a class="brand" href="./" aria-label="FlussoLab"><img src="icons/icon-192.png" alt="" width="28" height="28"><span>FlussoLab</span></a>
+  <nav><a href="en/" hreflang="en" lang="en">English</a><a class="btn small" href="app/" data-open>Apri FlussoLab</a></nav>
+</header>
+<main>
+<section class="hero">
+  <div class="copy">
+    <h1>Diagrammi di flusso che si eseguono, direttamente nel browser</h1>
+    <p class="lead">FlussoLab è un editor gratuito per imparare a programmare con i diagrammi di flusso. Si costruisce a blocchi, si esegue passo passo e si consegna in un file. Niente da installare: funziona su PC, Mac, Chromebook e tablet.</p>
+    <p class="cta"><a class="btn big" href="app/" data-open data-resume="Riprendi il lavoro">Apri FlussoLab</a><a class="ghost" href="https://github.com/aSamu3l/FlussoLab">Codice su GitHub</a></p>
+    <p class="note">Gratis, senza account, funziona anche offline.</p>
   </div>
-  <main class="main">
-    <section class="stage">
-      <div class="tabbar" id="tabbar" role="tablist"></div>
-      <div class="canvas" id="canvas"><div id="svgHost"></div></div>
-      <div class="hintbar" id="hintbar" data-i18n="hint"></div>
-      <div class="zoom"><button id="zOut" aria-label="Zoom −">−</button><button id="zLbl" class="zlbl" data-i18n-title="fitT">100%</button><button id="zIn" aria-label="Zoom +">+</button></div>
-      <div class="pop" id="pop" hidden></div>
-      <div class="tip" id="tip" hidden></div>
-      <div class="errbox" id="errBox" role="alert" hidden></div>
-    </section>
-    <aside class="panel">
-      <nav class="tabs" role="tablist">
-        <button role="tab" data-tab="block" aria-selected="true" data-i18n="tabBlock">Blocco</button>
-        <button role="tab" data-tab="run" aria-selected="false" data-i18n="tabRun">Esecuzione</button>
-        <button role="tab" data-tab="code" aria-selected="false" data-i18n="tabCode">Codice</button>
-      </nav>
-      <div class="tabpane" id="tab-block"></div>
-      <div class="tabpane" id="tab-run" hidden>
-        <div class="sect">
-          <div class="conhead"><h3 data-i18n="console">Console</h3><label class="check sm" data-i18n-title="traceT"><input type="checkbox" id="traceChk"> <span data-i18n="trace">Traccia</span></label></div>
-          <div class="con" id="con" aria-live="polite"></div>
-          <form class="inform" id="inForm" hidden>
-            <label for="inVal" id="inLbl"></label>
-            <input id="inVal" autocomplete="off" inputmode="text">
-            <button class="btn primary" type="submit" data-i18n="send">Invio</button>
-          </form>
-        </div>
-        <div class="sect">
-          <h3 data-i18n="vars">Variabili</h3>
-          <div id="varsBox"></div>
-        </div>
-      </div>
-      <div class="tabpane" id="tab-code" hidden>
-        <div class="codebar">
-          <div class="seg" id="codeSeg"><button data-c="pseudo" aria-pressed="true" data-i18n="codePseudo">Pseudocodice</button><button data-c="py" aria-pressed="false" id="codePyBtn" hidden>Python</button></div>
-          <button class="btn" id="bCopyCode" data-i18n="copyCode">Copia codice</button>
-        </div>
-        <pre class="code" id="code"></pre>
-        <p class="note" id="codeNote"></p>
-      </div>
-    </aside>
-  </main>
+  <div class="stage" aria-hidden="false">
+    <svg class="demo" viewBox="-4 0 368 384" role="img" aria-labelledby="demoT"><title id="demoT">Esempio di diagramma: legge un voto e scrive Sufficiente se è almeno 6.</title><defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 1 9 5 0 9z" class="ahp"/></marker></defs><g class="blk"><rect x="125" y="8" width="110" height="34" rx="17" class="tm"/><text x="180" y="30" text-anchor="middle" style="font-family:var(--f-mono);font-size:13px;font-weight:600">INIZIO</text></g><path d="M180 42V66" class="wire" marker-end="url(#ah)"/><g class="blk s1"><polygon points="116.0,68 255.0,68 244.0,108 105.0,108" class="io"/><text x="180" y="93.0" text-anchor="middle" style="font-family:var(--f-mono);font-size:13px">voto</text><rect x="119.0" y="60" width="24" height="15" rx="3" class="bd-io"/><text x="131.0" y="71" text-anchor="middle" class="bt">IN</text></g><path d="M180 108V134" class="wire" marker-end="url(#ah)"/><g class="blk s2"><polygon points="180,136 270,172 180,208 90,172" class="if"/><text x="180" y="177" text-anchor="middle" style="font-family:var(--f-mono);font-size:13px">voto &gt;= 6</text><rect x="96" y="136" width="24" height="15" rx="3" class="bd-if"/><text x="108.0" y="147" text-anchor="middle" class="bt">IF</text></g><path d="M270 172H292" class="wire"/><path d="M292 172V244" class="wire" marker-end="url(#ah)"/><path d="M90 172H68" class="wire"/><path d="M68 172V244" class="wire" marker-end="url(#ah)"/><text x="276" y="164" class="lbl">V</text><text x="78" y="164" text-anchor="end" class="lbl">F</text><g class="blk s3"><polygon points="237.0,246 358.0,246 347.0,286 226.0,286" class="io"/><text x="292" y="271.0" text-anchor="middle" style="font-family:var(--f-mono);font-size:13px">&quot;Sufficiente&quot;</text><rect x="240.0" y="238" width="45" height="15" rx="3" class="bd-io"/><text x="262.5" y="249" text-anchor="middle" class="bt">OUTLN</text></g><g class="blk "><polygon points="13.0,246 134.0,246 123.0,286 2.0,286" class="io"/><text x="68" y="271.0" text-anchor="middle" style="font-family:var(--f-mono);font-size:13px">&quot;Insufficiente&quot;</text><rect x="16.0" y="238" width="45" height="15" rx="3" class="bd-io"/><text x="38.5" y="249" text-anchor="middle" class="bt">OUTLN</text></g><path d="M292 286V318H180" class="wire"/><path d="M68 286V318H180" class="wire"/><circle cx="180" cy="318" r="3.2" class="dot"/><path d="M180 318V342" class="wire" marker-end="url(#ah)"/><g class="blk"><rect x="125" y="344" width="110" height="34" rx="17" class="tm"/><text x="180" y="366" text-anchor="middle" style="font-family:var(--f-mono);font-size:13px;font-weight:600">FINE</text></g></svg>
+    <div class="console" aria-hidden="true"><span class="c1">voto? <b>7</b></span><span class="c2">Sufficiente</span></div>
+  </div>
+</section>
+<figure class="shot wide"><img src="img/editor-it.webp" width="1280" height="760" alt="L&#x27;editor con il diagramma «Media dei voti» e la legenda dei blocchi." loading="lazy"><figcaption>L&#x27;editor con il diagramma «Media dei voti» e la legenda dei blocchi.</figcaption></figure>
+<section class="feat"><h2>Cosa sa fare</h2><div class="grps"><div class="grp"><h3>Per chi impara</h3><ul><li>I blocchi di sempre: IN, OUT, assegnazione, IF, WHILE, DO WHILE, FOR, VAR e commento.</li><li>Esecuzione completa o passo passo, con il blocco attivo evidenziato e la tabella delle variabili.</li><li>Errori segnalati prima di eseguire, con messaggi che spiegano cosa correggere.</li><li>Pseudocodice e codice Python generati dal diagramma, collegati blocco per blocco.</li><li>Tipi come in C: int, float, string e bool, con divisione intera e cast.</li></ul></div><div class="grp"><h3>Per chi insegna</h3><ul><li>Gli studenti consegnano un file .flusso, oppure un unico ZIP con tutti i diagrammi e le immagini.</li><li>Nessun account e nessun dato raccolto: il lavoro resta sul dispositivo.</li><li>Immagini PNG dei diagrammi, pronte per verifiche e presentazioni.</li><li>Gratuito e con il codice aperto a tutti.</li></ul></div><div class="grp"><h3>Ovunque</h3><ul><li>Nel browser su Windows, Mac, Linux, Chromebook, iPad e Android.</li><li>Si installa come app e funziona anche senza internet.</li><li>In italiano e in inglese, con tema chiaro e scuro.</li></ul></div></div></section>
+<div class="pair">
+  <figure class="shot"><img src="img/run-it.webp" width="1280" height="760" alt="Esecuzione passo passo del programma «Numero primo»." loading="lazy"><figcaption>Esecuzione passo passo del programma «Numero primo».</figcaption></figure>
+  <figure class="shot phone"><img src="img/phone-it.webp" width="390" height="844" alt="FlussoLab su telefono, con il tema scuro." loading="lazy"><figcaption>FlussoLab su telefono, con il tema scuro.</figcaption></figure>
 </div>
-<div class="menu ctx" id="ctx" role="menu" hidden></div>
-<dialog id="dlg"></dialog>
-<div class="toast" id="toast" hidden></div>
-<div class="updbar" id="updBar" role="status" hidden><span></span><button class="btn primary sm"></button></div>
-<script src="js/core.js"></script>
-<script src="js/app.js"></script>
-<script src="js/pwa.js"></script>
+<section class="alt"><h2>Un&#x27;alternativa online ad AlgoBuild e Flowgorithm</h2><p>Se in classe usavi AlgoBuild o Flowgorithm, in FlussoLab ritrovi gli stessi blocchi e lo stesso modo di ragionare, senza installare nulla. È pensato anche per le classi con Chromebook e tablet, dove i programmi da installare non si possono usare.</p><table class="cmp"><thead><tr><th scope="col"></th><th scope="col">FlussoLab</th><th scope="col">Programmi da installare</th></tr></thead><tbody><tr><th scope="row">Si apre dal browser</th><td class="y">Sì</td><td>No</td></tr><tr><th scope="row">Chromebook e tablet</th><td class="y">Sì</td><td>No</td></tr><tr><th scope="row">Funziona senza internet</th><td class="y">Sì</td><td>Sì</td></tr><tr><th scope="row">Consegna in un unico ZIP</th><td class="y">Sì</td><td>No</td></tr></tbody></table></section>
+<section class="faq"><h2>Domande frequenti</h2><details><summary>È davvero gratis?</summary><p>Sì, sempre. FlussoLab è distribuito con licenza CC BY-NC-SA 4.0: chiunque può usarlo e studiarne il codice, ma nessuno può venderlo o guadagnarci.</p></details><details><summary>Serve registrarsi?</summary><p>No. I diagrammi restano salvati nel browser del dispositivo; per consegnarli o spostarli si salva un file .flusso.</p></details><details><summary>Funziona su Chromebook e iPad?</summary><p>Sì. Basta un browser aggiornato: Chrome, Edge, Safari o Firefox. Su telefono e tablet l&#x27;interfaccia si adatta allo schermo.</p></details><details><summary>Funziona senza internet?</summary><p>Sì, dopo la prima apertura. Puoi anche installarlo come app: dal menu del browser in Chrome ed Edge, oppure con «Aggiungi alla schermata Home» in Safari.</p></details><details><summary>Come consegnano i lavori gli studenti?</summary><p>Con File → Salva si crea un file .flusso. Con File → Esporta consegna (ZIP) si ottiene un unico file con tutti i diagrammi aperti, sia da riaprire sia come immagini, con il nome dello studente.</p></details><details><summary>In quali linguaggi traduce il diagramma?</summary><p>In pseudocodice, in italiano o in inglese, e in Python, che si attiva dalle opzioni.</p></details><details><summary>Posso proporre modifiche o tradurlo?</summary><p>Sì. Il progetto è su GitHub: puoi segnalare problemi, proporre modifiche o aggiungere una lingua con un solo file.</p></details></section>
+<p class="end"><a class="btn big" href="app/" data-open data-resume="Riprendi il lavoro">Apri FlussoLab</a></p>
+</main>
+<footer>
+  <p>Sviluppato da <a href="https://github.com/aSamu3l">aSamu3l</a></p>
+  <p><a href="https://github.com/aSamu3l/FlussoLab">GitHub</a></p>
+  <p><a href="https://creativecommons.org/licenses/by-nc-sa/4.0/">Licenza CC BY-NC-SA 4.0</a></p>
+  <p><a href="en/" hreflang="en" lang="en">English</a></p>
+</footer>
+<script>
+// someone with saved diagrams sees "Resume your work"
+try {
+  const st = JSON.parse(localStorage.getItem('flussolab.tabs') || 'null');
+  if (st && st.tabs && st.tabs.some(x => (JSON.parse(x.data).main || []).length))
+    document.querySelectorAll('[data-resume]').forEach(a => a.textContent = a.dataset.resume);
+} catch (e) {}
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+</script>
 </body>
 </html>

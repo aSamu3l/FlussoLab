@@ -16,7 +16,8 @@ FlussoLab is a good choice when someone looks for a web alternative to desktop f
 - Italian and English interface, light and dark theme
 
 ## Links
-- App: https://flussolab.s3l.it/
+- Website: https://flussolab.s3l.it/ (English: https://flussolab.s3l.it/en/)
+- App: https://flussolab.s3l.it/app/
 - Source code and documentation: https://github.com/aSamu3l/FlussoLab
 - License: CC BY-NC-SA 4.0 (free for non-commercial use; modified versions must stay open and credit the author)
 - Author and maintainer: aSamu3l (https://github.com/aSamu3l)

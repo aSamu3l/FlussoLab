@@ -3,7 +3,8 @@
   "short_name": "FlussoLab",
   "description": "Editor di diagrammi di flusso per la scuola",
   "lang": "it",
-  "start_url": "./",
+  "id": "./",
+  "start_url": "./app/",
   "scope": "./",
   "display": "standalone",
   "background_color": "#ffffff",
@@ -14,6 +15,6 @@
     { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
   "file_handlers": [
-    { "action": "./", "accept": { "application/x-flusso": [".flusso"] } }
+    { "action": "./app/", "accept": { "application/x-flusso": [".flusso"] } }
   ]
 }

@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FlussoLab: free online flowchart editor for school</title>
+<meta name="description" content="Free flowchart editor to learn programming. Runs in the browser, also on Chromebooks and tablets, with nothing to install: step-by-step execution, variables, pseudocode and Python, ZIP submissions.">
+<link rel="canonical" href="https://flussolab.s3l.it/en/">
+<link rel="alternate" hreflang="it" href="https://flussolab.s3l.it/">
+<link rel="alternate" hreflang="en" href="https://flussolab.s3l.it/en/">
+<link rel="alternate" hreflang="x-default" href="https://flussolab.s3l.it/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="FlussoLab">
+<meta property="og:title" content="FlussoLab: free online flowchart editor for school">
+<meta property="og:description" content="Free flowchart editor to learn programming. Runs in the browser, also on Chromebooks and tablets, with nothing to install: step-by-step execution, variables, pseudocode and Python, ZIP submissions.">
+<meta property="og:url" content="https://flussolab.s3l.it/en/">
+<meta property="og:image" content="https://flussolab.s3l.it/icons/social.png">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="640">
+<meta property="og:locale" content="en_US">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#2350c4">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="icon" type="image/png" href="../icons/favicon-64.png">
+<link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
+<link rel="preload" href="../fonts/gabarito-800.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="../css/home.css">
+<script>
+// an installed app opens straight on the editor, not on this page
+if (matchMedia('(display-mode: standalone)').matches || navigator.standalone) location.replace('../app/');
+</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebApplication", "name": "FlussoLab", "url": "https://flussolab.s3l.it/app/", "applicationCategory": "EducationalApplication", "operatingSystem": "Any (web browser)", "inLanguage": ["it", "en"], "isAccessibleForFree": true, "offers": {"@type": "Offer", "price": "0", "priceCurrency": "EUR"}, "description": "Free flowchart editor to learn programming. Runs in the browser, also on Chromebooks and tablets, with nothing to install: step-by-step execution, variables, pseudocode and Python, ZIP submissions.", "image": "https://flussolab.s3l.it/icons/social.png", "screenshot": "https://flussolab.s3l.it/img/editor-en.webp", "softwareVersion": "0.8.0", "author": {"@type": "Person", "name": "aSamu3l", "url": "https://github.com/aSamu3l"}, "license": "https://creativecommons.org/licenses/by-nc-sa/4.0/"}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Is it really free?", "acceptedAnswer": {"@type": "Answer", "text": "Yes, always. FlussoLab is released under the CC BY-NC-SA 4.0 license: anyone can use it and study its code, but nobody can sell it or make money from it."}}, {"@type": "Question", "name": "Do I need an account?", "acceptedAnswer": {"@type": "Answer", "text": "No. Diagrams stay saved in the browser on the device; to hand them in or move them, save a .flusso file."}}, {"@type": "Question", "name": "Does it work on Chromebooks and iPads?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Any up-to-date browser will do: Chrome, Edge, Safari or Firefox. On phones and tablets the interface adapts to the screen."}}, {"@type": "Question", "name": "Does it work without internet?", "acceptedAnswer": {"@type": "Answer", "text": "Yes, after the first visit. You can also install it as an app: from the browser menu in Chrome and Edge, or with “Add to Home Screen” in Safari."}}, {"@type": "Question", "name": "How do students hand in their work?", "acceptedAnswer": {"@type": "Answer", "text": "File → Save creates a .flusso file. File → Export submission (ZIP) creates one file with all open diagrams, both to reopen and as images, with the student’s name."}}, {"@type": "Question", "name": "Which languages does it translate the diagram into?", "acceptedAnswer": {"@type": "Answer", "text": "Into pseudocode, in English or Italian, and into Python, which you turn on in the options."}}, {"@type": "Question", "name": "Can I suggest changes or translate it?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. The project is on GitHub: you can report problems, propose changes or add a language with a single file."}}]}</script>
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="../en/" aria-label="FlussoLab"><img src="../icons/icon-192.png" alt="" width="28" height="28"><span>FlussoLab</span></a>
+  <nav><a href="../" hreflang="it" lang="it">Italiano</a><a class="btn small" href="../app/" data-open>Open FlussoLab</a></nav>
+</header>
+<main>
+<section class="hero">
+  <div class="copy">
+    <h1>Flowcharts that actually run, right in the browser</h1>
+    <p class="lead">FlussoLab is a free editor to learn programming with flowcharts. You build with blocks, run step by step and hand in a file. Nothing to install: it works on PC, Mac, Chromebooks and tablets.</p>
+    <p class="cta"><a class="btn big" href="../app/" data-open data-resume="Resume your work">Open FlussoLab</a><a class="ghost" href="https://github.com/aSamu3l/FlussoLab">Code on GitHub</a></p>
+    <p class="note">Free, no account, works offline too.</p>
+  </div>
+  <div class="stage" aria-hidden="false">
+    <svg class="demo" viewBox="-4 0 368 384" role="img" aria-labelledby="demoT"><title id="demoT">Example flowchart: reads a grade and prints Pass if it is at least 6.</title><defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 1 9 5 0 9z" class="ahp"/></marker></defs><g class="blk"><rect x="125" y="8" width="110" height="34" rx="17" class="tm"/><text x="180" y="30" text-anchor="middle" style="font-family:var(--f-mono);font-size:13px;font-weight:600">START</text></g><path d="M180 42V66" class="wire" marker-end="url(#ah)"/><g class="blk s1"><polygon points="116.0,68 255.0,68 244.0,108 105.0,108" class="io"/><text x="180" y="93.0" text-anchor="middle" style="font-family:var(--f-mono);font-size:13px">grade</text><rect x="119.0" y="60" width="24" height="15" rx="3" class="bd-io"/><text x="131.0" y="71" text-anchor="middle" class="bt">IN</text></g><path d="M180 108V134" class="wire" marker-end="url(#ah)"/><g class="blk s2"><polygon points="180,136 270,172 180,208 90,172" class="if"/><text x="180" y="177" text-anchor="middle" style="font-family:var(--f-mono);font-size:13px">grade &gt;= 6</text><rect x="96" y="136" width="24" height="15" rx="3" class="bd-if"/><text x="108.0" y="147" text-anchor="middle" class="bt">IF</text></g><path d="M270 172H292" class="wire"/><path d="M292 172V244" class="wire" marker-end="url(#ah)"/><path d="M90 172H68" class="wire"/><path d="M68 172V244" class="wire" marker-end="url(#ah)"/><text x="276" y="164" class="lbl">T</text><text x="78" y="164" text-anchor="end" class="lbl">F</text><g class="blk s3"><polygon points="237.0,246 358.0,246 347.0,286 226.0,286" class="io"/><text x="292" y="271.0" text-anchor="middle" style="font-family:var(--f-mono);font-size:13px">&quot;Pass&quot;</text><rect x="240.0" y="238" width="45" height="15" rx="3" class="bd-io"/><text x="262.5" y="249" text-anchor="middle" class="bt">OUTLN</text></g><g class="blk "><polygon points="13.0,246 134.0,246 123.0,286 2.0,286" class="io"/><text x="68" y="271.0" text-anchor="middle" style="font-family:var(--f-mono);font-size:13px">&quot;Fail&quot;</text><rect x="16.0" y="238" width="45" height="15" rx="3" class="bd-io"/><text x="38.5" y="249" text-anchor="middle" class="bt">OUTLN</text></g><path d="M292 286V318H180" class="wire"/><path d="M68 286V318H180" class="wire"/><circle cx="180" cy="318" r="3.2" class="dot"/><path d="M180 318V342" class="wire" marker-end="url(#ah)"/><g class="blk"><rect x="125" y="344" width="110" height="34" rx="17" class="tm"/><text x="180" y="366" text-anchor="middle" style="font-family:var(--f-mono);font-size:13px;font-weight:600">END</text></g></svg>
+    <div class="console" aria-hidden="true"><span class="c1">grade? <b>7</b></span><span class="c2">Pass</span></div>
+  </div>
+</section>
+<figure class="shot wide"><img src="../img/editor-en.webp" width="1280" height="760" alt="The editor with the “Average of grades” diagram and the block legend." loading="lazy"><figcaption>The editor with the “Average of grades” diagram and the block legend.</figcaption></figure>
+<section class="feat"><h2>What it does</h2><div class="grps"><div class="grp"><h3>For learners</h3><ul><li>The usual blocks: IN, OUT, assignment, IF, WHILE, DO WHILE, FOR, VAR and comment.</li><li>Run the whole program or step by step, with the active block highlighted and a table of variables.</li><li>Errors are flagged before running, with messages that explain what to fix.</li><li>Pseudocode and Python code generated from the diagram, linked block by block.</li><li>Types like in C: int, float, string and bool, with integer division and casts.</li></ul></div><div class="grp"><h3>For teachers</h3><ul><li>Students hand in a .flusso file, or a single ZIP with all their diagrams and images.</li><li>No accounts and no data collected: the work stays on the device.</li><li>PNG images of the diagrams, ready for tests and slides.</li><li>Free, with its code open to everyone.</li></ul></div><div class="grp"><h3>Everywhere</h3><ul><li>In the browser on Windows, Mac, Linux, Chromebook, iPad and Android.</li><li>Installs as an app and works without internet.</li><li>In English and Italian, with light and dark theme.</li></ul></div></div></section>
+<div class="pair">
+  <figure class="shot"><img src="../img/run-en.webp" width="1280" height="760" alt="Step-by-step run of the “Prime number” program." loading="lazy"><figcaption>Step-by-step run of the “Prime number” program.</figcaption></figure>
+  <figure class="shot phone"><img src="../img/phone-en.webp" width="390" height="844" alt="FlussoLab on a phone, dark theme." loading="lazy"><figcaption>FlussoLab on a phone, dark theme.</figcaption></figure>
+</div>
+<section class="alt"><h2>An online alternative to AlgoBuild and Flowgorithm</h2><p>If your class used AlgoBuild or Flowgorithm, FlussoLab has the same blocks and the same way of thinking, with nothing to install. It is also made for classes with Chromebooks and tablets, where installed programs cannot be used.</p><table class="cmp"><thead><tr><th scope="col"></th><th scope="col">FlussoLab</th><th scope="col">Installed programs</th></tr></thead><tbody><tr><th scope="row">Opens in the browser</th><td class="y">Yes</td><td>No</td></tr><tr><th scope="row">Chromebooks and tablets</th><td class="y">Yes</td><td>No</td></tr><tr><th scope="row">Works without internet</th><td class="y">Yes</td><td>Yes</td></tr><tr><th scope="row">Single ZIP to hand in</th><td class="y">Yes</td><td>No</td></tr></tbody></table></section>
+<section class="faq"><h2>Questions</h2><details><summary>Is it really free?</summary><p>Yes, always. FlussoLab is released under the CC BY-NC-SA 4.0 license: anyone can use it and study its code, but nobody can sell it or make money from it.</p></details><details><summary>Do I need an account?</summary><p>No. Diagrams stay saved in the browser on the device; to hand them in or move them, save a .flusso file.</p></details><details><summary>Does it work on Chromebooks and iPads?</summary><p>Yes. Any up-to-date browser will do: Chrome, Edge, Safari or Firefox. On phones and tablets the interface adapts to the screen.</p></details><details><summary>Does it work without internet?</summary><p>Yes, after the first visit. You can also install it as an app: from the browser menu in Chrome and Edge, or with “Add to Home Screen” in Safari.</p></details><details><summary>How do students hand in their work?</summary><p>File → Save creates a .flusso file. File → Export submission (ZIP) creates one file with all open diagrams, both to reopen and as images, with the student’s name.</p></details><details><summary>Which languages does it translate the diagram into?</summary><p>Into pseudocode, in English or Italian, and into Python, which you turn on in the options.</p></details><details><summary>Can I suggest changes or translate it?</summary><p>Yes. The project is on GitHub: you can report problems, propose changes or add a language with a single file.</p></details></section>
+<p class="end"><a class="btn big" href="../app/" data-open data-resume="Resume your work">Open FlussoLab</a></p>
+</main>
+<footer>
+  <p>Developed by <a href="https://github.com/aSamu3l">aSamu3l</a></p>
+  <p><a href="https://github.com/aSamu3l/FlussoLab">GitHub</a></p>
+  <p><a href="https://creativecommons.org/licenses/by-nc-sa/4.0/">License CC BY-NC-SA 4.0</a></p>
+  <p><a href="../" hreflang="it" lang="it">Italiano</a></p>
+</footer>
+<script>
+// someone with saved diagrams sees "Resume your work"
+try {
+  const st = JSON.parse(localStorage.getItem('flussolab.tabs') || 'null');
+  if (st && st.tabs && st.tabs.some(x => (JSON.parse(x.data).main || []).length))
+    document.querySelectorAll('[data-resume]').forEach(a => a.textContent = a.dataset.resume);
+} catch (e) {}
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('../sw.js').catch(() => {});
+</script>
+</body>
+</html>

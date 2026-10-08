@@ -1,0 +1,140 @@
+/* FlussoLab welcome page. Same palette and fonts as the app: a squared exercise book with coloured blocks. */
+@font-face{font-family:"Atkinson Hyperlegible";font-weight:400;font-display:swap;src:url(../fonts/atkinson-400.woff2) format("woff2")}
+@font-face{font-family:"Atkinson Hyperlegible";font-weight:700;font-display:swap;src:url(../fonts/atkinson-700.woff2) format("woff2")}
+@font-face{font-family:"Gabarito";font-weight:600;font-display:swap;src:url(../fonts/gabarito-600.woff2) format("woff2")}
+@font-face{font-family:"Gabarito";font-weight:800;font-display:swap;src:url(../fonts/gabarito-800.woff2) format("woff2")}
+@font-face{font-family:"JetBrains Mono";font-weight:400;font-display:swap;src:url(../fonts/jetbrains-mono-400.woff2) format("woff2")}
+@font-face{font-family:"JetBrains Mono";font-weight:600;font-display:swap;src:url(../fonts/jetbrains-mono-600.woff2) format("woff2")}
+:root{
+  --paper:#fafcff; --grid:#e3eaf4; --surface:#ffffff; --rule:#d6dde8;
+  --ink:#172230; --muted:#56657a; --pen:#2350c4; --pen-dark:#1a3f9e; --on-pen:#fff;
+  --wire:#3a4657; --hl:#f2b705;
+  --io-f:#e0f3e7; --io-s:#2b8150; --if-f:#fdf0d3; --if-s:#a5720e; --tm-f:#eceef2; --tm-s:#4a5362;
+  --shadow:0 1px 2px rgb(20 30 50 / .06), 0 12px 32px rgb(20 30 50 / .10);
+  --f-display:"Gabarito", ui-sans-serif, system-ui, sans-serif;
+  --f-body:"Atkinson Hyperlegible", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono:"JetBrains Mono", ui-monospace, Consolas, monospace;
+  color-scheme:light dark;
+}
+@media (prefers-color-scheme: dark){:root{
+  --paper:#0f141b; --grid:#18202b; --surface:#151b24; --rule:#2a3443;
+  --ink:#e5eaf1; --muted:#9daabb; --pen:#7fa3ff; --pen-dark:#a9c1ff; --on-pen:#0c1322;
+  --wire:#a8b5c6; --hl:#ffcf3a;
+  --io-f:#163221; --io-s:#5fc98c; --if-f:#382b10; --if-s:#e8b34a; --tm-f:#232a35; --tm-s:#a7b1c0;
+  --shadow:0 1px 2px rgb(0 0 0 / .3), 0 12px 32px rgb(0 0 0 / .45);
+}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font:400 18px/1.6 var(--f-body)}
+a{color:var(--pen)}
+a:focus-visible,summary:focus-visible{outline:3px solid var(--pen);outline-offset:3px;border-radius:4px}
+img{max-width:100%;height:auto;display:block}
+main,.top,footer{max-width:1120px;margin:0 auto;padding:0 20px}
+
+.top{display:flex;align-items:center;justify-content:space-between;gap:16px;height:68px}
+.brand{display:flex;align-items:center;gap:10px;color:var(--ink);text-decoration:none;font:800 21px/1 var(--f-display)}
+.top nav{display:flex;align-items:center;gap:18px;font-size:16px}
+.top nav a:not(.btn){color:var(--muted);text-decoration:none}
+.top nav a:not(.btn):hover{color:var(--ink)}
+
+.btn{display:inline-block;background:var(--pen);color:var(--on-pen);text-decoration:none;font:700 17px/1 var(--f-body);
+  padding:15px 26px;border-radius:10px;box-shadow:0 1px 0 rgb(0 0 0 / .08), inset 0 -2px 0 rgb(0 0 0 / .14)}
+.btn:hover{background:var(--pen-dark)}
+.btn.small{padding:10px 16px;font-size:15px;border-radius:8px;white-space:nowrap}
+.btn.big{font-size:19px;padding:18px 32px}
+.ghost{color:var(--ink);font-weight:700;text-decoration-thickness:1px;text-underline-offset:4px}
+
+/* hero: the page opens on the exercise book itself */
+.hero{display:grid;grid-template-columns:1.05fr .95fr;gap:40px;align-items:center;margin:8px -20px 0;padding:48px 20px 56px;
+  border-radius:18px;border:1px solid var(--rule);
+  background-color:var(--paper);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:22px 22px;background-position:-1px -1px}
+h1{font:800 clamp(2.3rem,4.6vw,3.7rem)/1.04 var(--f-display);letter-spacing:-.015em;margin:0 0 22px;max-width:15ch;text-wrap:balance}
+.lead{font-size:clamp(1.05rem,1.6vw,1.2rem);max-width:36em;margin:0 0 30px;color:var(--ink)}
+.cta{display:flex;flex-wrap:wrap;align-items:center;gap:14px 26px;margin:0 0 14px}
+.note{margin:0;color:var(--muted);font-size:16px}
+
+.stage{position:relative;justify-self:center;width:100%;max-width:420px}
+.demo{width:100%;height:auto;overflow:visible}
+.demo text{fill:var(--ink);font-variant-ligatures:none}
+.demo .tm{fill:var(--tm-f);stroke:var(--tm-s);stroke-width:1.6}
+.demo .io{fill:var(--io-f);stroke:var(--io-s);stroke-width:1.6}
+.demo .if{fill:var(--if-f);stroke:var(--if-s);stroke-width:1.6}
+.demo .bd-io{fill:var(--io-s)} .demo .bd-if{fill:var(--if-s)}
+.demo .bt{fill:#fff;font:700 10px/1 var(--f-mono);letter-spacing:.03em}
+@media (prefers-color-scheme: dark){.demo .bt{fill:#0f141b}}
+.demo .wire{fill:none;stroke:var(--wire);stroke-width:1.6}
+.demo .ahp,.demo .dot{fill:var(--wire)}
+.demo .lbl{font:600 12px var(--f-mono);fill:var(--muted)}
+/* one run of the program when the page opens: IN, then IF, then the chosen OUTLN */
+.demo .s1 polygon,.demo .s2 polygon,.demo .s3 polygon{animation:run 2.4s ease both}
+.demo .s1 polygon{animation-delay:.5s}
+.demo .s2 polygon{animation-delay:1.3s}
+.demo .s3 polygon{animation:stay .4s ease 2.1s both}
+@keyframes run{0%{stroke-width:1.6}8%,30%{stroke:var(--hl);stroke-width:4.5}40%,100%{stroke-width:1.6}}
+@keyframes stay{to{stroke:var(--hl);stroke-width:4.5}}
+.console{position:absolute;left:-8px;bottom:4px;display:grid;gap:2px;padding:10px 14px;border-radius:10px;
+  background:var(--surface);border:1px solid var(--rule);box-shadow:var(--shadow);font:400 14px/1.5 var(--f-mono)}
+.console b{color:var(--pen);font-weight:600}
+.console .c1{animation:show .3s ease .7s both}
+.console .c2{animation:show .3s ease 2.3s both}
+@keyframes show{from{opacity:0;transform:translateY(4px)}}
+@media (prefers-reduced-motion: reduce){
+  .demo .s1 polygon,.demo .s2 polygon,.console span{animation:none}
+  .demo .s3 polygon{animation:none;stroke:var(--hl);stroke-width:4.5}
+}
+
+/* screenshots */
+.shot{margin:64px 0 0}
+.shot img{border-radius:12px;border:1px solid var(--rule);box-shadow:var(--shadow);background:var(--surface)}
+.shot figcaption{margin-top:12px;color:var(--muted);font-size:15px}
+.pair{display:grid;grid-template-columns:1fr 250px;gap:40px;align-items:end;margin-top:8px}
+.pair .shot{margin-top:56px}
+.phone img{border-radius:22px}
+
+h2{font:800 clamp(1.7rem,3vw,2.3rem)/1.15 var(--f-display);letter-spacing:-.01em;margin:0 0 22px;text-wrap:balance}
+section.feat,section.alt,section.faq{margin-top:88px}
+.grps{display:grid;grid-template-columns:repeat(3,1fr);gap:36px}
+.grp h3{font:600 21px/1.3 var(--f-display);margin:0 0 12px;padding-bottom:10px;border-bottom:2px solid var(--ink)}
+.grp ul{list-style:none;margin:0;padding:0}
+.grp li{position:relative;padding:9px 0 9px 22px;border-bottom:1px solid var(--rule);font-size:17px;line-height:1.5}
+.grp li::before{content:"";position:absolute;left:2px;top:17px;width:8px;height:8px;border-radius:50%;border:2px solid var(--pen)}
+
+.alt p{max-width:40em}
+.cmp{border-collapse:collapse;margin-top:26px;width:100%;max-width:640px;font-size:17px}
+.cmp th,.cmp td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--rule)}
+.cmp thead th{font-weight:700;border-bottom:2px solid var(--ink)}
+.cmp tbody th{font-weight:400}
+.cmp td.y{font-weight:700;color:var(--io-s)}
+
+.faq{max-width:780px}
+details{border-bottom:1px solid var(--rule)}
+details:first-of-type{border-top:1px solid var(--rule)}
+summary{cursor:pointer;list-style:none;padding:16px 36px 16px 0;font-weight:700;position:relative}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";position:absolute;right:6px;top:12px;font:400 26px/1 var(--f-display);color:var(--pen)}
+details[open] summary::after{content:"−"}
+details p{margin:0 0 18px;max-width:40em;color:var(--ink)}
+
+.end{text-align:center;margin:88px 0 0}
+footer{display:flex;flex-wrap:wrap;gap:6px 28px;margin-top:88px;padding-top:24px;padding-bottom:40px;border-top:1px solid var(--rule);color:var(--muted);font-size:15px}
+footer p{margin:0}
+footer a{color:var(--muted)}
+
+@media (max-width: 860px){
+  .hero{grid-template-columns:1fr;padding:32px 20px 40px;gap:28px;margin:4px 0 0;border-radius:14px}
+  h1{max-width:none}
+  .stage{max-width:360px}
+  .console{position:static;margin:10px 0 0;width:max-content}
+  .grps{grid-template-columns:1fr;gap:28px}
+  .pair{grid-template-columns:1fr;gap:0}
+  .phone{max-width:260px}
+}
+@media (max-width: 480px){
+  body{font-size:17px}
+  .btn.big{width:100%;text-align:center}
+  .top nav{gap:12px;font-size:15px}
+  .brand{font-size:19px}
+  .btn.small{padding:9px 12px;font-size:14px}
+}

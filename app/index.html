@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<base href="../">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FlussoLab · editor di diagrammi di flusso</title>
+<meta name="description" content="FlussoLab: editor gratuito di diagrammi di flusso (flowchart) per la scuola. Funziona nel browser, anche su Chromebook e tablet, senza installare nulla: esecuzione passo passo, variabili, pseudocodice, consegna in ZIP.">
+<link rel="canonical" href="https://flussolab.s3l.it/app/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="FlussoLab">
+<meta property="og:title" content="FlussoLab · diagrammi di flusso nel browser">
+<meta property="og:description" content="Editor gratuito di diagrammi di flusso per la scuola: nessuna installazione, funziona anche offline e su Chromebook.">
+<meta property="og:url" content="https://flussolab.s3l.it/app/">
+<meta property="og:image" content="https://flussolab.s3l.it/icons/social.png">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="640">
+<meta property="og:locale" content="it_IT">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"FlussoLab","url":"https://flussolab.s3l.it/","applicationCategory":"EducationalApplication","operatingSystem":"Any (web browser)","inLanguage":["it","en"],"isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"EUR"},"description":"Editor gratuito di diagrammi di flusso per la scuola, nel browser: blocchi IN, OUT, IF, WHILE, FOR, esecuzione passo passo, tipi int/float/string/bool, pseudocodice, esportazione PNG e consegna in ZIP.","author":{"@type":"Person","name":"aSamu3l","url":"https://github.com/aSamu3l"},"license":"https://creativecommons.org/licenses/by-nc-sa/4.0/"}</script>
+<meta name="theme-color" content="#2350c4">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icons/favicon-64.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="FlussoLab">
+
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<noscript><h1>FlussoLab</h1><p>Editor gratuito di diagrammi di flusso per la scuola, che funziona nel browser. Per usarlo serve JavaScript attivo.</p></noscript>
+<div class="app">
+  <header class="bar">
+    <div class="brand" aria-label="FlussoLab">
+      <svg width="22" height="22" viewBox="0 0 26 26" aria-hidden="true"><rect x="7" y="1.5" width="12" height="6" rx="3" style="fill:var(--tm-f);stroke:var(--tm-s)" stroke-width="1.5"/><path d="M13 7.5v3" style="stroke:var(--wire)" stroke-width="1.5"/><path d="M13 10.5l6 4.5-6 4.5-6-4.5z" style="fill:var(--if-f);stroke:var(--if-s)" stroke-width="1.5"/><path d="M13 19.5v3.5" style="stroke:var(--wire)" stroke-width="1.5"/></svg>
+      <span>FlussoLab</span>
+    </div>
+    <nav class="menubar" role="menubar">
+      <div class="mwrap"><button class="mbtn" data-menu="file" aria-haspopup="true" aria-expanded="false" data-i18n="mFile">File</button><div class="menu" id="m-file" role="menu" hidden></div></div>
+      <div class="mwrap"><button class="mbtn" data-menu="edit" aria-haspopup="true" aria-expanded="false" data-i18n="mEdit">Modifica</button><div class="menu" id="m-edit" role="menu" hidden></div></div>
+      <div class="mwrap"><button class="mbtn" data-menu="view" aria-haspopup="true" aria-expanded="false" data-i18n="mView">Visualizza</button><div class="menu" id="m-view" role="menu" hidden></div></div>
+      <div class="mwrap"><button class="mbtn" data-menu="help" aria-haspopup="true" aria-expanded="false" data-i18n="mHelp">Aiuto</button><div class="menu menu-r" id="m-help" role="menu" hidden></div></div>
+    </nav>
+    <span class="vsep" aria-hidden="true"></span>
+    <span class="netpill" id="netPill" data-i18n="offline" data-i18n-title="offlineT" hidden>Offline</span>
+    <input id="pname" class="pname" data-i18n-ph="untitled" data-i18n-title="progName" autocomplete="off" spellcheck="false">
+    <div class="spacer"></div>
+    <div class="runbar">
+      <button class="rb run" id="bRun" aria-pressed="false"><svg viewBox="0 0 16 16"><path d="M4 2.5v11l9-5.5z" fill="currentColor"/></svg><span data-i18n="run">Esegui</span></button>
+      <button class="rb" id="bStep"><svg viewBox="0 0 16 16"><path d="M3 2.5v11l7-5.5z" fill="currentColor"/><rect x="11" y="2.5" width="2.2" height="11" rx=".6" fill="currentColor"/></svg><span data-i18n="step">Passo</span></button>
+      <button class="rb stop" id="bStop" disabled><svg viewBox="0 0 16 16"><rect x="3" y="3" width="10" height="10" rx="1" fill="currentColor"/></svg><span data-i18n="stop">Stop</span></button>
+      <label class="speed" data-i18n-title="speed"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M2.5 11a5.5 5.5 0 0111 0" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M8 11l2.6-3.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><input type="range" id="speed" min="0" max="4" step="1" value="2"></label>
+    </div>
+  </header>
+
+  <div class="installbar" id="installBar" hidden>
+    <img src="icons/icon-192.png" alt="" width="22" height="22">
+    <span id="installMsg"></span>
+    <button class="btn primary sm" id="installYes"></button>
+    <button class="ibx" id="installNo" aria-label="Chiudi">×</button>
+  </div>
+  <main class="main">
+    <section class="stage">
+      <div class="tabbar" id="tabbar" role="tablist"></div>
+      <div class="canvas" id="canvas"><div id="svgHost"></div></div>
+      <div class="hintbar" id="hintbar" data-i18n="hint"></div>
+      <div class="zoom"><button id="zOut" aria-label="Zoom −">−</button><button id="zLbl" class="zlbl" data-i18n-title="fitT">100%</button><button id="zIn" aria-label="Zoom +">+</button></div>
+      <div class="pop" id="pop" hidden></div>
+      <div class="tip" id="tip" hidden></div>
+      <div class="errbox" id="errBox" role="alert" hidden></div>
+    </section>
+    <aside class="panel">
+      <nav class="tabs" role="tablist">
+        <button role="tab" data-tab="block" aria-selected="true" data-i18n="tabBlock">Blocco</button>
+        <button role="tab" data-tab="run" aria-selected="false" data-i18n="tabRun">Esecuzione</button>
+        <button role="tab" data-tab="code" aria-selected="false" data-i18n="tabCode">Codice</button>
+      </nav>
+      <div class="tabpane" id="tab-block"></div>
+      <div class="tabpane" id="tab-run" hidden>
+        <div class="sect">
+          <div class="conhead"><h3 data-i18n="console">Console</h3><label class="check sm" data-i18n-title="traceT"><input type="checkbox" id="traceChk"> <span data-i18n="trace">Traccia</span></label></div>
+          <div class="con" id="con" aria-live="polite"></div>
+          <form class="inform" id="inForm" hidden>
+            <label for="inVal" id="inLbl"></label>
+            <input id="inVal" autocomplete="off" inputmode="text">
+            <button class="btn primary" type="submit" data-i18n="send">Invio</button>
+          </form>
+        </div>
+        <div class="sect">
+          <h3 data-i18n="vars">Variabili</h3>
+          <div id="varsBox"></div>
+        </div>
+      </div>
+      <div class="tabpane" id="tab-code" hidden>
+        <div class="codebar">
+          <div class="seg" id="codeSeg"><button data-c="pseudo" aria-pressed="true" data-i18n="codePseudo">Pseudocodice</button><button data-c="py" aria-pressed="false" id="codePyBtn" hidden>Python</button></div>
+          <button class="btn" id="bCopyCode" data-i18n="copyCode">Copia codice</button>
+        </div>
+        <pre class="code" id="code"></pre>
+        <p class="note" id="codeNote"></p>
+      </div>
+    </aside>
+  </main>
+</div>
+<div class="menu ctx" id="ctx" role="menu" hidden></div>
+<dialog id="dlg"></dialog>
+<div class="toast" id="toast" hidden></div>
+<div class="updbar" id="updBar" role="status" hidden><span></span><button class="btn primary sm"></button></div>
+<script src="js/core.js"></script>
+<script src="js/app.js"></script>
+<script src="js/pwa.js"></script>
+</body>
+</html>

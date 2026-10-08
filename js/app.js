@@ -2,7 +2,7 @@
 'use strict';
 /* ====== Project settings: fill these in before publishing ====== */
 const CONFIG = {
-  version: '0.5.1',
+  version: '0.6.0',
   author: 'aSamu3l',
   github: 'https://github.com/aSamu3l',
   repo: 'https://github.com/aSamu3l/FlussoLab',
@@ -44,6 +44,10 @@ const I18N = {
     tooMany: n => `Puoi tenere aperti al massimo ${n} diagrammi: chiudine uno.`, newTab: 'Nuovo diagramma', closeTab: 'Chiudi',
     closeT: 'Chiudere il diagramma?', closeMsg: n => `«${n}» ha modifiche che non hai salvato in un file. Se lo chiudi, le perdi.`,
     closeAnyway: 'Chiudi senza salvare', unsaved: 'Modifiche non salvate in un file', fitT: 'Adatta allo schermo',
+    zipM: 'Esporta consegna (ZIP)…', zipTitle: 'Esporta la consegna', zipNote: 'Crea un unico file .zip con i diagrammi scelti, pronto da consegnare.',
+    zipWho: 'Nome e cognome', zipWhoPh: 'Mario Rossi', zipWhich: 'Diagrammi da includere', zipEmpty: 'vuoto',
+    zipFlusso: 'File .flusso', zipPng: 'Immagini PNG', zipGo: 'Scarica ZIP', zipWorking: 'Preparazione…',
+    zipNone: 'Scegli almeno un diagramma e un tipo di file', zipDone: n => `ZIP pronto: ${n} file`, zipFail: 'Non è stato possibile creare lo ZIP',
     installAsk: 'Vuoi installare FlussoLab come app? Funziona anche offline.', installBtn: 'Installa', installHowBtn: 'Come si fa',
     installM: 'Installa come app…', installT: 'Installa FlussoLab', installed: 'FlussoLab è installato',
     installHow: '<p>FlussoLab si installa come un\'app e poi funziona anche senza internet.</p><ul><li><b>Chrome o Edge (Windows, Chromebook, Android)</b>: menu del browser → «Installa FlussoLab» o «Aggiungi a schermata Home».</li><li><b>iPhone e iPad</b>: apri il sito con Safari, tocca Condividi → «Aggiungi alla schermata Home».</li></ul>',
@@ -126,6 +130,10 @@ const I18N = {
     tooMany: n => `You can keep at most ${n} diagrams open: close one.`, newTab: 'New diagram', closeTab: 'Close',
     closeT: 'Close the diagram?', closeMsg: n => `“${n}” has changes you have not saved to a file. If you close it, they are lost.`,
     closeAnyway: 'Close without saving', unsaved: 'Changes not saved to a file', fitT: 'Fit to screen',
+    zipM: 'Export submission (ZIP)…', zipTitle: 'Export submission', zipNote: 'Creates a single .zip file with the chosen diagrams, ready to hand in.',
+    zipWho: 'Full name', zipWhoPh: 'Jane Smith', zipWhich: 'Diagrams to include', zipEmpty: 'empty',
+    zipFlusso: '.flusso files', zipPng: 'PNG images', zipGo: 'Download ZIP', zipWorking: 'Preparing…',
+    zipNone: 'Choose at least one diagram and one file type', zipDone: n => `ZIP ready: ${n} files`, zipFail: 'The ZIP could not be created',
     installAsk: 'Install FlussoLab as an app? It also works offline.', installBtn: 'Install', installHowBtn: 'How to',
     installM: 'Install as app…', installT: 'Install FlussoLab', installed: 'FlussoLab is installed',
     installHow: '<p>FlussoLab installs like an app and then works without internet too.</p><ul><li><b>Chrome or Edge (Windows, Chromebook, Android)</b>: browser menu → “Install FlussoLab” or “Add to Home screen”.</li><li><b>iPhone and iPad</b>: open the site in Safari, tap Share → “Add to Home Screen”.</li></ul>',
@@ -1155,24 +1163,113 @@ function tryLoad(text) {
 
 function cmdNew() { if (isBlank() && !tabs[cur].dirty) return; addTab({ name: '', main: [] }, false); }
 
+// Renders a diagram (the current one or any other tab's) to a PNG blob.
+function diagramPng(doc, author) {
+  const saved = prog, savedSel = sel;
+  let W, H, inner;
+  try {
+    if (doc) { prog = { name: doc.name || '', main: JSON.parse(JSON.stringify(doc.main)) }; assignIds(prog.main); sel = null; }
+    ({ W, H, inner } = buildSVG(PRINT, false));
+  } finally { if (doc) { prog = saved; sel = savedSel; } }
+  const name = doc ? doc.name : prog.name;
+  const head = [name, author].filter(Boolean).join('  ·  ');
+  const top = head ? 30 : 0;
+  const W0 = W; W = Math.max(W, head ? head.length * 7.4 + 40 : 0); H += top;
+  const title = head ? `<text x="16" y="22" style="fill:#56657a;font-family:${SVGFONT};font-size:12px">${esc(head)}</text>` : '';
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><rect width="100%" height="100%" fill="#ffffff"/>${title}<g transform="translate(${(W - W0) / 2} ${top})">${inner}</g></svg>`;
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const sc = 2, c = document.createElement('canvas'); c.width = Math.ceil(W * sc); c.height = Math.ceil(H * sc);
+      const x = c.getContext('2d'); x.scale(sc, sc); x.drawImage(img, 0, 0);
+      c.toBlob(bl => bl ? resolve({ blob: bl, W }) : reject(new Error('png')), 'image/png');
+    };
+    img.onerror = reject;
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  });
+}
 function cmdPng() {
-  const { W, H, inner } = buildSVG(PRINT, false);
-  const title = prog.name ? `<text x="16" y="18" style="fill:#56657a;font-family:${SVGFONT};font-size:12px">${esc(prog.name)}</text>` : '';
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><rect width="100%" height="100%" fill="#ffffff"/>${title}${inner}</svg>`;
-  const img = new Image();
-  img.onload = () => {
-    const sc = 2, c = document.createElement('canvas'); c.width = Math.ceil(W * sc); c.height = Math.ceil(H * sc);
-    const x = c.getContext('2d'); x.scale(sc, sc); x.drawImage(img, 0, 0);
-    c.toBlob(bl => {
-      const url = URL.createObjectURL(bl), name = fileBase() + '.png';
-      openDlg(`<h2>${esc(t('pngTitle'))}</h2><div class="pngprev"><img src="${url}" width="${W}" alt="${esc(prog.name || t('untitled'))}"></div>
-        <p>${esc(t('pngNote'))}</p>
-        <div class="foot"><button class="btn" data-close>${esc(t('close'))}</button><button class="btn primary" id="pngDl">${esc(t('pngDl'))}</button></div>`);
-      $('#pngDl').onclick = () => triggerDownload(url, name, bl);
-    }, 'image/png');
+  diagramPng(null, '').then(({ blob: bl, W }) => {
+    const url = URL.createObjectURL(bl), name = fileBase() + '.png';
+    openDlg(`<h2>${esc(t('pngTitle'))}</h2><div class="pngprev"><img src="${url}" width="${W}" alt="${esc(prog.name || t('untitled'))}"></div>
+      <p>${esc(t('pngNote'))}</p>
+      <div class="foot"><button class="btn" data-close>${esc(t('close'))}</button><button class="btn primary" id="pngDl">${esc(t('pngDl'))}</button></div>`);
+    $('#pngDl').onclick = () => triggerDownload(url, name, bl);
+  });
+}
+
+/* ---------- ZIP (stored, no compression: PNGs are already compressed) ---------- */
+const CRC_T = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+function crc32(u8) { let c = 0xFFFFFFFF; for (let i = 0; i < u8.length; i++) c = CRC_T[(c ^ u8[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+function makeZip(files) { // files: [{ name, data: Uint8Array }]
+  const enc = new TextEncoder(), parts = [], central = [];
+  const d = new Date(), dosTime = (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1),
+    dosDate = ((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate();
+  let off = 0;
+  for (const f of files) {
+    const nm = enc.encode(f.name), crc = crc32(f.data), sz = f.data.length;
+    const lh = new DataView(new ArrayBuffer(30));
+    lh.setUint32(0, 0x04034b50, true); lh.setUint16(4, 20, true); lh.setUint16(6, 0x0800, true); lh.setUint16(8, 0, true);
+    lh.setUint16(10, dosTime, true); lh.setUint16(12, dosDate, true); lh.setUint32(14, crc, true);
+    lh.setUint32(18, sz, true); lh.setUint32(22, sz, true); lh.setUint16(26, nm.length, true); lh.setUint16(28, 0, true);
+    parts.push(new Uint8Array(lh.buffer), nm, f.data);
+    const ch = new DataView(new ArrayBuffer(46));
+    ch.setUint32(0, 0x02014b50, true); ch.setUint16(4, 20, true); ch.setUint16(6, 20, true); ch.setUint16(8, 0x0800, true);
+    ch.setUint16(10, 0, true); ch.setUint16(12, dosTime, true); ch.setUint16(14, dosDate, true); ch.setUint32(16, crc, true);
+    ch.setUint32(20, sz, true); ch.setUint32(24, sz, true); ch.setUint16(28, nm.length, true);
+    ch.setUint32(42, off, true);
+    central.push(new Uint8Array(ch.buffer), nm);
+    off += 30 + nm.length + sz;
+  }
+  const cdSize = central.reduce((n, p) => n + p.length, 0);
+  const end = new DataView(new ArrayBuffer(22));
+  end.setUint32(0, 0x06054b50, true); end.setUint16(8, files.length, true); end.setUint16(10, files.length, true);
+  end.setUint32(12, cdSize, true); end.setUint32(16, off, true);
+  return new Blob([...parts, ...central, new Uint8Array(end.buffer)], { type: 'application/zip' });
+}
+const safeName = s => String(s || '').trim().replace(/[\\/:*?"<>|]+/g, '').replace(/\s+/g, '_').slice(0, 60);
+
+function cmdExportZip() {
+  tabSnapshot();
+  const docs = tabs.map((T, i) => ({ i, doc: JSON.parse(T.data) }));
+  const student = store.get('student') || '';
+  openDlg(`<h2>${esc(t('zipTitle'))}</h2>
+    <p>${esc(t('zipNote'))}</p>
+    <div class="field" style="margin:0"><label for="zipWho">${esc(t('zipWho'))}</label><input type="text" id="zipWho" value="${esc(student)}" placeholder="${esc(t('zipWhoPh'))}" autocomplete="off"></div>
+    <div><b style="display:block;margin-bottom:6px">${esc(t('zipWhich'))}</b>
+      <div class="ziplist">${docs.map(({ i, doc }) => `<label class="check"><input type="checkbox" data-zt="${i}" ${doc.main.length ? 'checked' : ''}> <span>${esc(doc.name || t('untitled'))}${doc.main.length ? '' : ` <small style="color:var(--muted)">(${esc(t('zipEmpty'))})</small>`}</span></label>`).join('')}</div></div>
+    <div class="grp"><label class="check" style="margin:0"><input type="checkbox" id="zipF" checked> ${esc(t('zipFlusso'))}</label><label class="check" style="margin:0 0 0 14px"><input type="checkbox" id="zipP" checked> ${esc(t('zipPng'))}</label></div>
+    <div class="foot"><button class="btn" data-close>${esc(t('cancel'))}</button><button class="btn primary" id="zipGo">${esc(t('zipGo'))}</button></div>`);
+  $('#zipGo').onclick = async () => {
+    const who = $('#zipWho').value.trim(); store.set('student', who);
+    const pick = $$('[data-zt]', dlg).filter(c => c.checked).map(c => +c.dataset.zt);
+    const wantF = $('#zipF').checked, wantP = $('#zipP').checked;
+    if (!pick.length || (!wantF && !wantP)) { toast(t('zipNone')); return; }
+    const btn = $('#zipGo'); btn.disabled = true; btn.textContent = t('zipWorking');
+    try {
+      const enc = new TextEncoder(), files = [], used = new Set();
+      for (const [n, i] of pick.entries()) {
+        const doc = docs.find(d => d.i === i).doc;
+        let base = String(n + 1).padStart(2, '0') + '_' + (safeName(doc.name) || t('untitled').replace(/\s+/g, '_'));
+        while (used.has(base)) base += '_';
+        used.add(base);
+        if (wantF) {
+          const json = JSON.stringify({ format: 'flussolab', version: 1, name: doc.name || '', author: who, main: doc.main }, replacer, 2);
+          files.push({ name: base + '.flusso', data: enc.encode(json) });
+        }
+        if (wantP) {
+          const { blob } = await diagramPng(doc, who);
+          files.push({ name: base + '.png', data: new Uint8Array(await blob.arrayBuffer()) });
+        }
+      }
+      const zip = makeZip(files), url = URL.createObjectURL(zip);
+      const zname = (safeName(who) ? safeName(who) + '_' : '') + 'FlussoLab.zip';
+      await triggerDownload(url, zname, zip); setTimeout(() => URL.revokeObjectURL(url), 30000);
+      if (wantF) { pick.forEach(i => { tabs[i].dirty = false; }); renderTabs(); persist(); }
+      dlg.close(); toast(t('zipDone', files.length));
+    } catch (e) { console.error(e); btn.disabled = false; btn.textContent = t('zipGo'); toast(t('zipFail')); }
   };
-  img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
-};
+}
 
 const GUIDE = {
   it: `<h3>Come si usa</h3><ul>
@@ -1180,7 +1277,7 @@ const GUIDE = {
     <li><b>Spiegazione</b> mostra accanto a ogni blocco cosa fa. In <b>Opzioni</b> trovi i simboli ≥ ≤ ≠ e il tema chiaro o scuro.</li>
     <li>Tocca un blocco per modificarlo nel pannello <b>Blocco</b>. I blocchi con un errore hanno il bordo rosso tratteggiato.</li>
     <li><b>Esegui</b> avvia il programma. <b>Passo</b> esegue un blocco alla volta e mostra le variabili.</li>
-    <li><b>Salva</b> crea un file <code>.flusso</code> da consegnare. <b>Apri</b> lo ricarica. <b>Immagine</b> esporta il diagramma in PNG.</li>
+    <li><b>Salva</b> crea un file <code>.flusso</code> da consegnare. <b>File → Esporta consegna (ZIP)</b> mette in un unico file tutti i diagrammi aperti, come <code>.flusso</code> e come immagine. <b>Apri</b> lo ricarica. <b>Immagine</b> esporta il diagramma in PNG.</li>
     <li>Il lavoro resta salvato in questo browser anche se chiudi la pagina.</li></ul>
     <h3>Espressioni</h3><table>
     <tr><td>+ − *</td><td>operazioni; con un testo, + unisce: <code>"Ciao " + nome</code></td></tr>
@@ -1203,7 +1300,7 @@ const GUIDE = {
     <li><b>Explain</b> shows next to each block what it does. <b>Options</b> has the ≥ ≤ ≠ symbols and light or dark theme.</li>
     <li>Tap a block to edit it in the <b>Block</b> panel. Blocks with an error have a dashed red border.</li>
     <li><b>Run</b> starts the program. <b>Step</b> runs one block at a time and shows the variables.</li>
-    <li><b>Save</b> creates a <code>.flusso</code> file to hand in. <b>Open</b> loads it back. <b>Image</b> exports the diagram as PNG.</li>
+    <li><b>Save</b> creates a <code>.flusso</code> file to hand in. <b>File → Export submission (ZIP)</b> puts all open diagrams in one file, as <code>.flusso</code> and as images. <b>Open</b> loads it back. <b>Image</b> exports the diagram as PNG.</li>
     <li>Your work stays saved in this browser even if you close the page.</li></ul>
     <h3>Expressions</h3><table>
     <tr><td>+ − *</td><td>arithmetic; with text, + joins: <code>"Hi " + name</code></td></tr>
@@ -1245,7 +1342,7 @@ function pasteBlock() {
 /* ================= menu bar ================= */
 const MENUS = {
   file: () => [
-    ['new', t('new'), ''], ['open', t('open') + '…', 'Ctrl+O'], ['save', t('save') + '…', 'Ctrl+S'], ['png', t('png') + '…', ''], '-',
+    ['new', t('new'), ''], ['open', t('open') + '…', 'Ctrl+O'], ['save', t('save') + '…', 'Ctrl+S'], ['png', t('png') + '…', ''], ['zip', t('zipM'), ''], '-',
     ['install', t('installM'), ''], '-',
     { head: t('examples') }, ...EX.map((x, i) => ['ex:' + i, x[lang][0], '']),
   ],
@@ -1324,6 +1421,7 @@ function runCmd(c) {
   if (c === 'open') return cmdOpen();
   if (c === 'save') return cmdSave();
   if (c === 'png') return cmdPng();
+  if (c === 'zip') return cmdExportZip();
   if (c === 'install') return cmdInstall();
   if (c.startsWith('ex:')) return loadExample(+c.slice(3));
   if (c === 'undo') return undo();

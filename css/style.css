@@ -198,6 +198,8 @@ dialog{overscroll-behavior:contain}
 .hintbar,.zoom{transition:opacity .25s}
 .stage.busy .hintbar,.stage.busy .zoom{opacity:0;pointer-events:none}
 @media (pointer: coarse){ .tab .tx{width:28px;height:28px} .tab{padding:8px 6px 8px 12px} }
+.ziplist{display:grid;gap:2px;max-height:34vh;overflow:auto;border:1px solid var(--rule);border-radius:8px;padding:8px 10px;background:var(--paper)}
+.ziplist .check{margin:0;padding:3px 0}
 /* diagram */
 .blk{cursor:pointer}
 .blk:hover .shape{filter:brightness(.95)}

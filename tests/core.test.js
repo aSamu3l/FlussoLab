@@ -33,6 +33,8 @@ test('aritmetica e precedenze', () => {
   assert.equal(show('2 ^ 3 ^ 2'), '512');
   assert.equal(show('-2 ^ 2'), '-4');
   assert.equal(show('7 mod 3'), '1');
+  assert.equal(show('7 % 3'), '1');
+  assert.equal(show('-7 % 3'), '-1');
 });
 
 test('divisione come in C', () => {

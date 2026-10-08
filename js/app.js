@@ -2,7 +2,7 @@
 'use strict';
 /* ====== Project settings: fill these in before publishing ====== */
 const CONFIG = {
-  version: '0.5.0',
+  version: '0.5.1',
   author: 'aSamu3l',
   github: 'https://github.com/aSamu3l',
   repo: 'https://github.com/aSamu3l/FlussoLab',
@@ -77,7 +77,7 @@ const I18N = {
     e_tarr: (n, k) => `«${n}» è un vettore di ${t('tyk')[k]}: assegna i singoli elementi, ad esempio ${n}[0]`,
     e_incint: (op, n) => `${op} si può usare solo su variabili intere: «${n}» non è un intero`,
     e_reserved: n => `«${n}» è il nome di un tipo: non si può usare come nome di variabile`,
-    e_assigneq: 'Per confrontare si usa ==: il singolo = serve solo ad assegnare',
+    e_assigneq: 'Per confrontare si usa ==',
     e_redecl: n => `«${n}» è già stata dichiarata con un altro tipo`,
     e_declname: x => `«${x}» non è un nome di variabile valido`, e_kind: 'Scegli un tipo',
     consoleIdle: 'Premi Esegui per avviare il programma, oppure Passo per seguirlo un blocco alla volta.',
@@ -159,7 +159,7 @@ const I18N = {
     e_tarr: (n, k) => `“${n}” is an array of ${t('tyk')[k]}: assign single elements, for example ${n}[0]`,
     e_incint: (op, n) => `${op} works only on integer variables: “${n}” is not an integer`,
     e_reserved: n => `“${n}” is a type name: it cannot be used as a variable name`,
-    e_assigneq: 'To compare use ==: a single = is only for assignment',
+    e_assigneq: 'To compare use ==',
     e_redecl: n => `“${n}” was already declared with another type`,
     e_declname: x => `“${x}” is not a valid variable name`, e_kind: 'Choose a type',
     consoleIdle: 'Press Run to start the program, or Step to follow it one block at a time.',
@@ -1186,7 +1186,8 @@ const GUIDE = {
     <tr><td>+ − *</td><td>operazioni; con un testo, + unisce: <code>"Ciao " + nome</code></td></tr>
     <tr><td>/</td><td>divisione, come in C: tra due <code>int</code> il risultato è un <code>int</code> (<code>7 / 2</code> → 3); se uno dei due è <code>float</code> il risultato è <code>float</code> (<code>7.0 / 2</code> → 3.5)</td></tr>
     <tr><td>(float) (int)</td><td>conversione di tipo: <code>(float) s / n</code> → divisione con i decimali; <code>(int) 3.9</code> → 3</td></tr>
-    <tr><td>mod, ^</td><td>resto, potenza</td></tr>
+    <tr><td>mod  %</td><td>resto della divisione: <code>7 mod 3</code> e <code>7 % 3</code> sono uguali</td></tr>
+    <tr><td>^</td><td>potenza</td></tr>
     <tr><td>== !=</td><td>uguale, diverso. Il singolo <code>=</code> serve solo per assegnare</td></tr>
     <tr><td>&lt; &lt;= &gt; &gt;=</td><td>confronti</td></tr>
     <tr><td>AND OR NOT</td><td>anche && || !</td></tr>
@@ -1208,7 +1209,8 @@ const GUIDE = {
     <tr><td>+ − *</td><td>arithmetic; with text, + joins: <code>"Hi " + name</code></td></tr>
     <tr><td>/</td><td>division, as in C: between two <code>int</code> the result is an <code>int</code> (<code>7 / 2</code> → 3); if one is <code>float</code> the result is <code>float</code> (<code>7.0 / 2</code> → 3.5)</td></tr>
     <tr><td>(float) (int)</td><td>type cast: <code>(float) s / n</code> → division with decimals; <code>(int) 3.9</code> → 3</td></tr>
-    <tr><td>mod, ^</td><td>remainder, power</td></tr>
+    <tr><td>mod  %</td><td>remainder: <code>7 mod 3</code> and <code>7 % 3</code> are the same</td></tr>
+    <tr><td>^</td><td>power</td></tr>
     <tr><td>== !=</td><td>equal, not equal. A single <code>=</code> is only for assignment</td></tr>
     <tr><td>&lt; &lt;= &gt; &gt;=</td><td>comparisons</td></tr>
     <tr><td>AND OR NOT</td><td>also && || !</td></tr>

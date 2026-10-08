@@ -363,7 +363,7 @@ function* exec(seq, env, io) {
   const tr = io.trace || (() => {});
   const T = io.types || (io.types = Object.create(null));
   for (const b of seq) {
-    if (b.t === 'comment') continue;
+    if (b.t === 'comment' || b.off) continue; // a disabled block is skipped
     yield { t: 'at', b };
     switch (b.t) {
       case 'input': {
@@ -430,6 +430,7 @@ function knownVars(main) {
   const K = new Set();
   (function walk(seq) {
     for (const b of seq) {
+      if (b.off) continue;
       if (b.t === 'input') splitList(b.v).forEach(v => { const r = rootName(v); if (r) K.add(r); });
       if (b.t === 'assign' || b.t === 'for') { const r = rootName(b.v); if (r) K.add(r); }
       if (b.t === 'comment' || b.t === 'decl') continue;
@@ -486,6 +487,7 @@ function firstError(main) {
   (function walk(seq) {
     for (const b of seq) {
       if (found) return;
+      if (b.off) continue;
       const e = staticErr(b, known); if (e) { found = { b, e }; return; }
       if (b.t === 'if') { walk(b.y); walk(b.n); } else if (b.body) walk(b.body);
     }
@@ -502,6 +504,7 @@ function toPseudoLines(main, K) {
     const ind = '    '.repeat(d);
     const P = (s, b) => L.push({ s: ind + s, id: b ? b.id : null });
     for (const b of seq) {
+      if (b.off) continue;
       switch (b.t) {
         case 'comment': P(`// ${b.text || ''}`, b); break;
         case 'input': {
@@ -630,8 +633,9 @@ function toPython(main, T) {
   const noteArr = (src) => { try { let n = lvTyped(src).lv; if (n.k !== 'idx') return; while (n.k === 'idx') n = n.o; arrays.add(pyName(n.n)); } catch (e) {} };
   (function walk(seq, d) {
     const ind = '    '.repeat(d);
-    if (!seq.filter(b => b.t !== 'comment').length) { seq.forEach(b => L.push(`${ind}# ${b.text || ''}`)); L.push(ind + 'pass'); return; }
+    if (!seq.filter(b => b.t !== 'comment' && !b.off).length) { seq.filter(b => b.t === 'comment' && !b.off).forEach(b => L.push(`${ind}# ${b.text || ''}`)); L.push(ind + 'pass'); return; }
     for (const b of seq) {
+      if (b.off) continue;
       switch (b.t) {
         case 'comment': L.push(`${ind}# ${b.text || ''}`); break;
         case 'input': hasInput = true;
@@ -733,6 +737,36 @@ function negate(n) {
 }
 function invertCond(src) { return srcE(negate(parse(src))).s; }
 
+/* ---------- exercises: run a program with given inputs and compare what it writes ---------- */
+function runTest(main, inputs, maxSteps = 200000) {
+  const env = Object.create(null); let out = '';
+  const g = exec(main, env, { out: (s, ln) => { out += s + (ln ? '\n' : ''); } });
+  let k = 0, steps = 0, v;
+  try {
+    for (;;) {
+      const r = g.next(v); v = undefined;
+      if (r.done) break;
+      if (r.value.t === 'at') { if (++steps > maxSteps) return { out, err: new FErr('loop'), b: r.value.b }; continue; }
+      if (k >= inputs.length) return { out, err: new FErr('moreinput'), b: r.value.b };
+      v = String(inputs[k++]);
+    }
+  } catch (e) { if (!(e instanceof FErr)) throw e; return { out, err: e }; }
+  return { out, err: null };
+}
+// lines without trailing spaces and without empty lines at the end
+function outLines(s) { const l = String(s ?? '').replace(/\r/g, '').split('\n').map(x => x.trimEnd()); while (l.length && !l[l.length - 1]) l.pop(); return l; }
+function sameOut(got, want, mode) {
+  const a = outLines(got), b = outLines(want);
+  if (mode === 'last') return (a[a.length - 1] || '').trim() === (b[b.length - 1] || '').trim();
+  return a.length === b.length && a.every((x, j) => x === b[j]);
+}
+function checkTest(main, test, mode) {
+  const pre = firstError(main);
+  if (pre) return { ok: false, out: '', err: pre.e, b: pre.b };
+  const r = runTest(main, test.in || []);
+  return { ...r, ok: !r.err && sameOut(r.out, test.out, mode) };
+}
+
 /* ---------- share links ----------
    A diagram fits in the link itself (after #), so nothing is stored on a server.
    1. compact text: one letter per block, fields split by |, nested blocks in { }
@@ -752,7 +786,8 @@ const PRIME = 'Media dei voti\no"Quanti numeri? "\nIn\nAs|0\nFi|1|n|1{o"Numero "
   '?x mod 2 == 0{O"even"}{O"odd"}\nAtotal|total + x\nO"Total: " + str(total)\nIstring s\nAok|false\nVbool|ok\n?ok OR NOT trovato{O"si"}{O"no"}\n';
 function packDoc(doc) {
   const q = x => String(x ?? '').replace(/[\\|{}\n]/g, c => '\\' + (c === '\n' ? 'n' : c));
-  const seq = arr => (arr || []).map(b => {
+  const seq = arr => (arr || []).map(b => (b.off ? '_' : '') + one(b)).filter(x => x && x !== '_').join('\n');
+  const one = b => {
     switch (b.t) {
       case 'input': return 'I' + q(b.v);
       case 'output': return (b.ln === false ? 'o' : 'O') + q(b.e);
@@ -765,8 +800,16 @@ function packDoc(doc) {
       case 'decl': return 'V' + q(b.k) + '|' + q(b.v);
     }
     return '';
-  }).filter(Boolean).join('\n');
-  return q(doc.name) + '\n' + seq(doc.main);
+  };
+  // exercise: one line with the text ('!' exact output, '^' only the last line), one line per test
+  // ('=' visible, '~' hidden): expected output, then each input after |
+  let head = '';
+  if (doc.ex) {
+    const ex = doc.ex;
+    head = (ex.mode === 'last' ? '^' : '!') + q(ex.text) + '\n' +
+      (ex.tests || []).map(x => (x.hidden ? '~' : '=') + q(x.out) + (x.in || []).map(v => '|' + q(v)).join('') + '\n').join('');
+  }
+  return q(doc.name) + '\n' + head + seq(doc.main);
 }
 function unpackDoc(txt) {
   let i = 0;
@@ -774,6 +817,7 @@ function unpackDoc(txt) {
   const bar = () => { if (txt[i] !== '|') throw new Error('share'); i++; };
   const open = () => { if (txt[i] !== '{') throw new Error('share'); i++; const s = seq(); if (txt[i] !== '}') throw new Error('share'); i++; return s; };
   function block() {
+    if (txt[i] === '_') { i++; const b = block(); b.off = true; return b; }
     const c = txt[i++];
     switch (c) {
       case 'I': return { t: 'input', v: field() };
@@ -790,8 +834,18 @@ function unpackDoc(txt) {
   }
   function seq() { const out = []; while (i < txt.length && txt[i] !== '}') { out.push(block()); if (txt[i] === '\n') i++; } return out; }
   const name = field(); if (txt[i] === '\n') i++;
+  let ex = null;
+  if (txt[i] === '!' || txt[i] === '^') {
+    ex = { text: '', mode: txt[i] === '^' ? 'last' : 'exact', tests: [] }; i++;
+    ex.text = field(); if (txt[i] === '\n') i++;
+    while (txt[i] === '=' || txt[i] === '~') {
+      const hidden = txt[i++] === '~', out = field(), inp = [];
+      while (txt[i] === '|') { i++; inp.push(field()); }
+      ex.tests.push({ in: inp, out, hidden }); if (txt[i] === '\n') i++;
+    }
+  }
   const main = seq(); if (i !== txt.length) throw new Error('share');
-  return { name, main };
+  return ex ? { name, main, ex } : { name, main };
 }
 // PPM model: counts of the next byte after the last 2 bytes, the last byte, and none (order 2, 1, 0)
 function ppmModel() {
@@ -866,6 +920,6 @@ function shareDecode(code) {
   try { return unpackDoc(new TextDecoder('utf-8', { fatal: true }).decode(new Uint8Array(bytes))); } catch (e) { throw new FErr('badlink'); }
 }
 
-return { shareEncode, shareDecode, packDoc, KINDS, parseDecl, lvTyped, toPseudoLines, invertCond, knownVars, firstError, FErr, parse, parseLV, splitList, exec, fmt, typeOf, parseInput, staticErr, toPseudo, toPython, setBoolNames, FN };
+return { runTest, checkTest, sameOut, outLines, shareEncode, shareDecode, packDoc, KINDS, parseDecl, lvTyped, toPseudoLines, invertCond, knownVars, firstError, FErr, parse, parseLV, splitList, exec, fmt, typeOf, parseInput, staticErr, toPseudo, toPython, setBoolNames, FN };
 })();
 if (typeof module !== 'undefined') module.exports = FL;

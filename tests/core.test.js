@@ -311,3 +311,35 @@ test('link condivisibili: andata e ritorno senza perdite', () => {
   assert.ok(FL.shareEncode({ name: IT.examples[1].name, main: IT.examples[1].main }).length < 50, 'la tabellina deve stare sotto i 50 caratteri');
   for (const bad of ['', 'b123', 'a!!', 'aZZZZZZZZZZZZZZZZZZZZ']) assert.equal(errKey(() => FL.shareDecode(bad)), 'badlink');
 });
+
+// Esercizi: il programma viene eseguito con gli input della prova e si confronta quello che scrive.
+test('esercizi: prove, confronto dell\'output e link', () => {
+  const max = IT.examples[4].main; // Massimo di un vettore
+  const ok = FL.checkTest(max, { in: ['3', '4', '9', '2'], out: 'Massimo: 9' }, 'exact');
+  assert.equal(ok.ok, true);
+  assert.equal(FL.checkTest(max, { in: ['3', '4', '9', '2'], out: '9' }, 'exact').ok, false);
+  assert.equal(FL.checkTest(max, { in: ['2', '1', '7'], out: 'Il massimo è\nMassimo: 7' }, 'last').ok, true);
+  assert.equal(FL.checkTest(max, { in: ['3', '1'], out: '' }, 'exact').err.key, 'moreinput');
+  assert.equal(FL.runTest([{ t: 'while', c: 'true', body: [] }], [], 1000).err.key, 'loop');
+  assert.equal(FL.checkTest([{ t: 'output', e: 'x' }], { in: [], out: '' }, 'exact').err.key, 'nodef');
+  assert.equal(FL.sameOut('a  \nb\n\n', 'a\nb', 'exact'), true);
+  const ex = { text: 'Stampa il massimo\ndi n numeri', mode: 'last', tests: [{ in: ['2', '5', '1'], out: 'Massimo: 5', hidden: false }, { in: ['1', '-3'], out: 'Massimo: -3', hidden: true }] };
+  const back = FL.shareDecode(FL.shareEncode({ name: 'Massimo', main: [], ex }));
+  assert.deepEqual(back, { name: 'Massimo', main: [], ex });
+  assert.ok(FL.shareEncode({ name: 'Massimo', main: [], ex }).length < 90);
+});
+
+// Un blocco disattivato viene saltato: serve per gli OUT di controllo prima di verificare un esercizio.
+test('blocchi disattivati', () => {
+  const main = [{ t: 'input', v: 'n' }, { t: 'output', e: '"debug " + str(n)', off: true }, { t: 'output', e: 'n * 2' },
+    { t: 'output', e: 'nonesiste', off: true }, { t: 'if', c: 'n > 0', y: [{ t: 'output', e: '"positivo"' }], n: [], off: true }];
+  assert.deepEqual(run(main, ['4']).out, ['8']);
+  assert.equal(FL.firstError(main), null);
+  assert.equal(FL.checkTest(main, { in: ['4'], out: '8' }, 'exact').ok, true);
+  assert.doesNotMatch(FL.toPseudo(main, IT.pseudo), /debug|positivo/);
+  assert.doesNotMatch(FL.toPython(main, IT.python), /debug|positivo/);
+  const back = FL.shareDecode(FL.shareEncode({ name: 'x', main }));
+  assert.deepEqual(back.main.map(b => !!b.off), [false, true, false, true, true]);
+  // una variabile letta solo in un blocco disattivato non esiste
+  assert.equal(FL.firstError([{ t: 'input', v: 'k', off: true }, { t: 'output', e: 'k' }]).e.key, 'nodef');
+});

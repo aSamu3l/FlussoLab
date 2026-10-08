@@ -266,6 +266,41 @@ dialog{overscroll-behavior:contain}
 pre.code{margin:0;font:13px/1.55 var(--f-mono);background:var(--paper);border:1px solid var(--rule);border-radius:8px;padding:12px;overflow:auto;white-space:pre;tab-size:4}
 .note{font-size:12.5px;color:var(--muted);margin-top:8px}
 
+/* disabled block: faded and dashed, skipped when running */
+.blk.off{opacity:.38}
+.blk.off .shape{stroke-dasharray:5 4}
+.offnote{margin:0 0 12px;padding:8px 10px;border-radius:7px;background:var(--surface-2);color:var(--muted);font-size:13px}
+/* exercise: task, checks and results (student) */
+.extask{white-space:pre-wrap;font-size:15px;line-height:1.5;margin:0 0 6px}
+.exbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:14px 0}
+.exsum{font-weight:700;padding:9px 12px;border-radius:8px;background:var(--surface-2);margin-bottom:10px}
+.exsum.ok{background:var(--io-f);color:var(--green)}
+.exres{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.exres li{border:1px solid var(--rule);border-radius:8px;padding:9px 11px;font-size:13.5px}
+.exres li.ko{border-color:var(--red);background:var(--red-soft)}
+.exres .h{display:flex;justify-content:space-between;align-items:center;gap:8px;font-weight:700}
+.exres .mark{font-size:15px}
+.exres li.ok .mark{color:var(--green)}
+.exres li.ko .mark{color:var(--red)}
+.radios{display:grid;gap:8px}
+.radios label{display:flex;gap:9px;align-items:flex-start;font-size:14.5px;cursor:pointer}
+.radios input{margin:3px 0 0;accent-color:var(--pen)}
+.exres dl{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;margin:8px 0 0}
+.exres dt{color:var(--muted);font-size:12px;font-weight:700;padding-top:2px}
+.exres dd{margin:0;font:13px/1.4 var(--f-mono);white-space:pre-wrap;word-break:break-word;font-variant-ligatures:none}
+.exres .err{color:var(--red);margin-top:6px}
+/* exercise editor (teacher) */
+.dlg textarea{font:14px var(--f-mono);padding:8px 10px;border:1px solid var(--rule);border-radius:7px;background:var(--paper);width:100%;resize:vertical;color:var(--ink)}
+.dlg textarea.prose{font-family:var(--f-body)}
+.extests{display:grid;gap:10px}
+.extest{border:1px solid var(--rule);border-radius:9px;padding:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px 10px}
+.extest .lbl{font-size:12px;font-weight:700;color:var(--muted)}
+.extest .act{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.extest .act .sp{flex:1}
+.extest .msg{grid-column:1/-1;color:var(--red);font-size:12.5px}
+.dlg.wide{max-height:calc(100vh - 60px)}
+dialog.wide{width:min(720px,calc(100vw - 32px))}
+@media (max-width: 560px){ .extest{grid-template-columns:1fr} }
 /* dialogs */
 dialog{border:1px solid var(--rule);border-radius:14px;padding:0;background:var(--surface);color:var(--ink);box-shadow:var(--shadow);width:min(560px,calc(100vw - 32px));max-height:calc(100vh - 48px)}
 dialog::backdrop{background:rgb(10 16 26 / .45)}

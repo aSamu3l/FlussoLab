@@ -2,7 +2,7 @@
 'use strict';
 /* ====== Project settings ====== */
 const CONFIG = {
-  version: '0.9.0',
+  version: '0.10.0',
   author: 'aSamu3l',
   github: 'https://github.com/aSamu3l',
   repo: 'https://github.com/aSamu3l/FlussoLab',
@@ -94,9 +94,18 @@ function mk(type) {
 }
 const nameOf = o => typeof (o && o.name) === 'string' ? o.name : '';
 const replacer = (k, v) => (k === 'id' || k[0] === '_') ? undefined : v;
-const ser = () => JSON.stringify({ name: prog.name, main: prog.main }, replacer);
+// an exercise made by the teacher: text, how to compare the output, tests with inputs and expected output
+function validEx(x) {
+  if (!x || typeof x !== 'object' || !Array.isArray(x.tests)) return null;
+  const tests = x.tests.slice(0, 50).filter(v => v && typeof v === 'object').map(v => ({
+    in: (Array.isArray(v.in) ? v.in : String(v.in ?? '').split('\n')).map(String).map(z => z.trim()).filter(Boolean),
+    out: String(v.out ?? ''), hidden: !!v.hidden }));
+  return { text: String(x.text ?? ''), mode: x.mode === 'last' ? 'last' : 'exact', tests };
+}
+const docOf = o => { const ex = validEx(o && o.ex); return ex ? { name: nameOf(o), main: o.main, ex } : { name: nameOf(o), main: o.main }; };
+const ser = () => JSON.stringify(docOf(prog), replacer);
 function snap() { hist.push(ser()); if (hist.length > 150) hist.shift(); fut.length = 0; markDirty(); }
-function restore(s) { closePop(); hideCtx(); ctxSlot = null; const o = JSON.parse(s); prog = { name: nameOf(o), main: o.main }; assignIds(prog.main); sel = null; $('#pname').value = prog.name; }
+function restore(s) { closePop(); hideCtx(); ctxSlot = null; const o = JSON.parse(s); prog = docOf(o); assignIds(prog.main); sel = null; $('#pname').value = prog.name; }
 function undo() { if (!hist.length) return; stopRun(); fut.push(ser()); restore(hist.pop()); markDirty(); afterChange(true); }
 function redo() { if (!fut.length) return; stopRun(); hist.push(ser()); restore(fut.pop()); markDirty(); afterChange(true); }
 
@@ -104,13 +113,13 @@ function redo() { if (!fut.length) return; stopRun(); hist.push(ser()); restore(
 const MAXTABS = 10;
 let tabs = [], cur = 0, tabSeq = 0;
 function markDirty() { if (tabs[cur] && !tabs[cur].dirty) { tabs[cur].dirty = true; renderTabs(); } }
-function isBlank() { return !prog.main.length && !String(prog.name).trim(); }
+function isBlank() { return !prog.main.length && !String(prog.name).trim() && !prog.ex; }
 function tabSnapshot() { const T = tabs[cur]; if (!T) return; T.data = ser(); T.hist = hist; T.fut = fut; T.zoom = zoom; }
 function activate(i) {
   stopRun(true); closePop(); if (typeof tip !== 'undefined') tip.hidden = true;
   tabSnapshot();
   cur = i; const T = tabs[i], o = JSON.parse(T.data);
-  prog = { name: nameOf(o), main: o.main }; assignIds(prog.main);
+  prog = docOf(o); assignIds(prog.main);
   hist = T.hist || []; fut = T.fut || []; zoom = T.zoom || 1; sel = null;
   $('#pname').value = prog.name; $('#errBox').hidden = true;
   clearConsole(); renderTabs(); afterChange(true);
@@ -119,7 +128,7 @@ function activate(i) {
 function addTab(o, dirty) {
   if (tabs.length >= MAXTABS) { toast(t('tooMany', MAXTABS)); return false; }
   tabSnapshot();
-  tabs.push({ id: ++tabSeq, data: JSON.stringify({ name: nameOf(o), main: o.main }, replacer), hist: [], fut: [], dirty: !!dirty, zoom: 1 });
+  tabs.push({ id: ++tabSeq, data: JSON.stringify(docOf(o), replacer), hist: [], fut: [], dirty: !!dirty, zoom: 1 });
   activate(tabs.length - 1);
   requestAnimationFrame(() => { const el = $('#tabbar .tab.on'); if (el) el.scrollIntoView({ block: 'nearest', inline: 'nearest' }); });
   return true;
@@ -168,6 +177,7 @@ const TYPES = ['decl', 'input', 'output', 'assign', 'if', 'while', 'do', 'for', 
 const MENU = ['decl', 'input', 'output', 'outln', 'assign', 'if', 'while', 'do', 'for', 'comment'];
 function validBlock(b) {
   if (!b || typeof b !== 'object' || !TYPES.includes(b.t)) return false;
+  if (b.off !== true) delete b.off;
   const str = k => { if (b[k] == null) b[k] = ''; b[k] = String(b[k]); };
   const arr = k => Array.isArray(b[k]) && b[k].every(validBlock);
   switch (b.t) {
@@ -186,7 +196,7 @@ function loadObj(o, fromUser) {
   if (!o || !Array.isArray(o.main) || !o.main.every(validBlock)) throw new Error('bad');
   if (fromUser) snap();
   stopRun();
-  prog = { name: nameOf(o), main: o.main };
+  prog = docOf(o);
   assignIds(prog.main); sel = null;
   $('#pname').value = prog.name;
   clearConsole();
@@ -309,11 +319,17 @@ function buildSVG(P, interactive) {
       if (i < arr.length) { block(arr[i], x, y); y += arr[i]._h; }
     }
   }
+  let offDepth = 0;
   function block(b, x, y) {
+    if (b.off) offDepth++;
+    try { block1(b, x, y); } finally { if (b.off) offDepth--; }
+  }
+  function block1(b, x, y) {
     const k = KIND[b.t], lab = label(b);
     let cls = 'blk';
+    if (offDepth) cls += ' off';
     if (interactive) {
-      if (FL.staticErr(b, known)) cls += ' bad';
+      if (!offDepth && FL.staticErr(b, known)) cls += ' bad';
       if (b.id === sel) cls += ' sel';
       if (b.id === runCur) cls += ' cur';
       if (b.id === runErr) cls += ' err';
@@ -517,6 +533,7 @@ $('#svgHost').addEventListener('contextmenu', e => {
       ['up', '\u2191 ' + t('up'), '', !f || f.idx === 0], ['down', '\u2193 ' + t('down'), '', !f || f.idx === f.arr.length - 1]];
     if (hasC) items.push('-', ['inv', t('invert'), '']);
     if (f && f.b.t === 'if') items.push(['swap', t('swap'), '']);
+    if (f) items.push('-', ['off', f.b.off ? t('blkOn') : t('blkOff'), '']);
     items.push('-', ['del', t('del'), 'Canc']);
     showCtx(items, e.clientX, e.clientY);
     return;
@@ -652,12 +669,13 @@ function renderPanel() {
     fields += `<div class="grp" style="margin:-2px 0 12px"><button class="btn" data-act="inv" ${ok ? '' : 'disabled'}>⇄ ${esc(t('invert'))}</button>${b.t === 'if' ? `<button class="btn" data-act="swap">${esc(t('swap'))}</button>` : ''}</div>`;
   }
   box.innerHTML = `<div class="bhead">${typeIcon(tk)}<div><h3>${esc(t('types')[tk])}</h3><p>${esc(noteOf(b))}</p></div></div>
-    ${fields}<div class="perr" id="blkErr" hidden></div>
+    ${b.off ? `<p class="offnote">${esc(t('blkOffNote'))}</p>` : ''}${fields}<div class="perr" id="blkErr" hidden></div>
     <div class="actions">
       <button class="btn" data-act="up" ${f.idx === 0 ? 'disabled' : ''}>↑ ${esc(t('up'))}</button>
       <button class="btn" data-act="down" ${f.idx === f.arr.length - 1 ? 'disabled' : ''}>↓ ${esc(t('down'))}</button>
       <button class="btn" data-act="dup">${esc(t('dup'))}</button>
       <button class="btn" data-act="copy">${esc(t('copy'))}</button>
+      <button class="btn" data-act="off">${esc(b.off ? t('blkOn') : t('blkOff'))}</button>
       <button class="btn danger" data-act="del">${esc(t('del'))}</button>
     </div>`;
 }
@@ -703,6 +721,7 @@ function blockAct(act) {
   if (act === 'del') { deleteSel(f); return; }
   if (act === 'inv') { try { f.b.c = FL.invertCond(f.b.c); toast(t('inverted')); } catch (e) {} }
   if (act === 'swap') { const y = f.b.y; f.b.y = f.b.n; f.b.n = y; toast(t('swapped')); }
+  if (act === 'off') { if (f.b.off) delete f.b.off; else f.b.off = true; }
   afterChange(true);
 }
 function deleteSel(f) {
@@ -710,15 +729,16 @@ function deleteSel(f) {
   sel = f.arr[Math.min(f.idx, f.arr.length - 1)]?.id || null;
   afterChange(true); toast(t('deleted'));
 }
-function afterChange(panel) { renderDiagram(); if (panel) { renderPanel(); updBlkErr(); } renderCode(); persist(); }
+function afterChange(panel) { renderDiagram(); if (panel) { renderPanel(); updBlkErr(); } renderCode(); exRes = null; renderEx(); persist(); }
 
 /* ================= side panel tabs ================= */
 let curTab = 'block';
 function switchTab(name) {
   curTab = name;
   $$('.tabs [data-tab]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === name)));
-  ['block', 'run', 'code'].forEach(n => { $('#tab-' + n).hidden = n !== name; });
+  ['block', 'run', 'code', 'ex'].forEach(n => { $('#tab-' + n).hidden = n !== name; });
   if (name === 'code') renderCode();
+  if (name === 'ex') renderEx();
 }
 $$('.tabs [data-tab]').forEach(b => b.onclick = () => switchTab(b.dataset.tab));
 
@@ -833,7 +853,7 @@ function showErrBox(b, msg) {
   box.hidden = false;
   box.querySelector('.x').onclick = () => { box.hidden = true; };
 }
-function startRun(mode) {
+function startRun(mode, autoIn) {
   $('#errBox').hidden = true;
   const pre = FL.firstError(prog.main);
   if (pre) {
@@ -845,7 +865,7 @@ function startRun(mode) {
   stopRun(true); closePop();
   con.innerHTML = ''; delete con.dataset.idle; lastVals = {}; openLine = null;
   const env = Object.create(null);
-  R = { env, mode, state: 'run', steps: 0, cur: null, errId: null, timer: 0 };
+  R = { env, mode, state: 'run', steps: 0, cur: null, errId: null, timer: 0, autoIn: autoIn ? [...autoIn] : null };
   R.io = { out: (s, ln) => conOut(s, ln), trace: traceFn };
   R.gen = FL.exec(prog.main, env, R.io);
   FL.setBoolNames(t('FALSE'), t('TRUE'));
@@ -884,6 +904,8 @@ function stepClick() {
 }
 function askInput(name) {
   switchTab('run');
+  // "try step by step" on an exercise test: the test inputs are typed in by themselves
+  if (R.autoIn && R.autoIn.length) { const v = R.autoIn.shift(); setTimeout(() => { if (R && R.state === 'input') giveInput(v); }, 0); return; }
   $('#inLbl').textContent = t('inputAsk', name);
   $('#inForm').hidden = false; $('#inVal').value = '';
   markCur(); renderVars(); setRunUI();
@@ -894,12 +916,15 @@ $('#inForm').addEventListener('submit', e => {
   if (!R || R.state !== 'input') return;
   const v = $('#inVal').value;
   if (!v.trim()) { toast(t('inEmpty')); $('#inVal').focus(); return; }
+  giveInput(v);
+});
+function giveInput(v) {
   if (openLine) { const sp = document.createElement('span'); sp.className = 'ln-in'; sp.textContent = v; openLine.appendChild(sp); openLine = null; }
   else conLine(v, 'ln-in');
   $('#inForm').hidden = true; R.state = 'run';
   const r = pump(v);
   if (r === 'at' && R.mode === 'run') tick(); else refresh();
-});
+}
 function traceFn(kind, b, d) {
   let s;
   if (kind === 'in') s = `IN ${d.name} = ${FL.fmt(d.value)}`;
@@ -940,6 +965,7 @@ $('#bStop').onclick = () => stopRun(false);
 const dlg = $('#dlg');
 function openDlg(html) {
   hideMenu(); hideCtx(); closePop();
+  dlg.classList.remove('wide');
   dlg.innerHTML = `<div class="dlg">${html}</div>`;
   if (!dlg.open) { dlg.showModal(); document.documentElement.classList.add('locked'); }
 }
@@ -958,17 +984,100 @@ async function triggerDownload(href, name, data) {
   const a = document.createElement('a'); a.href = href; a.download = name; document.body.appendChild(a); a.click(); a.remove();
 }
 
+
+/* ================= exercises ================= */
+// student: the "Exercise" tab with the task, the Check button and one line per test
+let exRes = null;
+function renderEx() {
+  const has = !!prog.ex;
+  $('#tabExBtn').hidden = !has;
+  if (!has) { if (curTab === 'ex') switchTab('block'); return; }
+  if (curTab !== 'ex') return;
+  const ex = prog.ex, box = $('#tab-ex');
+  let h = `<div class="sect"><h3>${esc(t('exText'))}</h3><p class="extask">${esc(ex.text || '—')}</p>
+    <p class="note">${esc(ex.mode === 'last' ? t('exModeLastNote') : t('exModeExactNote'))}</p></div>
+    <div class="exbar"><button class="btn primary" id="exCheck">${esc(t('exCheck'))}</button><span style="flex:1"></span>
+    <button class="btn" id="exShare">${esc(t('exShare'))}</button><button class="btn" id="exEdit">${esc(t('exEditM'))}</button></div>`;
+  if (!ex.tests.length) h += `<p class="note">${esc(t('exNoTests'))}</p>`;
+  if (exRes) {
+    const ok = exRes.filter(r => r.ok).length;
+    h += `<div class="exsum${ok === exRes.length ? ' ok' : ''}" role="status">${esc(ok === exRes.length ? t('exAll') : t('exSummary', ok, exRes.length))}</div><ul class="exres">`;
+    exRes.forEach((r, i) => {
+      const tst = ex.tests[i];
+      h += `<li class="${r.ok ? 'ok' : 'ko'}"><div class="h"><span>${esc(tst.hidden ? t('exHiddenTest', i + 1) : t('exTest', i + 1))}</span><span class="mark" aria-label="${r.ok ? 'OK' : 'KO'}">${r.ok ? '✓' : '✗'}</span></div>`;
+      if (!tst.hidden && !r.ok) {
+        h += `<dl><dt>${esc(t('exInLbl'))}</dt><dd>${esc(tst.in.join(', ') || '—')}</dd><dt>${esc(t('exWant'))}</dt><dd>${esc(tst.out || t('exNothing'))}</dd>
+          <dt>${esc(t('exGot'))}</dt><dd>${esc(r.out.replace(/\n$/, '') || t('exNothing'))}</dd></dl>`;
+        if (r.err) h += `<div class="err">${esc(emsg(r.err))}</div>`;
+        h += `<div class="exbar" style="margin:8px 0 0"><button class="btn" data-exstep="${i}">${esc(t('exStep'))}</button></div>`;
+      } else if (tst.hidden && !r.ok && r.err) h += `<div class="err">${esc(emsg(r.err))}</div>`;
+      h += '</li>';
+    });
+    h += '</ul>';
+  }
+  box.innerHTML = h;
+  $('#exCheck').onclick = () => { FL.setBoolNames(t('FALSE'), t('TRUE')); exRes = ex.tests.map(x => FL.checkTest(prog.main, x, ex.mode)); renderEx(); };
+  $('#exEdit').onclick = cmdExercise;
+  $('#exShare').onclick = cmdShare;
+  $$('[data-exstep]', box).forEach(b => b.onclick = () => startRun('step', ex.tests[+b.dataset.exstep].in));
+}
+// teacher: write the task and the tests; "Compute" runs the open diagram to fill the expected output
+function cmdExercise() {
+  const ex = prog.ex ? JSON.parse(JSON.stringify(prog.ex)) : { text: '', mode: 'exact', tests: [{ in: [], out: '', hidden: false }] };
+  const row = (x, i) => `<div class="extest" data-i="${i}">
+      <label class="lbl" for="exIn${i}">${esc(t('exIn'))}</label><label class="lbl" for="exOut${i}">${esc(t('exOut'))}</label>
+      <textarea id="exIn${i}" rows="3" data-k="in">${esc(x.in.join('\n'))}</textarea><textarea id="exOut${i}" rows="3" data-k="out">${esc(x.out)}</textarea>
+      <div class="act"><label class="check sm"><input type="checkbox" data-k="hidden" ${x.hidden ? 'checked' : ''}> ${esc(t('exHidden'))}</label><span class="sp"></span>
+        <button class="btn" type="button" data-calc="${i}">${esc(t('exCalc'))}</button><button class="btn danger" type="button" data-del="${i}" aria-label="${esc(t('exRemove'))}">×</button></div>
+      <div class="msg" hidden></div></div>`;
+  const read = () => {
+    ex.text = $('#exTextIn').value; ex.mode = $('#exModeIn').value;
+    ex.tests = $$('.extest', dlg).map(r => ({ in: r.querySelector('[data-k=in]').value.split('\n').map(z => z.trim()).filter(Boolean), out: r.querySelector('[data-k=out]').value, hidden: r.querySelector('[data-k=hidden]').checked }));
+  };
+  const draw = () => {
+    openDlg(`<h2>${esc(prog.ex ? t('exEditM') : t('exT'))}</h2>
+      <div class="field" style="margin:0"><label for="exTextIn">${esc(t('exText'))}</label><textarea id="exTextIn" class="prose" rows="3" placeholder="${esc(t('exTextPh'))}">${esc(ex.text)}</textarea></div>
+      <div class="field" style="margin:0"><label for="exModeIn">${esc(t('exMode'))}</label><select id="exModeIn"><option value="exact"${ex.mode !== 'last' ? ' selected' : ''}>${esc(t('exModeExact'))}</option><option value="last"${ex.mode === 'last' ? ' selected' : ''}>${esc(t('exModeLast'))}</option></select></div>
+      <div><b style="display:block;margin-bottom:6px">${esc(t('exTests'))}</b><div class="extests">${ex.tests.map(row).join('')}</div>
+      <p class="note">${esc(t('exCalcNote'))}</p><button class="btn" type="button" id="exAdd">${esc(t('exAdd'))}</button></div>
+      <div class="foot">${prog.ex ? `<button class="btn danger" id="exDel">${esc(t('exDelete'))}</button><span style="flex:1"></span>` : ''}<button class="btn" data-close>${esc(t('cancel'))}</button><button class="btn primary" id="exSave">${esc(t('save'))}</button></div>`);
+    dlg.classList.add('wide');
+    $('#exAdd').onclick = () => { read(); ex.tests.push({ in: [], out: '', hidden: false }); draw(); $$('.extest textarea', dlg).slice(-2)[0].focus(); };
+    $$('[data-del]', dlg).forEach(b => b.onclick = () => { read(); ex.tests.splice(+b.dataset.del, 1); draw(); });
+    $$('[data-calc]', dlg).forEach(b => b.onclick = () => {
+      read(); const i = +b.dataset.calc, r = dlg.querySelector(`.extest[data-i="${i}"]`), msg = r.querySelector('.msg');
+      FL.setBoolNames(t('FALSE'), t('TRUE'));
+      const pre = FL.firstError(prog.main), res = pre ? { err: pre.e, out: '' } : FL.runTest(prog.main, ex.tests[i].in);
+      if (res.err) { msg.textContent = emsg(res.err); msg.hidden = false; return; }
+      msg.hidden = true; r.querySelector('[data-k=out]').value = FL.outLines(res.out).join('\n');
+    });
+    if ($('#exDel')) $('#exDel').onclick = () => { snap(); delete prog.ex; dlg.close(); afterChange(false); switchTab('block'); };
+    $('#exSave').onclick = () => {
+      read();
+      ex.tests = ex.tests.filter(x => x.in.length || x.out.trim());
+      if (!ex.tests.length) { toast(t('exNeedTest')); return; }
+      snap(); prog.ex = validEx(ex); dlg.close(); afterChange(false); switchTab('ex');
+    };
+  };
+  draw();
+}
+
 /* ---------- share link: the whole diagram is inside the link (see shareEncode in core.js) ---------- */
 function shareBase() {
   return /^https?:$/.test(location.protocol) ? new URL('./', document.baseURI).href : 'https://flussolab.s3l.it/';
 }
 function cmdShare() {
-  const link = shareBase() + '#' + FL.shareEncode(JSON.parse(ser()));
-  openDlg(`<h2>${esc(t('shareT'))}</h2>
+  const doc = JSON.parse(ser());
+  // an exercise is shared without the diagram by default: the open diagram is usually the teacher's solution
+  const make = withMain => shareBase() + '#' + FL.shareEncode(doc.ex && !withMain ? { ...doc, main: [] } : doc);
+  let link = make(false);
+  openDlg(`<h2>${esc(doc.ex ? t('exShareT') : t('shareT'))}</h2>
+    ${doc.ex ? `<div class="radios"><label><input type="radio" name="shWhat" value="0" checked> <span>${esc(t('shareExNo'))}</span></label><label><input type="radio" name="shWhat" value="1"> <span>${esc(t('shareExWith'))}</span></label></div>` : ''}
     <div class="field" style="margin:0"><input type="text" id="shareLink" readonly value="${esc(link)}" aria-label="${esc(t('shareT'))}"></div>
-    <p>${esc(t('shareNote'))}</p>${link.length > 2000 ? `<p>${esc(t('shareLong', link.length))}</p>` : ''}
+    <p>${esc(t('shareNote'))}</p><p id="shareLongP"${link.length > 2000 ? '' : ' hidden'}>${esc(t('shareLong', link.length))}</p>
     <div class="foot"><button class="btn" data-close>${esc(t('close'))}</button>${navigator.share ? `<button class="btn" id="shareSys">${esc(t('shareSys'))}</button>` : ''}<button class="btn primary" id="shareCopy">${esc(t('copyLink'))}</button></div>`);
   const inp = $('#shareLink'); inp.addEventListener('focus', () => inp.select());
+  $$('[name=shWhat]', dlg).forEach(r => r.onchange = () => { link = make(r.value === '1'); inp.value = link; $('#shareLongP').hidden = link.length <= 2000; $('#shareLongP').textContent = t('shareLong', link.length); });
   $('#shareCopy').onclick = async () => {
     try { await navigator.clipboard.writeText(link); } catch (e) { inp.focus(); inp.select(); try { document.execCommand('copy'); } catch (e2) { return; } }
     toast(t('copied'));
@@ -981,12 +1090,12 @@ function openFromLink() {
   if (!h) return;
   history.replaceState(null, '', location.pathname + location.search);
   let doc; try { doc = FL.shareDecode(h); } catch (e) { toast(t('badLink')); return; }
-  try { if (openDoc(doc)) toast(t('linkOpened')); } catch (e) { toast(t('badLink')); }
+  try { if (openDoc(doc)) { toast(t(doc.ex ? 'exOpened' : 'linkOpened')); if (doc.ex) switchTab('ex'); } } catch (e) { toast(t('badLink')); }
 }
 addEventListener('hashchange', () => { if (booted) openFromLink(); });
 
 function cmdSave() {
-  const json = JSON.stringify({ format: 'flussolab', version: 1, name: prog.name, main: prog.main }, replacer, 2);
+  const json = JSON.stringify({ format: 'flussolab', version: 1, ...docOf(prog) }, replacer, 2);
   openDlg(`<h2>${esc(t('saveTitle'))}</h2>
     <div class="field" style="margin:0"><label for="saveName">${esc(t('fileName'))}</label><input type="text" id="saveName" value="${esc(fileBase())}"></div>
     <p>${esc(t('saveNote'))}</p>
@@ -1117,7 +1226,7 @@ function cmdExportZip() {
         while (used.has(base)) base += '_';
         used.add(base);
         if (wantF) {
-          const json = JSON.stringify({ format: 'flussolab', version: 1, name: doc.name || '', author: who, main: doc.main }, replacer, 2);
+          const json = JSON.stringify({ format: 'flussolab', version: 1, ...docOf(doc), author: who }, replacer, 2);
           files.push({ name: base + '.flusso', data: enc.encode(json) });
         }
         if (wantP) {
@@ -1157,7 +1266,7 @@ function pasteBlock() {
 /* ================= menu bar ================= */
 const MENUS = {
   file: () => [
-    ['new', t('new'), ''], ['open', t('open') + '…', 'Ctrl+O'], ['save', t('save') + '…', 'Ctrl+S'], ['share', t('shareM'), ''], ['png', t('png') + '…', ''], ['zip', t('zipM'), ''], '-',
+    ['new', t('new'), ''], ['open', t('open') + '…', 'Ctrl+O'], ['save', t('save') + '…', 'Ctrl+S'], ['share', t('shareM'), ''], ['exercise', prog.ex ? t('exEditM') : t('exM'), ''], ['png', t('png') + '…', ''], ['zip', t('zipM'), ''], '-',
     ['install', t('installM'), ''], '-',
     { head: t('examples') }, ...langPart('examples').map((x, i) => ['ex:' + i, x.name, '']),
   ],
@@ -1236,6 +1345,7 @@ function runCmd(c) {
   if (c === 'open') return cmdOpen();
   if (c === 'save') return cmdSave();
   if (c === 'share') return cmdShare();
+  if (c === 'exercise') return cmdExercise();
   if (c === 'png') return cmdPng();
   if (c === 'zip') return cmdExportZip();
   if (c === 'install') return cmdInstall();
@@ -1253,7 +1363,7 @@ function runCmd(c) {
   if (c === 'py') { opts.py = !opts.py; saveOpts(); renderCode(); return; }
   if (c === 'cut' && f) { clip = JSON.stringify(f.b, replacer); stopRun(); snap(); return deleteSel(f); }
   if (c === 'up' || c === 'down') { const btn = document.createElement('button'); btn.dataset.act = c; return blockAct(c); }
-  if ((c === 'inv' || c === 'swap') && f) return blockAct(c);
+  if ((c === 'inv' || c === 'swap' || c === 'off') && f) return blockAct(c);
   if (c.startsWith('ins:')) { const sl = ctxSlot; if (sl) { popSlot = sl; insertType(c.slice(4)); } return; }
   if (c === 'pasteSlot' && ctxSlot && clip) { popSlot = ctxSlot; insertType('__paste'); return; }
   if (c.startsWith('theme:')) { opts.theme = c.slice(6); saveOpts(); applyTheme(); return; }
@@ -1275,7 +1385,7 @@ function applyLang() {
   $$('[data-i18n]').forEach(el => { const k = el.dataset.i18n; if (k) el.textContent = t(k); });
   $$('[data-i18n-ph]').forEach(el => el.placeholder = t(el.dataset.i18nPh));
   $$('[data-i18n-title]').forEach(el => { el.title = t(el.dataset.i18nTitle); el.setAttribute('aria-label', t(el.dataset.i18nTitle)); });
-  setRunUI(); syncTrace(); renderDiagram(); renderPanel(); renderCode();
+  setRunUI(); syncTrace(); renderDiagram(); renderPanel(); renderCode(); renderEx();
   if (con.dataset.idle) clearConsole(); else renderVars();
 }
 
@@ -1359,7 +1469,7 @@ let booted = false;
     if (st && Array.isArray(st.tabs)) st.tabs.slice(0, MAXTABS).forEach(x => {
       try {
         const o = JSON.parse(x.data);
-        if (o && Array.isArray(o.main) && o.main.every(validBlock)) tabs.push({ id: ++tabSeq, data: JSON.stringify({ name: nameOf(o), main: o.main }), hist: [], fut: [], dirty: !!x.dirty, zoom: 1 });
+        if (o && Array.isArray(o.main) && o.main.every(validBlock)) tabs.push({ id: ++tabSeq, data: JSON.stringify(docOf(o)), hist: [], fut: [], dirty: !!x.dirty, zoom: 1 });
       } catch (e) {}
     });
     if (tabs.length) cur = Math.min(Math.max(0, st.cur | 0), tabs.length - 1);

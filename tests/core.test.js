@@ -3,6 +3,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const FL = require('../js/core.js');
+const IT = require('../lang/it.json');
 
 // Esegue un programma e restituisce le righe scritte a schermo e le variabili.
 function run(main, inputs = []) {
@@ -155,7 +156,7 @@ test('inverti condizione', () => {
 });
 
 test('pseudocodice', () => {
-  const p = FL.toPseudo([{ t: 'input', v: 'n' }, { t: 'if', c: 'n > 0', y: [{ t: 'output', e: '"positivo"' }], n: [] }], 'it');
+  const p = FL.toPseudo([{ t: 'input', v: 'n' }, { t: 'if', c: 'n > 0', y: [{ t: 'output', e: '"positivo"' }], n: [] }], IT.pseudo);
   assert.equal(p, 'INIZIO\n    LEGGI n\n    SE n > 0 ALLORA\n        SCRIVI "positivo"\n    FINE SE\nFINE');
 });
 
@@ -199,12 +200,12 @@ test('incremento e decremento', () => {
     { t: 'assign', v: 'i', inc: '--' }, { t: 'output', e: 'i' }]).out, ['2']);
   assert.equal(errKey(() => run([{ t: 'assign', v: 'z', e: '1.5' }, { t: 'assign', v: 'z', inc: '++' }])), 'incint');
   assert.equal(errKey(() => run([{ t: 'decl', k: 'float', v: 'r' }, { t: 'assign', v: 'r', e: '1' }, { t: 'assign', v: 'r', inc: '++' }])), 'incint');
-  assert.equal(FL.toPseudo([{ t: 'assign', v: 'i', inc: '++' }], 'it'), 'INIZIO\n    i = i + 1\nFINE');
+  assert.equal(FL.toPseudo([{ t: 'assign', v: 'i', inc: '++' }], IT.pseudo), 'INIZIO\n    i = i + 1\nFINE');
 });
 
 test('Python generato: solo funzioni standard', () => {
   const py = FL.toPython([{ t: 'input', v: 'int a, int b' }, { t: 'output', e: 'a / b' }, { t: 'output', e: 'x / y' },
-    { t: 'output', e: 'a % b' }, { t: 'output', e: 'round(z)' }, { t: 'output', e: '7 / 2' }], 'it');
+    { t: 'output', e: 'a % b' }, { t: 'output', e: 'round(z)' }, { t: 'output', e: '7 / 2' }], IT.python);
   assert.doesNotMatch(py, /def /);
   assert.match(py, /a: int = int\(input\("a\? "\)\)/);
   assert.match(py, /print\(int\(a \/ b\)\)/);
@@ -212,7 +213,7 @@ test('Python generato: solo funzioni standard', () => {
   assert.match(py, /print\(a % b\)/);
   assert.match(py, /print\(math\.floor\(z \+ 0\.5\)\)/);
   assert.match(py, /print\(int\(7 \/ 2\)\)/);
-  const py2 = FL.toPython([{ t: 'input', v: 'n, float m, string s' }], 'it');
+  const py2 = FL.toPython([{ t: 'input', v: 'n, float m, string s' }], IT.python);
   assert.match(py2, /^n = input\("n\? "\)$/m);
   assert.match(py2, /m: float = float\(input\("m\? "\)\.replace\(",", "\."\)\)/);
   assert.match(py2, /s: str = input\("s\? "\)$/m);
@@ -233,10 +234,48 @@ test('numeri con la virgola sempre riconoscibili, × e ÷, numeri enormi', () =>
 test('Python generato: testi, cicli e vettori', () => {
   const py = FL.toPython([{ t: 'assign', v: 'n', e: '5' }, { t: 'assign', v: 's', e: '"n = " + str(n)' }, { t: 'output', e: 's + "1"' },
     { t: 'assign', v: 'k', e: '-1' }, { t: 'for', v: 'i', a: '3', b: '1', s: 'k', body: [] },
-    { t: 'assign', v: 'm[0][1]', e: '5' }, { t: 'assign', v: 'float f', e: '3' }], 'it');
+    { t: 'assign', v: 'm[0][1]', e: '5' }, { t: 'assign', v: 'float f', e: '3' }], IT.python);
   assert.match(py, /s = "n = " \+ str\(n\)/);
   assert.match(py, /print\(s \+ "1"\)/);
   assert.match(py, /while \(k > 0 and i <= 1\) or \(k < 0 and i >= 1\):/);
   assert.match(py, /m\.setdefault\(0, \{\}\)\[1\] = 5/);
   assert.match(py, /f: float = float\(3\)/);
+});
+
+// Ogni file di lingua deve avere le stesse voci di lang/it.json, così chi aggiunge una lingua sa cosa manca.
+test('file di lingua completi e coerenti', () => {
+  const fs = require('fs'), path = require('path');
+  const dir = path.join(__dirname, '..', 'lang');
+  const list = JSON.parse(fs.readFileSync(path.join(dir, 'languages.json'), 'utf8'));
+  assert.ok(list.some(l => l.code === 'it') && list.some(l => l.code === 'en'));
+  const keys = (o, pre = '') => Object.entries(o).flatMap(([k, v]) => v && typeof v === 'object' && !Array.isArray(v) ? keys(v, pre + k + '.') : [pre + k]);
+  const ph = v => typeof v === 'string' ? (v.match(/\{\d(:\w+)?\}/g) || []).sort().join() : '';
+  const flat = (o, pre = '') => Object.fromEntries(Object.entries(o).flatMap(([k, v]) => v && typeof v === 'object' && !Array.isArray(v) ? Object.entries(flat(v, pre + k + '.')) : [[pre + k, v]]));
+  const base = flat({ ui: IT.ui, pseudo: IT.pseudo, python: IT.python });
+  for (const { code, name } of list) {
+    assert.match(code, /^[a-z]{2,3}(-[A-Z]{2})?$/, `codice lingua non valido: ${code}`);
+    const L = JSON.parse(fs.readFileSync(path.join(dir, code + '.json'), 'utf8'));
+    assert.equal(L.code, code, `${code}.json: "code" deve essere "${code}"`);
+    assert.ok(name && L.name, `${code}: manca il nome della lingua`);
+    const f = flat({ ui: L.ui, pseudo: L.pseudo, python: L.python });
+    const missing = Object.keys(base).filter(k => !(k in f));
+    assert.deepEqual(missing, [], `${code}.json: mancano queste voci`);
+    for (const k of Object.keys(base)) assert.equal(ph(f[k]), ph(base[k]), `${code}.json: segnaposto diversi in ${k}`);
+    assert.ok(typeof L.guide === 'string' && L.guide.length > 100, `${code}.json: manca la guida`);
+    assert.ok(Array.isArray(L.examples) && L.examples.length, `${code}.json: mancano gli esempi`);
+    for (const x of L.examples) {
+      assert.ok(x.name && Array.isArray(x.main), `${code}.json: esempio senza nome o blocchi`);
+      FL.setBoolNames(L.ui.FALSE, L.ui.TRUE);
+      assert.equal(FL.firstError(x.main), null, `${code}.json: l'esempio «${x.name}» ha un errore`);
+    }
+  }
+  FL.setBoolNames(IT.ui.FALSE, IT.ui.TRUE);
+});
+
+test('valori logici nella lingua scelta', () => {
+  FL.setBoolNames('FAUX', 'VRAI');
+  assert.equal(show('vrai and not faux'), 'VRAI');
+  assert.equal(show('true and vero'), 'VRAI');
+  FL.setBoolNames('FALSO', 'VERO');
+  assert.equal(show('vrai == vrai', { vrai: '1' }), 'VERO');
 });

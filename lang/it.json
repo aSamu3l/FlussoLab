@@ -1,0 +1,572 @@
+{
+  "name": "Italiano",
+  "code": "it",
+  "ui": {
+    "new": "Nuovo",
+    "open": "Apri",
+    "save": "Salva",
+    "png": "Immagine",
+    "undo": "Annulla (Ctrl+Z)",
+    "redo": "Ripeti (Ctrl+Y)",
+    "help": "Guida",
+    "run": "Esegui",
+    "step": "Passo",
+    "stop": "Stop",
+    "speed": "Velocità",
+    "tabBlock": "Blocco",
+    "tabRun": "Esecuzione",
+    "tabCode": "Codice",
+    "progName": "Nome del programma",
+    "untitled": "Programma senza nome",
+    "hint": "Clicca o tocca un + per inserire un blocco. Tasto destro, o tocco prolungato, per altre azioni.",
+    "START": "INIZIO",
+    "END": "FINE",
+    "T": "V",
+    "F": "F",
+    "TRUE": "VERO",
+    "FALSE": "FALSO",
+    "types": {
+      "decl": "VAR · Dichiarazione",
+      "input": "IN · Input",
+      "output": "OUT · Output",
+      "outln": "OUTLN · Output a capo",
+      "assign": "Assegnazione",
+      "comment": "Commento",
+      "if": "IF · Se",
+      "while": "WHILE · Mentre",
+      "do": "DO WHILE · Ripeti mentre",
+      "for": "FOR · Per"
+    },
+    "typeHint": {
+      "decl": "Facoltativo: fissa il tipo di una o più variabili",
+      "input": "Legge uno o più valori da tastiera",
+      "out": "Scrive a schermo; nel blocco scegli se andare a capo",
+      "output": "Scrive a schermo e resta sulla stessa riga",
+      "outln": "Scrive a schermo e poi va a capo",
+      "comment": "Una nota per chi legge, non viene eseguita",
+      "assign": "Calcola un valore e lo salva in una variabile",
+      "if": "Due strade, in base a una condizione",
+      "while": "Controlla la condizione, poi ripete finché è vera",
+      "do": "Esegue almeno una volta, poi ripete se la condizione è vera",
+      "for": "Ripete contando con una variabile"
+    },
+    "f_vars": "Variabili da leggere",
+    "f_expr": "Espressione da mostrare",
+    "f_var": "Variabile",
+    "f_cond": "Condizione",
+    "f_from": "Da",
+    "f_to": "A",
+    "f_step": "Passo",
+    "f_ln": "Vai a capo (OUTLN)",
+    "f_assign": "Assegnazione",
+    "e_noeq": "Manca il segno =: scrivi variabile = espressione (oppure i++ / i--)",
+    "f_comment": "Testo del commento",
+    "n_cm": "commento: non viene eseguito",
+    "loopEnd": "fine ciclo",
+    "trace": "Traccia",
+    "traceT": "Mostra nella console ogni blocco eseguito",
+    "cut": "Taglia",
+    "pasteAfter": "Incolla dopo",
+    "showPy": "Mostra anche Python",
+    "codeLink": "Collega diagramma e codice",
+    "e_cmpmix": "Stai confrontando un testo con un numero ({0}). Forse mancano le parentesi, ad esempio \"Risultato: \" + str(x > 5)",
+    "mFile": "File",
+    "mEdit": "Modifica",
+    "mView": "Visualizza",
+    "mHelp": "Aiuto",
+    "undoM": "Annulla",
+    "redoM": "Ripeti",
+    "optSymShort": "Simboli ≥ ≤ ≠",
+    "zoomIn": "Ingrandisci",
+    "zoomOut": "Riduci",
+    "zoom100": "Zoom 100%",
+    "helpT": "Guida",
+    "language": "Lingua",
+    "offline": "Offline",
+    "offlineT": "Sei offline: FlussoLab funziona lo stesso e salva tutto su questo dispositivo.",
+    "tooMany": "Puoi tenere aperti al massimo {0} diagrammi: chiudine uno.",
+    "newTab": "Nuovo diagramma",
+    "closeTab": "Chiudi",
+    "closeT": "Chiudere il diagramma?",
+    "closeMsg": "«{0}» ha modifiche che non hai salvato in un file. Se lo chiudi, le perdi.",
+    "closeAnyway": "Chiudi senza salvare",
+    "unsaved": "Modifiche non salvate in un file",
+    "fitT": "Adatta allo schermo",
+    "zipM": "Esporta consegna (ZIP)…",
+    "zipTitle": "Esporta la consegna",
+    "zipNote": "Crea un unico file .zip con i diagrammi scelti, pronto da consegnare.",
+    "zipWho": "Nome e cognome",
+    "zipWhoPh": "Mario Rossi",
+    "zipWhich": "Diagrammi da includere",
+    "zipEmpty": "vuoto",
+    "zipFlusso": "File .flusso",
+    "zipPng": "Immagini PNG",
+    "zipGo": "Scarica ZIP",
+    "zipWorking": "Preparazione…",
+    "zipNone": "Scegli almeno un diagramma e un tipo di file",
+    "zipDone": "ZIP pronto: {0} file",
+    "zipFail": "Non è stato possibile creare lo ZIP",
+    "inEmpty": "Scrivi un valore prima di premere Invio",
+    "installAsk": "Vuoi installare FlussoLab come app? Funziona anche offline.",
+    "installBtn": "Installa",
+    "installHowBtn": "Come si fa",
+    "installM": "Installa come app…",
+    "installT": "Installa FlussoLab",
+    "installed": "FlussoLab è installato",
+    "installHow": "<p>FlussoLab si installa come un'app e poi funziona anche senza internet.</p><ul><li><b>Chrome o Edge (Windows, Chromebook, Android)</b>: menu del browser → «Installa FlussoLab» o «Aggiungi a schermata Home».</li><li><b>iPhone e iPad</b>: apri il sito con Safari, tocca Condividi → «Aggiungi alla schermata Home».</li></ul>",
+    "updAvail": "È disponibile una nuova versione.",
+    "updNow": "Aggiorna",
+    "aboutM": "Informazioni su FlussoLab",
+    "version": "Versione",
+    "aboutText": "Editor di diagrammi di flusso che funziona nel browser, pensato per la scuola. Non serve installare niente.",
+    "devBy": "Sviluppato da",
+    "license": "Licenza",
+    "freeOpen": "gratuito, codice aperto, vietato l'uso commerciale",
+    "source": "Codice sorgente",
+    "supportText": "FlussoLab è gratuito. Se ti è utile, puoi aiutare a mantenerlo con una piccola donazione.",
+    "support": "Sostieni il progetto",
+    "e_nodef": "Nessuna variabile trovata con il nome «{0}»",
+    "e_notcond": "Questa non è una condizione: serve un confronto, ad esempio x > 0",
+    "invert": "Inverti condizione",
+    "swap": "Scambia rami V e F",
+    "inverted": "Condizione invertita",
+    "swapped": "Rami scambiati",
+    "explain": "Spiegazione",
+    "optExplain": "Modalità spiegazione",
+    "optTheme": "Aspetto",
+    "thAuto": "Automatico",
+    "thLight": "Chiaro",
+    "thDark": "Scuro",
+    "n_in": "legge da tastiera {0}",
+    "n_out": "scrive a schermo {0}",
+    "n_outln": "scrive a schermo {0} e va a capo",
+    "n_val": "il valore",
+    "n_as": "calcola e salva in {0}",
+    "n_if": "se è vera esegue V, se è falsa esegue F",
+    "n_while": "finché è vera ripete il ciclo",
+    "n_do": "esegue il ciclo, poi lo ripete se è vera",
+    "n_for": "ripete con {0} = {1}, …, {2}",
+    "up": "Su",
+    "down": "Giù",
+    "dup": "Duplica",
+    "copy": "Copia",
+    "del": "Elimina",
+    "noSel": "Tocca un blocco del diagramma per modificarlo, oppure un <b>+</b> su una linea per inserirne uno nuovo.",
+    "legendT": "I blocchi",
+    "insertHere": "Inserisci qui",
+    "pasteHere": "Incolla il blocco copiato",
+    "console": "Console",
+    "vars": "Variabili",
+    "noVars": "Nessuna variabile ancora.",
+    "thName": "Nome",
+    "thVal": "Valore",
+    "thType": "Tipo",
+    "ty": {
+      "int": "int",
+      "float": "float",
+      "str": "string",
+      "bool": "bool",
+      "arr": "vettore"
+    },
+    "tyk": {
+      "int": "int",
+      "float": "float",
+      "str": "string",
+      "bool": "bool"
+    },
+    "f_type": "Tipo",
+    "f_declvars": "Variabili",
+    "n_decl": "le variabili saranno di tipo {0}",
+    "n_inc": "aumenta {0} di 1",
+    "n_dec": "diminuisce {0} di 1",
+    "vecOf": "vettore di",
+    "e_tdecl": "«{0}» è di tipo {1:tyk}: non può contenere {2}",
+    "e_tin": "«{0}» non è un valore {1:tyk} valido per {2}",
+    "e_tarr": "«{0}» è un vettore di {1:tyk}: assegna i singoli elementi, ad esempio {0}[0]",
+    "e_incint": "{0} si può usare solo su variabili intere: «{1}» non è un intero",
+    "e_reserved": "«{0}» è il nome di un tipo: non si può usare come nome di variabile",
+    "e_assigneq": "Per confrontare si usa ==",
+    "e_redecl": "«{0}» è già stata dichiarata con un altro tipo",
+    "e_declname": "«{0}» non è un nome di variabile valido",
+    "e_kind": "Scegli un tipo",
+    "consoleIdle": "Premi Esegui per avviare il programma, oppure Passo per seguirlo un blocco alla volta.",
+    "inputAsk": "Inserisci il valore di {0}",
+    "send": "Invio",
+    "done": "Programma terminato.",
+    "stopped": "Esecuzione interrotta.",
+    "errAt": "Errore",
+    "codePseudo": "Pseudocodice",
+    "copyCode": "Copia codice",
+    "copied": "Copiato negli appunti",
+    "pyNote": "Codice Python con sole funzioni standard. Attenzione: in Python / tra variabili non dichiarate int dà sempre un risultato con la virgola, e % con i numeri negativi può dare un risultato diverso dal diagramma.",
+    "pseudoNote": "Pseudocodice generato dal diagramma. Si aggiorna a ogni modifica.",
+    "saveTitle": "Salva il diagramma",
+    "fileName": "Nome del file",
+    "download": "Scarica il file",
+    "saveNote": "Il file .flusso contiene tutto il diagramma: si riapre da File → Apri.",
+    "openTitle": "Apri un diagramma",
+    "pickFile": "Scegli un file…",
+    "dropHere": "oppure trascina qui un file .flusso",
+    "examples": "Esempi pronti",
+    "pngTitle": "Esporta come immagine",
+    "pngErr": "Impossibile creare l'immagine: il diagramma è troppo grande",
+    "pngDl": "Scarica PNG",
+    "pngNote": "Se il download non parte, tieni premuto sull'immagine (o clic destro) e scegli «Salva immagine».",
+    "cancel": "Annulla",
+    "close": "Chiudi",
+    "loadedOk": "Diagramma caricato",
+    "badFile": "Questo file non contiene un diagramma valido.",
+    "deleted": "Blocco eliminato",
+    "copiedBlk": "Blocco copiato",
+    "e_syntax": "Non capisco «{0}» in questo punto",
+    "e_end": "L'espressione è incompleta",
+    "e_str": "Manca la virgoletta di chiusura",
+    "e_empty": "Il campo è vuoto",
+    "e_undef": "La variabile {0} non ha ancora un valore",
+    "e_div0": "Divisione per zero",
+    "e_big": "Numero troppo grande",
+    "e_type": "Tipi di dato non adatti all'operazione {0}",
+    "e_strmix": "Non si può unire un testo con {0:mix}: usa str(), ad esempio \"Totale: \" + str(n)",
+    "mix": {
+      "int": "un numero",
+      "float": "un numero",
+      "bool": "un valore logico",
+      "arr": "un vettore"
+    },
+    "e_fn": "Funzione sconosciuta: {0}",
+    "e_args": "{0} vuole {1} argomenti",
+    "e_idx": "Indice non valido: {0}",
+    "e_notarr": "{0} non è un vettore",
+    "e_lv": "Qui serve il nome di una variabile",
+    "e_bool": "La condizione deve risultare VERO o FALSO (ad esempio x > 0)",
+    "e_loop": "Troppi passi: forse è un ciclo infinito?",
+    "e_step0": "Il passo del ciclo non può essere 0",
+    "e_sqrt": "Radice quadrata di un numero negativo",
+    "e_num": "«{0}» non è un numero"
+  },
+  "pseudo": {
+    "start": "INIZIO",
+    "end": "FINE",
+    "read": "LEGGI",
+    "write": "SCRIVI",
+    "if": "SE",
+    "then": "ALLORA",
+    "else": "ALTRIMENTI",
+    "endif": "FINE SE",
+    "while": "MENTRE",
+    "do": "ESEGUI",
+    "endwhile": "FINE MENTRE",
+    "repeat": "RIPETI",
+    "repwhile": "MENTRE",
+    "for": "PER",
+    "from": "DA",
+    "to": "A",
+    "step": "PASSO",
+    "endfor": "FINE PER",
+    "noln": "(senza andare a capo)",
+    "vars": "VARIABILI",
+    "kinds": {
+      "int": "int",
+      "float": "float",
+      "str": "string",
+      "bool": "bool"
+    },
+    "arrOf": "VETTORE DI"
+  },
+  "python": {
+    "generated": "Generato da FlussoLab",
+    "array": "vettore",
+    "arrayOf": "vettore di"
+  },
+  "guide": "<h3>Come si usa</h3><ul>\n<li>Tocca un <b>+</b> su una linea per inserire un blocco in quel punto. <b>OUT</b> scrive e resta sulla riga, <b>OUTLN</b> scrive e va a capo.</li>\n<li><b>Spiegazione</b> mostra accanto a ogni blocco cosa fa. In <b>Opzioni</b> trovi i simboli ≥ ≤ ≠ e il tema chiaro o scuro.</li>\n<li>Tocca un blocco per modificarlo nel pannello <b>Blocco</b>. I blocchi con un errore hanno il bordo rosso tratteggiato.</li>\n<li><b>Esegui</b> avvia il programma. <b>Passo</b> esegue un blocco alla volta e mostra le variabili.</li>\n<li><b>Salva</b> crea un file <code>.flusso</code> da consegnare. <b>File → Esporta consegna (ZIP)</b> mette in un unico file tutti i diagrammi aperti, come <code>.flusso</code> e come immagine. <b>Apri</b> lo ricarica. <b>Immagine</b> esporta il diagramma in PNG.</li>\n<li>Il lavoro resta salvato in questo browser anche se chiudi la pagina.</li></ul>\n<h3>Espressioni</h3><table>\n<tr><td>+ − *</td><td>operazioni; tra due testi, + li unisce: <code>\"Ciao \" + nome</code>, per un numero usa <code>str(n)</code></td></tr>\n<tr><td>/</td><td>divisione, come in C: tra due <code>int</code> il risultato è un <code>int</code> (<code>7 / 2</code> → 3); se uno dei due è <code>float</code> il risultato è <code>float</code> (<code>7.0 / 2</code> → 3.5)</td></tr>\n<tr><td>(float) (int)</td><td>conversione di tipo: <code>(float) s / n</code> → divisione con i decimali; <code>(int) 3.9</code> → 3</td></tr>\n<tr><td>mod  %</td><td>resto della divisione: <code>7 mod 3</code> e <code>7 % 3</code> sono uguali</td></tr>\n<tr><td>^</td><td>potenza</td></tr>\n<tr><td>== !=</td><td>uguale, diverso. Il singolo <code>=</code> serve solo per assegnare</td></tr>\n<tr><td>&lt; &lt;= &gt; &gt;=</td><td>confronti</td></tr>\n<tr><td>AND OR NOT</td><td>anche && || !</td></tr>\n<tr><td>true, false</td><td>valori logici (vanno bene anche vero, falso)</td></tr>\n<tr><td>v[i]</td><td>elemento di un vettore; si crea assegnando <code>v[0] = 5</code> o leggendo <code>v[i]</code></td></tr>\n<tr><td>i++  i--</td><td>nel blocco assegnazione: aumenta o diminuisce di 1 una variabile intera</td></tr></table>\n<h3>Tipi delle variabili</h3><p>Di base il tipo è automatico: lo decide il valore. Puoi dichiararlo dove la variabile nasce, ad esempio <code>IN int n</code>, <code>float media = (float) s / n</code> o <code>FOR int i = 1 TO 10</code>, oppure con il blocco <b>VAR</b>. I tipi sono <code>int</code> (numeri interi), <code>float</code> (numeri con la virgola, va bene anche <code>double</code>), <code>string</code> (testo) e <code>bool</code> (vero o falso). Per un vettore scrivi <code>v[]</code>. Le parole dei tipi non si possono usare come nomi di variabile. FlussoLab segnala se metti un valore del tipo sbagliato; con IN, una variabile <code>string</code> tiene il testo così com'è, anche se sono cifre.</p>\n<h3>Funzioni</h3><p><code>sqrt abs int float round floor ceil pow min max sin cos tan random() randint(a,b) len str num</code></p>\n<h3>Scorciatoie</h3><p><kbd>Canc</kbd> elimina il blocco selezionato · <kbd>Ctrl</kbd>+<kbd>Z</kbd> annulla · <kbd>Ctrl</kbd>+<kbd>C</kbd>/<kbd>V</kbd> copia e incolla dopo il blocco selezionato</p>\n<h3>Il progetto</h3><p>FlussoLab è gratuito e il suo codice è aperto a tutti, ma non può essere usato per guadagnarci. Funziona interamente nel browser: niente da installare, anche su Chromebook e tablet.</p>",
+  "examples": [
+    {
+      "name": "Media dei voti",
+      "tags": "Per, Se",
+      "main": [
+        {
+          "t": "output",
+          "e": "\"Quanti voti? \"",
+          "ln": false
+        },
+        {
+          "t": "input",
+          "v": "n"
+        },
+        {
+          "t": "assign",
+          "v": "s",
+          "e": "0"
+        },
+        {
+          "t": "for",
+          "v": "i",
+          "a": "1",
+          "b": "n",
+          "s": "1",
+          "body": [
+            {
+              "t": "output",
+              "e": "\"Voto \"",
+              "ln": false
+            },
+            {
+              "t": "output",
+              "e": "i",
+              "ln": false
+            },
+            {
+              "t": "output",
+              "e": "\": \"",
+              "ln": false
+            },
+            {
+              "t": "input",
+              "v": "voto"
+            },
+            {
+              "t": "assign",
+              "v": "s",
+              "e": "s + voto"
+            }
+          ]
+        },
+        {
+          "t": "assign",
+          "v": "float media",
+          "e": "(float) s / n"
+        },
+        {
+          "t": "output",
+          "e": "\"Media: \"",
+          "ln": false
+        },
+        {
+          "t": "output",
+          "e": "round(media * 100) / 100.0"
+        },
+        {
+          "t": "if",
+          "c": "media >= 6",
+          "y": [
+            {
+              "t": "output",
+              "e": "\"Sufficiente\""
+            }
+          ],
+          "n": [
+            {
+              "t": "output",
+              "e": "\"Insufficiente\""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Tabellina",
+      "tags": "Per",
+      "main": [
+        {
+          "t": "input",
+          "v": "n"
+        },
+        {
+          "t": "for",
+          "v": "i",
+          "a": "1",
+          "b": "10",
+          "s": "1",
+          "body": [
+            {
+              "t": "output",
+              "e": "n",
+              "ln": false
+            },
+            {
+              "t": "output",
+              "e": "\" x \"",
+              "ln": false
+            },
+            {
+              "t": "output",
+              "e": "i",
+              "ln": false
+            },
+            {
+              "t": "output",
+              "e": "\" = \"",
+              "ln": false
+            },
+            {
+              "t": "output",
+              "e": "n * i"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Numero primo",
+      "tags": "Mentre, AND, mod",
+      "main": [
+        {
+          "t": "input",
+          "v": "n"
+        },
+        {
+          "t": "assign",
+          "v": "d",
+          "e": "2"
+        },
+        {
+          "t": "assign",
+          "v": "primo",
+          "e": "vero"
+        },
+        {
+          "t": "while",
+          "c": "d * d <= n AND primo",
+          "body": [
+            {
+              "t": "if",
+              "c": "n mod d == 0",
+              "y": [
+                {
+                  "t": "assign",
+                  "v": "primo",
+                  "e": "falso"
+                }
+              ],
+              "n": []
+            },
+            {
+              "t": "assign",
+              "v": "d",
+              "e": "d + 1"
+            }
+          ]
+        },
+        {
+          "t": "if",
+          "c": "primo AND n > 1",
+          "y": [
+            {
+              "t": "output",
+              "e": "n",
+              "ln": false
+            },
+            {
+              "t": "output",
+              "e": "\" è primo\""
+            }
+          ],
+          "n": [
+            {
+              "t": "output",
+              "e": "n",
+              "ln": false
+            },
+            {
+              "t": "output",
+              "e": "\" non è primo\""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Somma fino a zero",
+      "tags": "Ripeti… mentre",
+      "main": [
+        {
+          "t": "assign",
+          "v": "s",
+          "e": "0"
+        },
+        {
+          "t": "do",
+          "c": "x != 0",
+          "body": [
+            {
+              "t": "input",
+              "v": "x"
+            },
+            {
+              "t": "assign",
+              "v": "s",
+              "e": "s + x"
+            }
+          ]
+        },
+        {
+          "t": "output",
+          "e": "\"Totale: \"",
+          "ln": false
+        },
+        {
+          "t": "output",
+          "e": "s"
+        }
+      ]
+    },
+    {
+      "name": "Massimo di un vettore",
+      "tags": "Vettori",
+      "main": [
+        {
+          "t": "input",
+          "v": "n"
+        },
+        {
+          "t": "for",
+          "v": "i",
+          "a": "0",
+          "b": "n - 1",
+          "s": "1",
+          "body": [
+            {
+              "t": "input",
+              "v": "v[i]"
+            }
+          ]
+        },
+        {
+          "t": "assign",
+          "v": "max",
+          "e": "v[0]"
+        },
+        {
+          "t": "for",
+          "v": "i",
+          "a": "1",
+          "b": "n - 1",
+          "s": "1",
+          "body": [
+            {
+              "t": "if",
+              "c": "v[i] > max",
+              "y": [
+                {
+                  "t": "assign",
+                  "v": "max",
+                  "e": "v[i]"
+                }
+              ],
+              "n": []
+            }
+          ]
+        },
+        {
+          "t": "output",
+          "e": "\"Massimo: \"",
+          "ln": false
+        },
+        {
+          "t": "output",
+          "e": "max"
+        }
+      ]
+    }
+  ]
+}

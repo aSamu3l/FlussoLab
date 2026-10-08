@@ -2,7 +2,7 @@
 'use strict';
 /* ====== Project settings ====== */
 const CONFIG = {
-  version: '0.6.10',
+  version: '0.7.0',
   author: 'aSamu3l',
   github: 'https://github.com/aSamu3l',
   repo: 'https://github.com/aSamu3l/FlussoLab',
@@ -16,211 +16,51 @@ const store = {
   set(k, v) { try { localStorage.setItem('flussolab.' + k, v); } catch (e) {} },
 };
 
-/* ================= i18n ================= */
-const I18N = {
-  it: {
-    new: 'Nuovo', open: 'Apri', save: 'Salva', png: 'Immagine', undo: 'Annulla (Ctrl+Z)', redo: 'Ripeti (Ctrl+Y)', help: 'Guida',
-    run: 'Esegui', step: 'Passo', stop: 'Stop', speed: 'Velocità',
-    tabBlock: 'Blocco', tabRun: 'Esecuzione', tabCode: 'Codice',
-    progName: 'Nome del programma', untitled: 'Programma senza nome',
-    hint: 'Clicca o tocca un + per inserire un blocco. Tasto destro, o tocco prolungato, per altre azioni.',
-    START: 'INIZIO', END: 'FINE', T: 'V', F: 'F', TRUE: 'VERO', FALSE: 'FALSO',
-    types: { decl: 'VAR · Dichiarazione', input: 'IN · Input', output: 'OUT · Output', outln: 'OUTLN · Output a capo', assign: 'Assegnazione', comment: 'Commento', if: 'IF · Se', while: 'WHILE · Mentre', do: 'DO WHILE · Ripeti mentre', for: 'FOR · Per' },
-    typeHint: {
-      decl: 'Facoltativo: fissa il tipo di una o più variabili', input: 'Legge uno o più valori da tastiera', out: 'Scrive a schermo; nel blocco scegli se andare a capo', output: 'Scrive a schermo e resta sulla stessa riga', outln: 'Scrive a schermo e poi va a capo', comment: 'Una nota per chi legge, non viene eseguita', assign: 'Calcola un valore e lo salva in una variabile',
-      if: 'Due strade, in base a una condizione', while: 'Controlla la condizione, poi ripete finché è vera',
-      do: 'Esegue almeno una volta, poi ripete se la condizione è vera', for: 'Ripete contando con una variabile',
-    },
-    f_vars: 'Variabili da leggere', f_expr: 'Espressione da mostrare',
-    f_var: 'Variabile', f_cond: 'Condizione',
-    f_from: 'Da', f_to: 'A', f_step: 'Passo',
-    f_ln: 'Vai a capo (OUTLN)', f_assign: 'Assegnazione', e_noeq: 'Manca il segno =: scrivi variabile = espressione (oppure i++ / i--)', f_comment: 'Testo del commento', n_cm: 'commento: non viene eseguito',
-    loopEnd: 'fine ciclo', trace: 'Traccia', traceT: 'Mostra nella console ogni blocco eseguito', cut: 'Taglia', pasteAfter: 'Incolla dopo',
-    showPy: 'Mostra anche Python', codeLink: 'Collega diagramma e codice',
-    e_cmpmix: op => `Stai confrontando un testo con un numero (${op}). Forse mancano le parentesi, ad esempio "Risultato: " + str(x > 5)`, mFile: 'File', mEdit: 'Modifica', mView: 'Visualizza', mHelp: 'Aiuto',
-    undoM: 'Annulla', redoM: 'Ripeti', optSymShort: 'Simboli ≥ ≤ ≠', zoomIn: 'Ingrandisci', zoomOut: 'Riduci', zoom100: 'Zoom 100%',
-    helpT: 'Guida', language: 'Lingua', offline: 'Offline', offlineT: 'Sei offline: FlussoLab funziona lo stesso e salva tutto su questo dispositivo.',
-    tooMany: n => `Puoi tenere aperti al massimo ${n} diagrammi: chiudine uno.`, newTab: 'Nuovo diagramma', closeTab: 'Chiudi',
-    closeT: 'Chiudere il diagramma?', closeMsg: n => `«${n}» ha modifiche che non hai salvato in un file. Se lo chiudi, le perdi.`,
-    closeAnyway: 'Chiudi senza salvare', unsaved: 'Modifiche non salvate in un file', fitT: 'Adatta allo schermo',
-    zipM: 'Esporta consegna (ZIP)…', zipTitle: 'Esporta la consegna', zipNote: 'Crea un unico file .zip con i diagrammi scelti, pronto da consegnare.',
-    zipWho: 'Nome e cognome', zipWhoPh: 'Mario Rossi', zipWhich: 'Diagrammi da includere', zipEmpty: 'vuoto',
-    zipFlusso: 'File .flusso', zipPng: 'Immagini PNG', zipGo: 'Scarica ZIP', zipWorking: 'Preparazione…',
-    zipNone: 'Scegli almeno un diagramma e un tipo di file', zipDone: n => `ZIP pronto: ${n} file`, zipFail: 'Non è stato possibile creare lo ZIP',
-    inEmpty: 'Scrivi un valore prima di premere Invio',
-    installAsk: 'Vuoi installare FlussoLab come app? Funziona anche offline.', installBtn: 'Installa', installHowBtn: 'Come si fa',
-    installM: 'Installa come app…', installT: 'Installa FlussoLab', installed: 'FlussoLab è installato',
-    installHow: '<p>FlussoLab si installa come un\'app e poi funziona anche senza internet.</p><ul><li><b>Chrome o Edge (Windows, Chromebook, Android)</b>: menu del browser → «Installa FlussoLab» o «Aggiungi a schermata Home».</li><li><b>iPhone e iPad</b>: apri il sito con Safari, tocca Condividi → «Aggiungi alla schermata Home».</li></ul>',
-    updAvail: 'È disponibile una nuova versione.', updNow: 'Aggiorna', aboutM: 'Informazioni su FlussoLab', version: 'Versione',
-    aboutText: 'Editor di diagrammi di flusso che funziona nel browser, pensato per la scuola. Non serve installare niente.',
-    devBy: 'Sviluppato da', license: 'Licenza', freeOpen: 'gratuito, codice aperto, vietato l\'uso commerciale', source: 'Codice sorgente',
-    supportText: 'FlussoLab è gratuito. Se ti è utile, puoi aiutare a mantenerlo con una piccola donazione.', support: 'Sostieni il progetto',
-    e_nodef: n => `Nessuna variabile trovata con il nome «${n}»`,
-    e_notcond: 'Questa non è una condizione: serve un confronto, ad esempio x > 0', invert: 'Inverti condizione', swap: 'Scambia rami V e F',
-    inverted: 'Condizione invertita', swapped: 'Rami scambiati',
-    explain: 'Spiegazione', 
-    
-    optExplain: 'Modalità spiegazione', 
-    optTheme: 'Aspetto', thAuto: 'Automatico', thLight: 'Chiaro', thDark: 'Scuro',
-    n_in: v => `legge da tastiera ${v}`,
-    n_out: (x, ln) => `scrive a schermo ${x}` + (ln ? ' e va a capo' : ''),
-    n_val: 'il valore', n_as: v => `calcola e salva in ${v}`,
-    n_if: 'se è vera esegue V, se è falsa esegue F', n_while: 'finché è vera ripete il ciclo',
-    n_do: 'esegue il ciclo, poi lo ripete se è vera', n_for: (v, a, b) => `ripete con ${v} = ${a}, …, ${b}`,
-    up: 'Su', down: 'Giù', dup: 'Duplica', copy: 'Copia', del: 'Elimina',
-    noSel: 'Tocca un blocco del diagramma per modificarlo, oppure un <b>+</b> su una linea per inserirne uno nuovo.',
-    legendT: 'I blocchi',
-    insertHere: 'Inserisci qui', pasteHere: 'Incolla il blocco copiato',
-    console: 'Console', vars: 'Variabili', noVars: 'Nessuna variabile ancora.', thName: 'Nome', thVal: 'Valore', thType: 'Tipo',
-    ty: { int: 'int', float: 'float', str: 'string', bool: 'bool', arr: 'vettore' },
-    tyk: { int: 'int', float: 'float', str: 'string', bool: 'bool' }, f_type: 'Tipo', f_declvars: 'Variabili',
-    n_decl: k => `le variabili saranno di tipo ${k}`, n_inc: (v, op) => op === '++' ? `aumenta ${v} di 1` : `diminuisce ${v} di 1`, vecOf: 'vettore di',
-    e_tdecl: (n, k, v) => `«${n}» è di tipo ${t('tyk')[k]}: non può contenere ${v}`,
-    e_tin: (v, k, n) => `«${v}» non è un valore ${t('tyk')[k]} valido per ${n}`,
-    e_tarr: (n, k) => `«${n}» è un vettore di ${t('tyk')[k]}: assegna i singoli elementi, ad esempio ${n}[0]`,
-    e_incint: (op, n) => `${op} si può usare solo su variabili intere: «${n}» non è un intero`,
-    e_reserved: n => `«${n}» è il nome di un tipo: non si può usare come nome di variabile`,
-    e_assigneq: 'Per confrontare si usa ==',
-    e_redecl: n => `«${n}» è già stata dichiarata con un altro tipo`,
-    e_declname: x => `«${x}» non è un nome di variabile valido`, e_kind: 'Scegli un tipo',
-    consoleIdle: 'Premi Esegui per avviare il programma, oppure Passo per seguirlo un blocco alla volta.',
-    inputAsk: n => `Inserisci il valore di ${n}`, send: 'Invio', done: 'Programma terminato.', stopped: 'Esecuzione interrotta.',
-    errAt: 'Errore', codePseudo: 'Pseudocodice', copyCode: 'Copia codice', copied: 'Copiato negli appunti',
-    pyNote: 'Codice Python con sole funzioni standard. Attenzione: in Python / tra variabili non dichiarate int dà sempre un risultato con la virgola, e % con i numeri negativi può dare un risultato diverso dal diagramma.',
-    pseudoNote: 'Pseudocodice generato dal diagramma. Si aggiorna a ogni modifica.',
-    saveTitle: 'Salva il diagramma', fileName: 'Nome del file', download: 'Scarica il file', 
-    saveNote: 'Il file .flusso contiene tutto il diagramma: si riapre da File → Apri.',
-    openTitle: 'Apri un diagramma', pickFile: 'Scegli un file…', dropHere: 'oppure trascina qui un file .flusso',
-    examples: 'Esempi pronti',
-    pngTitle: 'Esporta come immagine', pngErr: 'Impossibile creare l\'immagine: il diagramma è troppo grande', pngDl: 'Scarica PNG', pngNote: 'Se il download non parte, tieni premuto sull\'immagine (o clic destro) e scegli «Salva immagine».',
-    cancel: 'Annulla', close: 'Chiudi',
-    loadedOk: 'Diagramma caricato', badFile: 'Questo file non contiene un diagramma valido.', deleted: 'Blocco eliminato', copiedBlk: 'Blocco copiato',
-    e_syntax: x => `Non capisco «${x}» in questo punto`, e_end: 'L\'espressione è incompleta', e_str: 'Manca la virgoletta di chiusura',
-    e_empty: 'Il campo è vuoto', e_undef: n => `La variabile ${n} non ha ancora un valore`, e_div0: 'Divisione per zero', e_big: 'Numero troppo grande',
-    e_type: op => `Tipi di dato non adatti all'operazione ${op}`, e_strmix: k => `Non si può unire un testo con ${k === 'bool' ? 'un valore logico' : k === 'arr' ? 'un vettore' : 'un numero'}: usa str(), ad esempio "Totale: " + str(n)`, e_fn: n => `Funzione sconosciuta: ${n}`, e_args: (n, k) => `${n} vuole ${k} argomenti`,
-    e_idx: i => `Indice non valido: ${i}`, e_notarr: n => `${n} non è un vettore`, e_lv: 'Qui serve il nome di una variabile',
-    e_bool: 'La condizione deve risultare VERO o FALSO (ad esempio x > 0)', e_loop: 'Troppi passi: forse è un ciclo infinito?',
-    e_step0: 'Il passo del ciclo non può essere 0', e_sqrt: 'Radice quadrata di un numero negativo', e_num: x => `«${x}» non è un numero`,
-  },
-  en: {
-    new: 'New', open: 'Open', save: 'Save', png: 'Image', undo: 'Undo (Ctrl+Z)', redo: 'Redo (Ctrl+Y)', help: 'Guide',
-    run: 'Run', step: 'Step', stop: 'Stop', speed: 'Speed',
-    tabBlock: 'Block', tabRun: 'Run', tabCode: 'Code',
-    progName: 'Program name', untitled: 'Untitled program',
-    hint: 'Click or tap a + to insert a block. Right-click, or long-press, for more actions.',
-    START: 'START', END: 'END', T: 'T', F: 'F', TRUE: 'TRUE', FALSE: 'FALSE',
-    types: { decl: 'VAR · Declaration', input: 'IN · Input', output: 'OUT · Output', outln: 'OUTLN · Output + new line', assign: 'Assignment', comment: 'Comment', if: 'IF', while: 'WHILE', do: 'DO WHILE', for: 'FOR' },
-    typeHint: {
-      decl: 'Optional: fixes the type of one or more variables', input: 'Reads one or more values from the keyboard', out: 'Writes on screen; in the block you choose whether to start a new line', output: 'Writes on screen and stays on the same line', outln: 'Writes on screen, then starts a new line', comment: 'A note for the reader, never executed', assign: 'Computes a value and stores it in a variable',
-      if: 'Two paths, depending on a condition', while: 'Checks the condition, then repeats while it is true',
-      do: 'Runs at least once, then repeats if the condition is true', for: 'Repeats while counting with a variable',
-    },
-    f_vars: 'Variables to read', f_expr: 'Expression to show',
-    f_var: 'Variable', f_cond: 'Condition',
-    f_from: 'From', f_to: 'To', f_step: 'Step',
-    f_ln: 'New line (OUTLN)', f_assign: 'Assignment', e_noeq: 'The = sign is missing: write variable = expression (or i++ / i--)', f_comment: 'Comment text', n_cm: 'comment: it is not executed',
-    loopEnd: 'loop ends', trace: 'Trace', traceT: 'Show every executed block in the console', cut: 'Cut', pasteAfter: 'Paste after',
-    showPy: 'Also show Python', codeLink: 'Link diagram and code',
-    e_cmpmix: op => `You are comparing text with a number (${op}). Maybe parentheses are missing, for example "Result: " + str(x > 5)`, mFile: 'File', mEdit: 'Edit', mView: 'View', mHelp: 'Help',
-    undoM: 'Undo', redoM: 'Redo', optSymShort: 'Symbols ≥ ≤ ≠', zoomIn: 'Zoom in', zoomOut: 'Zoom out', zoom100: 'Zoom 100%',
-    helpT: 'Guide', language: 'Language', offline: 'Offline', offlineT: 'You are offline: FlussoLab still works and keeps everything on this device.',
-    tooMany: n => `You can keep at most ${n} diagrams open: close one.`, newTab: 'New diagram', closeTab: 'Close',
-    closeT: 'Close the diagram?', closeMsg: n => `“${n}” has changes you have not saved to a file. If you close it, they are lost.`,
-    closeAnyway: 'Close without saving', unsaved: 'Changes not saved to a file', fitT: 'Fit to screen',
-    zipM: 'Export submission (ZIP)…', zipTitle: 'Export submission', zipNote: 'Creates a single .zip file with the chosen diagrams, ready to hand in.',
-    zipWho: 'Full name', zipWhoPh: 'Jane Smith', zipWhich: 'Diagrams to include', zipEmpty: 'empty',
-    zipFlusso: '.flusso files', zipPng: 'PNG images', zipGo: 'Download ZIP', zipWorking: 'Preparing…',
-    zipNone: 'Choose at least one diagram and one file type', zipDone: n => `ZIP ready: ${n} files`, zipFail: 'The ZIP could not be created',
-    inEmpty: 'Type a value before pressing Enter',
-    installAsk: 'Install FlussoLab as an app? It also works offline.', installBtn: 'Install', installHowBtn: 'How to',
-    installM: 'Install as app…', installT: 'Install FlussoLab', installed: 'FlussoLab is installed',
-    installHow: '<p>FlussoLab installs like an app and then works without internet too.</p><ul><li><b>Chrome or Edge (Windows, Chromebook, Android)</b>: browser menu → “Install FlussoLab” or “Add to Home screen”.</li><li><b>iPhone and iPad</b>: open the site in Safari, tap Share → “Add to Home Screen”.</li></ul>',
-    updAvail: 'A new version is available.', updNow: 'Update', aboutM: 'About FlussoLab', version: 'Version',
-    aboutText: 'A flowchart editor that runs in the browser, made for school. Nothing to install.',
-    devBy: 'Developed by', license: 'License', freeOpen: 'free, open code, no commercial use', source: 'Source code',
-    supportText: 'FlussoLab is free. If you find it useful, you can help keep it going with a small donation.', support: 'Support the project',
-    e_nodef: n => `No variable found with the name “${n}”`,
-    e_notcond: 'This is not a condition: it needs a comparison, for example x > 0', invert: 'Invert condition', swap: 'Swap T and F branches',
-    inverted: 'Condition inverted', swapped: 'Branches swapped',
-    explain: 'Explain', 
-    
-    optExplain: 'Explain mode', 
-    optTheme: 'Appearance', thAuto: 'Automatic', thLight: 'Light', thDark: 'Dark',
-    n_in: v => `reads ${v} from the keyboard`,
-    n_out: (x, ln) => `writes ${x} on screen` + (ln ? ' and starts a new line' : ''),
-    n_val: 'the value', n_as: v => `computes and stores in ${v}`,
-    n_if: 'if true runs T, if false runs F', n_while: 'repeats the loop while it is true',
-    n_do: 'runs the loop, then repeats it if true', n_for: (v, a, b) => `repeats with ${v} = ${a}, …, ${b}`,
-    up: 'Up', down: 'Down', dup: 'Duplicate', copy: 'Copy', del: 'Delete',
-    noSel: 'Tap a block in the diagram to edit it, or a <b>+</b> on a line to insert a new one.',
-    legendT: 'Blocks',
-    insertHere: 'Insert here', pasteHere: 'Paste copied block',
-    console: 'Console', vars: 'Variables', noVars: 'No variables yet.', thName: 'Name', thVal: 'Value', thType: 'Type',
-    ty: { int: 'int', float: 'float', str: 'string', bool: 'bool', arr: 'array' },
-    tyk: { int: 'int', float: 'float', str: 'string', bool: 'bool' }, f_type: 'Type', f_declvars: 'Variables',
-    n_decl: k => `the variables will be of type ${k}`, n_inc: (v, op) => op === '++' ? `adds 1 to ${v}` : `subtracts 1 from ${v}`, vecOf: 'array of',
-    e_tdecl: (n, k, v) => `“${n}” is of type ${t('tyk')[k]}: it cannot hold ${v}`,
-    e_tin: (v, k, n) => `“${v}” is not a valid ${t('tyk')[k]} value for ${n}`,
-    e_tarr: (n, k) => `“${n}” is an array of ${t('tyk')[k]}: assign single elements, for example ${n}[0]`,
-    e_incint: (op, n) => `${op} works only on integer variables: “${n}” is not an integer`,
-    e_reserved: n => `“${n}” is a type name: it cannot be used as a variable name`,
-    e_assigneq: 'To compare use ==',
-    e_redecl: n => `“${n}” was already declared with another type`,
-    e_declname: x => `“${x}” is not a valid variable name`, e_kind: 'Choose a type',
-    consoleIdle: 'Press Run to start the program, or Step to follow it one block at a time.',
-    inputAsk: n => `Enter the value of ${n}`, send: 'Enter', done: 'Program finished.', stopped: 'Run stopped.',
-    errAt: 'Error', codePseudo: 'Pseudocode', copyCode: 'Copy code', copied: 'Copied to clipboard',
-    pyNote: 'Python code using only standard functions. Note: in Python / between variables not declared int always gives a decimal result, and % with negative numbers may differ from the diagram.',
-    pseudoNote: 'Pseudocode generated from the diagram. It updates on every change.',
-    saveTitle: 'Save the diagram', fileName: 'File name', download: 'Download file', 
-    saveNote: 'The .flusso file holds the whole diagram: reopen it from File → Open.',
-    openTitle: 'Open a diagram', pickFile: 'Choose a file…', dropHere: 'or drop a .flusso file here',
-    examples: 'Ready-made examples',
-    pngTitle: 'Export as image', pngErr: 'Could not create the image: the diagram is too large', pngDl: 'Download PNG', pngNote: 'If the download does not start, long-press (or right-click) the image and choose “Save image”.',
-    cancel: 'Cancel', close: 'Close',
-    loadedOk: 'Diagram loaded', badFile: 'This file does not contain a valid diagram.', deleted: 'Block deleted', copiedBlk: 'Block copied',
-    e_syntax: x => `I don't understand “${x}” here`, e_end: 'The expression is incomplete', e_str: 'Missing closing quote',
-    e_empty: 'The field is empty', e_undef: n => `Variable ${n} has no value yet`, e_div0: 'Division by zero', e_big: 'Number too large',
-    e_type: op => `Wrong data types for ${op}`, e_strmix: k => `Text cannot be joined with ${k === 'bool' ? 'a logical value' : k === 'arr' ? 'an array' : 'a number'}: use str(), for example "Total: " + str(n)`, e_fn: n => `Unknown function: ${n}`, e_args: (n, k) => `${n} takes ${k} arguments`,
-    e_idx: i => `Invalid index: ${i}`, e_notarr: n => `${n} is not an array`, e_lv: 'A variable name is needed here',
-    e_bool: 'The condition must give TRUE or FALSE (for example x > 0)', e_loop: 'Too many steps: maybe an infinite loop?',
-    e_step0: 'The loop step cannot be 0', e_sqrt: 'Square root of a negative number', e_num: x => `“${x}” is not a number`,
-  },
-};
-let lang = store.get('lang') === 'en' ? 'en' : 'it';
 const opts = Object.assign({ explain: false, sym: false, theme: 'auto', trace: true, py: false, link: true }, (() => { try { return JSON.parse(store.get('prefs') || '{}'); } catch (e) { return {}; } })());
 function saveOpts() { store.set('prefs', JSON.stringify(opts)); }
 function applyTheme() { const r = document.documentElement; if (opts.theme === 'auto') r.removeAttribute('data-theme'); else r.setAttribute('data-theme', opts.theme); }
 applyTheme();
-function t(k, ...a) { const v = I18N[lang][k] ?? I18N.it[k]; return typeof v === 'function' ? v(...a) : v; }
+/* ================= i18n =================
+   Every text is in lang/<code>.json; lang/languages.json lists the languages shown in the Help menu.
+   A missing text falls back to English, then to Italian. In a text, {0} {1} … are replaced by the
+   values passed to t(); {1:tyk} looks the value up in the "tyk" table of the same file.         */
+const BASE = 'it';
+let LANGS = [{ code: 'it', name: 'Italiano' }, { code: 'en', name: 'English' }];
+const LD = Object.create(null);
+let lang = BASE;
+const INL = window.FLUSSO_LANGS; // single-file build: languages embedded in the page
+async function getJSON(path) {
+  if (INL) { if (path in INL) return INL[path]; throw new Error('missing ' + path); }
+  const r = await fetch(path); if (!r.ok) throw new Error(path); return r.json();
+}
+async function loadLang(code) {
+  for (const c of [code, 'en', BASE]) if (!LD[c]) { try { LD[c] = await getJSON(`lang/${c}.json`); } catch (e) { if (c === code) throw e; } }
+}
+function chain() { return [lang, 'en', BASE].map(c => LD[c]).filter(Boolean); }
+function look(k) { for (const L of chain()) { const v = L.ui && L.ui[k]; if (v !== undefined) return v; } return undefined; }
+function section(name) { return Object.assign({}, ...chain().reverse().map(L => L[name] || {})); }
+function langPart(name) { for (const L of chain()) if (L[name] && L[name].length) return L[name]; return name === 'examples' ? [] : ''; }
+function pickLang() {
+  const ok = c => LANGS.some(l => l.code === c), saved = store.get('lang');
+  if (saved && ok(saved)) return saved;
+  for (const n of navigator.languages || [navigator.language || '']) {
+    const c = String(n).toLowerCase(); if (ok(c)) return c;
+    const p = c.split('-')[0]; if (ok(p)) return p;
+  }
+  return ok('en') ? 'en' : BASE;
+}
+function t(k, ...a) {
+  const v = look(k);
+  if (v === undefined) return k;
+  if (typeof v !== 'string') return v;
+  return v.replace(/\{(\d)(?::(\w+))?\}/g, (m, i, tab) => {
+    const x = a[i];
+    if (tab) { const T = look(tab); if (T && T[x] != null) return T[x]; }
+    return x == null ? '' : String(x);
+  });
+}
 function emsg(e) { if (e instanceof FL.FErr) return t('e_' + e.key, ...e.args); console.error(e); return String(e && e.message || e); }
 
-/* ================= examples ================= */
-const EX = [
-  { it: ['Media dei voti', 'Per, Se'], en: ['Average of grades', 'For, If'], name: 'Media dei voti', main: [
-    { t: 'output', e: '"Quanti voti? "', ln: false }, { t: 'input', v: 'n' }, { t: 'assign', v: 's', e: '0' },
-    { t: 'for', v: 'i', a: '1', b: 'n', s: '1', body: [{ t: 'output', e: '"Voto "', ln: false }, { t: 'output', e: 'i', ln: false }, { t: 'output', e: '": "', ln: false }, { t: 'input', v: 'voto' }, { t: 'assign', v: 's', e: 's + voto' }] },
-    { t: 'assign', v: 'float media', e: '(float) s / n' }, { t: 'output', e: '"Media: "', ln: false }, { t: 'output', e: 'round(media * 100) / 100.0' },
-    { t: 'if', c: 'media >= 6', y: [{ t: 'output', e: '"Sufficiente"' }], n: [{ t: 'output', e: '"Insufficiente"' }] }] },
-  { it: ['Tabellina', 'Per'], en: ['Times table', 'For'], name: 'Tabellina', main: [
-    { t: 'input', v: 'n' },
-    { t: 'for', v: 'i', a: '1', b: '10', s: '1', body: [{ t: 'output', e: 'n', ln: false }, { t: 'output', e: '" x "', ln: false }, { t: 'output', e: 'i', ln: false }, { t: 'output', e: '" = "', ln: false }, { t: 'output', e: 'n * i' }] }] },
-  { it: ['Numero primo', 'Mentre, AND, mod'], en: ['Prime number', 'While, AND, mod'], name: 'Numero primo', main: [
-    { t: 'input', v: 'n' }, { t: 'assign', v: 'd', e: '2' }, { t: 'assign', v: 'primo', e: 'vero' },
-    { t: 'while', c: 'd * d <= n AND primo', body: [
-      { t: 'if', c: 'n mod d == 0', y: [{ t: 'assign', v: 'primo', e: 'falso' }], n: [] }, { t: 'assign', v: 'd', e: 'd + 1' }] },
-    { t: 'if', c: 'primo AND n > 1', y: [{ t: 'output', e: 'n', ln: false }, { t: 'output', e: '" è primo"' }], n: [{ t: 'output', e: 'n', ln: false }, { t: 'output', e: '" non è primo"' }] }] },
-  { it: ['Somma fino a zero', 'Ripeti… mentre'], en: ['Sum until zero', 'Do… while'], name: 'Somma fino a zero', main: [
-    { t: 'assign', v: 's', e: '0' },
-    { t: 'do', c: 'x != 0', body: [{ t: 'input', v: 'x' }, { t: 'assign', v: 's', e: 's + x' }] },
-    { t: 'output', e: '"Totale: "', ln: false }, { t: 'output', e: 's' }] },
-  { it: ['Massimo di un vettore', 'Vettori'], en: ['Array maximum', 'Arrays'], name: 'Massimo di un vettore', main: [
-    { t: 'input', v: 'n' },
-    { t: 'for', v: 'i', a: '0', b: 'n - 1', s: '1', body: [{ t: 'input', v: 'v[i]' }] },
-    { t: 'assign', v: 'max', e: 'v[0]' },
-    { t: 'for', v: 'i', a: '1', b: 'n - 1', s: '1', body: [{ t: 'if', c: 'v[i] > max', y: [{ t: 'assign', v: 'max', e: 'v[i]' }], n: [] }] },
-    { t: 'output', e: '"Massimo: "', ln: false }, { t: 'output', e: 'max' }] },
-];
 
 /* ================= state ================= */
 let prog = { name: '', main: [] };
@@ -379,9 +219,9 @@ function noteOf(b) {
     case 'output': {
       let x = t('n_val');
       try { const a = FL.parse(b.e); if (a.k === 'str') x = `«${a.v}»`; else if (a.k === 'var') x = t('n_val') + ' ' + a.n; } catch (e) {}
-      return t('n_out', x, b.ln !== false);
+      return t(b.ln !== false ? 'n_outln' : 'n_out', x);
     }
-    case 'assign': return b.inc ? t('n_inc', dots(b.v), b.inc) : t('n_as', dots(b.v));
+    case 'assign': return b.inc ? t(b.inc === '++' ? 'n_inc' : 'n_dec', dots(b.v)) : t('n_as', dots(b.v));
     case 'decl': return t('n_decl', t('tyk')[b.k] || '');
     case 'if': return t('n_if');
     case 'while': return t('n_while');
@@ -889,8 +729,8 @@ function renderCode() {
   if (!opts.py && codeMode === 'py') { codeMode = 'pseudo'; $$('#codeSeg button').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.c === 'pseudo'))); }
   if (curTab !== 'code') return;
   const pre = $('#code');
-  if (codeMode === 'py') pre.textContent = FL.toPython(prog.main, lang);
-  else pre.innerHTML = FL.toPseudoLines(prog.main, lang).map(l => `<span class="cl${l.id && l.id === sel ? ' on' : ''}"${l.id ? ` data-b="${l.id}"` : ''}>${esc(l.s) || ' '}</span>`).join('');
+  if (codeMode === 'py') pre.textContent = FL.toPython(prog.main, section('python'));
+  else pre.innerHTML = FL.toPseudoLines(prog.main, section('pseudo')).map(l => `<span class="cl${l.id && l.id === sel ? ' on' : ''}"${l.id ? ` data-b="${l.id}"` : ''}>${esc(l.s) || ' '}</span>`).join('');
   $('#codeNote').textContent = codeMode === 'py' ? t('pyNote') : t('pseudoNote');
 }
 function hoverLink(id, on) {
@@ -1138,7 +978,7 @@ function cmdOpen() {
   openDlg(`<h2>${esc(t('openTitle'))}</h2>
     <div class="drop" id="drop"><input type="file" id="fileIn" accept=".flusso" hidden>
       <button class="btn primary" id="pick">${esc(t('pickFile'))}</button><span>${esc(t('dropHere'))}</span></div>
-    <div><b style="display:block;margin-bottom:6px">${esc(t('examples'))}</b><div class="exlist">${EX.map((x, i) => `<button data-ex="${i}">${esc(x[lang][0])}<small>${esc(x[lang][1])}</small></button>`).join('')}</div></div>
+    <div><b style="display:block;margin-bottom:6px">${esc(t('examples'))}</b><div class="exlist">${langPart('examples').map((x, i) => `<button data-ex="${i}">${esc(x.name)}<small>${esc(x.tags || '')}</small></button>`).join('')}</div></div>
     <div class="foot"><button class="btn" data-close>${esc(t('close'))}</button></div>`);
   const fin = $('#fileIn'), drop = $('#drop');
   $('#pick').onclick = () => fin.click();
@@ -1148,8 +988,7 @@ function cmdOpen() {
   drop.ondragleave = () => drop.classList.remove('over');
   drop.ondrop = e => { e.preventDefault(); drop.classList.remove('over'); readFile(e.dataTransfer.files[0]); };
   $$('[data-ex]', dlg).forEach(b => b.onclick = () => {
-    const x = EX[+b.dataset.ex];
-    dlg.close(); if (openDoc({ name: x[lang][0], main: JSON.parse(JSON.stringify(x.main)) })) toast(t('loadedOk'));
+    dlg.close(); loadExample(+b.dataset.ex);
   });
 };
 function tryLoad(text) {
@@ -1268,54 +1107,6 @@ function cmdExportZip() {
   };
 }
 
-const GUIDE = {
-  it: `<h3>Come si usa</h3><ul>
-    <li>Tocca un <b>+</b> su una linea per inserire un blocco in quel punto. <b>OUT</b> scrive e resta sulla riga, <b>OUTLN</b> scrive e va a capo.</li>
-    <li><b>Spiegazione</b> mostra accanto a ogni blocco cosa fa. In <b>Opzioni</b> trovi i simboli ≥ ≤ ≠ e il tema chiaro o scuro.</li>
-    <li>Tocca un blocco per modificarlo nel pannello <b>Blocco</b>. I blocchi con un errore hanno il bordo rosso tratteggiato.</li>
-    <li><b>Esegui</b> avvia il programma. <b>Passo</b> esegue un blocco alla volta e mostra le variabili.</li>
-    <li><b>Salva</b> crea un file <code>.flusso</code> da consegnare. <b>File → Esporta consegna (ZIP)</b> mette in un unico file tutti i diagrammi aperti, come <code>.flusso</code> e come immagine. <b>Apri</b> lo ricarica. <b>Immagine</b> esporta il diagramma in PNG.</li>
-    <li>Il lavoro resta salvato in questo browser anche se chiudi la pagina.</li></ul>
-    <h3>Espressioni</h3><table>
-    <tr><td>+ − *</td><td>operazioni; tra due testi, + li unisce: <code>"Ciao " + nome</code>, per un numero usa <code>str(n)</code></td></tr>
-    <tr><td>/</td><td>divisione, come in C: tra due <code>int</code> il risultato è un <code>int</code> (<code>7 / 2</code> → 3); se uno dei due è <code>float</code> il risultato è <code>float</code> (<code>7.0 / 2</code> → 3.5)</td></tr>
-    <tr><td>(float) (int)</td><td>conversione di tipo: <code>(float) s / n</code> → divisione con i decimali; <code>(int) 3.9</code> → 3</td></tr>
-    <tr><td>mod  %</td><td>resto della divisione: <code>7 mod 3</code> e <code>7 % 3</code> sono uguali</td></tr>
-    <tr><td>^</td><td>potenza</td></tr>
-    <tr><td>== !=</td><td>uguale, diverso. Il singolo <code>=</code> serve solo per assegnare</td></tr>
-    <tr><td>&lt; &lt;= &gt; &gt;=</td><td>confronti</td></tr>
-    <tr><td>AND OR NOT</td><td>anche && || !</td></tr>
-    <tr><td>true, false</td><td>valori logici (vanno bene anche vero, falso)</td></tr>
-    <tr><td>v[i]</td><td>elemento di un vettore; si crea assegnando <code>v[0] = 5</code> o leggendo <code>v[i]</code></td></tr>
-    <tr><td>i++  i--</td><td>nel blocco assegnazione: aumenta o diminuisce di 1 una variabile intera</td></tr></table>
-    <h3>Tipi delle variabili</h3><p>Di base il tipo è automatico: lo decide il valore. Puoi dichiararlo dove la variabile nasce, ad esempio <code>IN int n</code>, <code>float media = (float) s / n</code> o <code>FOR int i = 1 TO 10</code>, oppure con il blocco <b>VAR</b>. I tipi sono <code>int</code> (numeri interi), <code>float</code> (numeri con la virgola, va bene anche <code>double</code>), <code>string</code> (testo) e <code>bool</code> (vero o falso). Per un vettore scrivi <code>v[]</code>. Le parole dei tipi non si possono usare come nomi di variabile. FlussoLab segnala se metti un valore del tipo sbagliato; con IN, una variabile <code>string</code> tiene il testo così com'è, anche se sono cifre.</p>
-    <h3>Funzioni</h3><p><code>sqrt abs int float round floor ceil pow min max sin cos tan random() randint(a,b) len str num</code></p>
-    <h3>Scorciatoie</h3><p><kbd>Canc</kbd> elimina il blocco selezionato · <kbd>Ctrl</kbd>+<kbd>Z</kbd> annulla · <kbd>Ctrl</kbd>+<kbd>C</kbd>/<kbd>V</kbd> copia e incolla dopo il blocco selezionato</p>
-    <h3>Il progetto</h3><p>FlussoLab è gratuito e il suo codice è aperto a tutti, ma non può essere usato per guadagnarci. Funziona interamente nel browser: niente da installare, anche su Chromebook e tablet.</p>`,
-  en: `<h3>How to use it</h3><ul>
-    <li>Tap a <b>+</b> on a line to insert a block there. <b>OUT</b> writes and stays on the line, <b>OUTLN</b> writes and starts a new line.</li>
-    <li><b>Explain</b> shows next to each block what it does. <b>Options</b> has the ≥ ≤ ≠ symbols and light or dark theme.</li>
-    <li>Tap a block to edit it in the <b>Block</b> panel. Blocks with an error have a dashed red border.</li>
-    <li><b>Run</b> starts the program. <b>Step</b> runs one block at a time and shows the variables.</li>
-    <li><b>Save</b> creates a <code>.flusso</code> file to hand in. <b>File → Export submission (ZIP)</b> puts all open diagrams in one file, as <code>.flusso</code> and as images. <b>Open</b> loads it back. <b>Image</b> exports the diagram as PNG.</li>
-    <li>Your work stays saved in this browser even if you close the page.</li></ul>
-    <h3>Expressions</h3><table>
-    <tr><td>+ − *</td><td>arithmetic; between two texts, + joins them: <code>"Hi " + name</code>, for a number use <code>str(n)</code></td></tr>
-    <tr><td>/</td><td>division, as in C: between two <code>int</code> the result is an <code>int</code> (<code>7 / 2</code> → 3); if one is <code>float</code> the result is <code>float</code> (<code>7.0 / 2</code> → 3.5)</td></tr>
-    <tr><td>(float) (int)</td><td>type cast: <code>(float) s / n</code> → division with decimals; <code>(int) 3.9</code> → 3</td></tr>
-    <tr><td>mod  %</td><td>remainder: <code>7 mod 3</code> and <code>7 % 3</code> are the same</td></tr>
-    <tr><td>^</td><td>power</td></tr>
-    <tr><td>== !=</td><td>equal, not equal. A single <code>=</code> is only for assignment</td></tr>
-    <tr><td>&lt; &lt;= &gt; &gt;=</td><td>comparisons</td></tr>
-    <tr><td>AND OR NOT</td><td>also && || !</td></tr>
-    <tr><td>true, false</td><td>boolean values</td></tr>
-    <tr><td>v[i]</td><td>array element; created by assigning <code>v[0] = 5</code> or reading <code>v[i]</code></td></tr>
-    <tr><td>i++  i--</td><td>in the assignment block: adds or subtracts 1 from an integer variable</td></tr></table>
-    <h3>Variable types</h3><p>By default the type is automatic: the value decides it. You can declare it where the variable is born, for example <code>IN int n</code>, <code>float avg = (float) s / n</code> or <code>FOR int i = 1 TO 10</code>, or with the <b>VAR</b> block. The types are <code>int</code> (whole numbers), <code>float</code> (numbers with decimals, <code>double</code> works too), <code>string</code> (text) and <code>bool</code> (true or false). For an array write <code>v[]</code>. Type words cannot be used as variable names. FlussoLab reports a value of the wrong type; with IN, a <code>string</code> variable keeps the text as typed, even if it is digits.</p>
-    <h3>Functions</h3><p><code>sqrt abs int float round floor ceil pow min max sin cos tan random() randint(a,b) len str num</code></p>
-    <h3>Shortcuts</h3><p><kbd>Del</kbd> deletes the selected block · <kbd>Ctrl</kbd>+<kbd>Z</kbd> undo · <kbd>Ctrl</kbd>+<kbd>C</kbd>/<kbd>V</kbd> copy and paste after the selected block</p>
-    <h3>The project</h3><p>FlussoLab is free and its code is open to everyone, but it cannot be used to make money. It runs entirely in the browser: nothing to install, Chromebooks and tablets included.</p>`,
-};
 function cmdAbout() {
   const a = CONFIG.author ? (CONFIG.github ? `<a href="${esc(CONFIG.github)}" target="_blank" rel="noopener">${esc(CONFIG.author)}</a>` : esc(CONFIG.author)) : '—';
   openDlg(`<div class="about">
@@ -1327,8 +1118,8 @@ function cmdAbout() {
     ${CONFIG.donate ? `<div class="support"><p>${esc(t('supportText'))}</p><a class="btn primary" href="${esc(CONFIG.donate)}" target="_blank" rel="noopener">♥ ${esc(t('support'))}</a></div>` : ''}
     <div class="foot"><button class="btn" data-close>${esc(t('close'))}</button></div>`);
 }
-function cmdHelp() { openDlg(`<h2>${esc(t('helpT'))}</h2><div class="guide">${GUIDE[lang]}</div><div class="foot"><button class="btn primary" data-close>${esc(t('close'))}</button></div>`); }
-function loadExample(i) { const x = EX[i]; if (openDoc({ name: x[lang][0], main: JSON.parse(JSON.stringify(x.main)) })) toast(t('loadedOk')); }
+function cmdHelp() { openDlg(`<h2>${esc(t('helpT'))}</h2><div class="guide">${langPart('guide')}</div><div class="foot"><button class="btn primary" data-close>${esc(t('close'))}</button></div>`); }
+function loadExample(i) { const x = langPart('examples')[i]; if (!x) return; if (openDoc({ name: x.name, main: JSON.parse(JSON.stringify(x.main)) })) toast(t('loadedOk')); }
 function pasteBlock() {
   if (!clip) return; stopRun(); snap();
   const f = sel && find(sel); const nb = JSON.parse(clip); assignIds([nb]);
@@ -1341,7 +1132,7 @@ const MENUS = {
   file: () => [
     ['new', t('new'), ''], ['open', t('open') + '…', 'Ctrl+O'], ['save', t('save') + '…', 'Ctrl+S'], ['png', t('png') + '…', ''], ['zip', t('zipM'), ''], '-',
     ['install', t('installM'), ''], '-',
-    { head: t('examples') }, ...EX.map((x, i) => ['ex:' + i, x[lang][0], '']),
+    { head: t('examples') }, ...langPart('examples').map((x, i) => ['ex:' + i, x.name, '']),
   ],
   edit: () => {
     const f = sel && find(sel);
@@ -1356,7 +1147,7 @@ const MENUS = {
   ],
   help: () => [
     ['help', t('helpT'), 'F1'], ['about', t('aboutM'), ''], '-', { head: t('language') },
-    ['lang:it', 'Italiano', '', false, lang === 'it', true], ['lang:en', 'English', '', false, lang === 'en', true],
+    ...LANGS.map(l => ['lang:' + l.code, l.name, '', false, lang === l.code, true]),
   ],
 };
 let openMenu = null;
@@ -1443,7 +1234,10 @@ function runCmd(c) {
   if (c === 'z100') return setZoom(1);
   if (c === 'help') return cmdHelp();
   if (c === 'about') return cmdAbout();
-  if (c.startsWith('lang:')) { lang = c.slice(5); store.set('lang', lang); applyLang(); }
+  if (c.startsWith('lang:')) {
+    const code = c.slice(5);
+    loadLang(code).then(() => { lang = code; store.set('lang', lang); applyLang(); }).catch(() => toast('Offline?'));
+  }
 }
 
 /* ================= language ================= */
@@ -1465,6 +1259,7 @@ function toast(msg) { const el = $('#toast'); el.textContent = msg; el.hidden = 
 let persistT = 0;
 function persist() { clearTimeout(persistT); persistT = setTimeout(persistNow, 300); }
 function persistNow() {
+  if (!booted) return;
   tabSnapshot();
   store.set('tabs', JSON.stringify({ cur, tabs: tabs.map(T => ({ data: T.data, dirty: T.dirty })) }));
 }
@@ -1526,7 +1321,11 @@ window.flussoUpdate = (apply) => {
 };
 
 /* ================= boot ================= */
-(function boot() {
+let booted = false;
+(async function boot() {
+  // texts first: the language files are small and, once installed, come from the offline cache
+  try { const l = await getJSON('lang/languages.json'); if (Array.isArray(l) && l.length) LANGS = l.filter(x => x && x.code && x.name); } catch (e) {}
+  try { await loadLang(pickLang()); lang = pickLang(); } catch (e) { try { await loadLang(BASE); } catch (e2) {} lang = BASE; }
   try {
     const st = JSON.parse(store.get('tabs') || 'null');
     if (st && Array.isArray(st.tabs)) st.tabs.slice(0, MAXTABS).forEach(x => {
@@ -1544,6 +1343,7 @@ window.flussoUpdate = (apply) => {
   }
   { const T = tabs[cur], o = JSON.parse(T.data); loadObj(o, false); }
   renderTabs();
+  booted = true;
   clearConsole(); applyLang(); syncNet();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => renderDiagram());
 })();

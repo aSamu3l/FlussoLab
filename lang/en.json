@@ -1,0 +1,572 @@
+{
+  "name": "English",
+  "code": "en",
+  "ui": {
+    "new": "New",
+    "open": "Open",
+    "save": "Save",
+    "png": "Image",
+    "undo": "Undo (Ctrl+Z)",
+    "redo": "Redo (Ctrl+Y)",
+    "help": "Guide",
+    "run": "Run",
+    "step": "Step",
+    "stop": "Stop",
+    "speed": "Speed",
+    "tabBlock": "Block",
+    "tabRun": "Run",
+    "tabCode": "Code",
+    "progName": "Program name",
+    "untitled": "Untitled program",
+    "hint": "Click or tap a + to insert a block. Right-click, or long-press, for more actions.",
+    "START": "START",
+    "END": "END",
+    "T": "T",
+    "F": "F",
+    "TRUE": "TRUE",
+    "FALSE": "FALSE",
+    "types": {
+      "decl": "VAR · Declaration",
+      "input": "IN · Input",
+      "output": "OUT · Output",
+      "outln": "OUTLN · Output + new line",
+      "assign": "Assignment",
+      "comment": "Comment",
+      "if": "IF",
+      "while": "WHILE",
+      "do": "DO WHILE",
+      "for": "FOR"
+    },
+    "typeHint": {
+      "decl": "Optional: fixes the type of one or more variables",
+      "input": "Reads one or more values from the keyboard",
+      "out": "Writes on screen; in the block you choose whether to start a new line",
+      "output": "Writes on screen and stays on the same line",
+      "outln": "Writes on screen, then starts a new line",
+      "comment": "A note for the reader, never executed",
+      "assign": "Computes a value and stores it in a variable",
+      "if": "Two paths, depending on a condition",
+      "while": "Checks the condition, then repeats while it is true",
+      "do": "Runs at least once, then repeats if the condition is true",
+      "for": "Repeats while counting with a variable"
+    },
+    "f_vars": "Variables to read",
+    "f_expr": "Expression to show",
+    "f_var": "Variable",
+    "f_cond": "Condition",
+    "f_from": "From",
+    "f_to": "To",
+    "f_step": "Step",
+    "f_ln": "New line (OUTLN)",
+    "f_assign": "Assignment",
+    "e_noeq": "The = sign is missing: write variable = expression (or i++ / i--)",
+    "f_comment": "Comment text",
+    "n_cm": "comment: it is not executed",
+    "loopEnd": "loop ends",
+    "trace": "Trace",
+    "traceT": "Show every executed block in the console",
+    "cut": "Cut",
+    "pasteAfter": "Paste after",
+    "showPy": "Also show Python",
+    "codeLink": "Link diagram and code",
+    "e_cmpmix": "You are comparing text with a number ({0}). Maybe parentheses are missing, for example \"Result: \" + str(x > 5)",
+    "mFile": "File",
+    "mEdit": "Edit",
+    "mView": "View",
+    "mHelp": "Help",
+    "undoM": "Undo",
+    "redoM": "Redo",
+    "optSymShort": "Symbols ≥ ≤ ≠",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "zoom100": "Zoom 100%",
+    "helpT": "Guide",
+    "language": "Language",
+    "offline": "Offline",
+    "offlineT": "You are offline: FlussoLab still works and keeps everything on this device.",
+    "tooMany": "You can keep at most {0} diagrams open: close one.",
+    "newTab": "New diagram",
+    "closeTab": "Close",
+    "closeT": "Close the diagram?",
+    "closeMsg": "“{0}” has changes you have not saved to a file. If you close it, they are lost.",
+    "closeAnyway": "Close without saving",
+    "unsaved": "Changes not saved to a file",
+    "fitT": "Fit to screen",
+    "zipM": "Export submission (ZIP)…",
+    "zipTitle": "Export submission",
+    "zipNote": "Creates a single .zip file with the chosen diagrams, ready to hand in.",
+    "zipWho": "Full name",
+    "zipWhoPh": "Jane Smith",
+    "zipWhich": "Diagrams to include",
+    "zipEmpty": "empty",
+    "zipFlusso": ".flusso files",
+    "zipPng": "PNG images",
+    "zipGo": "Download ZIP",
+    "zipWorking": "Preparing…",
+    "zipNone": "Choose at least one diagram and one file type",
+    "zipDone": "ZIP ready: {0} files",
+    "zipFail": "The ZIP could not be created",
+    "inEmpty": "Type a value before pressing Enter",
+    "installAsk": "Install FlussoLab as an app? It also works offline.",
+    "installBtn": "Install",
+    "installHowBtn": "How to",
+    "installM": "Install as app…",
+    "installT": "Install FlussoLab",
+    "installed": "FlussoLab is installed",
+    "installHow": "<p>FlussoLab installs like an app and then works without internet too.</p><ul><li><b>Chrome or Edge (Windows, Chromebook, Android)</b>: browser menu → “Install FlussoLab” or “Add to Home screen”.</li><li><b>iPhone and iPad</b>: open the site in Safari, tap Share → “Add to Home Screen”.</li></ul>",
+    "updAvail": "A new version is available.",
+    "updNow": "Update",
+    "aboutM": "About FlussoLab",
+    "version": "Version",
+    "aboutText": "A flowchart editor that runs in the browser, made for school. Nothing to install.",
+    "devBy": "Developed by",
+    "license": "License",
+    "freeOpen": "free, open code, no commercial use",
+    "source": "Source code",
+    "supportText": "FlussoLab is free. If you find it useful, you can help keep it going with a small donation.",
+    "support": "Support the project",
+    "e_nodef": "No variable found with the name “{0}”",
+    "e_notcond": "This is not a condition: it needs a comparison, for example x > 0",
+    "invert": "Invert condition",
+    "swap": "Swap T and F branches",
+    "inverted": "Condition inverted",
+    "swapped": "Branches swapped",
+    "explain": "Explain",
+    "optExplain": "Explain mode",
+    "optTheme": "Appearance",
+    "thAuto": "Automatic",
+    "thLight": "Light",
+    "thDark": "Dark",
+    "n_in": "reads {0} from the keyboard",
+    "n_out": "writes {0} on screen",
+    "n_outln": "writes {0} on screen and starts a new line",
+    "n_val": "the value",
+    "n_as": "computes and stores in {0}",
+    "n_if": "if true runs T, if false runs F",
+    "n_while": "repeats the loop while it is true",
+    "n_do": "runs the loop, then repeats it if true",
+    "n_for": "repeats with {0} = {1}, …, {2}",
+    "up": "Up",
+    "down": "Down",
+    "dup": "Duplicate",
+    "copy": "Copy",
+    "del": "Delete",
+    "noSel": "Tap a block in the diagram to edit it, or a <b>+</b> on a line to insert a new one.",
+    "legendT": "Blocks",
+    "insertHere": "Insert here",
+    "pasteHere": "Paste copied block",
+    "console": "Console",
+    "vars": "Variables",
+    "noVars": "No variables yet.",
+    "thName": "Name",
+    "thVal": "Value",
+    "thType": "Type",
+    "ty": {
+      "int": "int",
+      "float": "float",
+      "str": "string",
+      "bool": "bool",
+      "arr": "array"
+    },
+    "tyk": {
+      "int": "int",
+      "float": "float",
+      "str": "string",
+      "bool": "bool"
+    },
+    "f_type": "Type",
+    "f_declvars": "Variables",
+    "n_decl": "the variables will be of type {0}",
+    "n_inc": "adds 1 to {0}",
+    "n_dec": "subtracts 1 from {0}",
+    "vecOf": "array of",
+    "e_tdecl": "“{0}” is of type {1:tyk}: it cannot hold {2}",
+    "e_tin": "“{0}” is not a valid {1:tyk} value for {2}",
+    "e_tarr": "“{0}” is an array of {1:tyk}: assign single elements, for example {0}[0]",
+    "e_incint": "{0} works only on integer variables: “{1}” is not an integer",
+    "e_reserved": "“{0}” is a type name: it cannot be used as a variable name",
+    "e_assigneq": "To compare use ==",
+    "e_redecl": "“{0}” was already declared with another type",
+    "e_declname": "“{0}” is not a valid variable name",
+    "e_kind": "Choose a type",
+    "consoleIdle": "Press Run to start the program, or Step to follow it one block at a time.",
+    "inputAsk": "Enter the value of {0}",
+    "send": "Enter",
+    "done": "Program finished.",
+    "stopped": "Run stopped.",
+    "errAt": "Error",
+    "codePseudo": "Pseudocode",
+    "copyCode": "Copy code",
+    "copied": "Copied to clipboard",
+    "pyNote": "Python code using only standard functions. Note: in Python / between variables not declared int always gives a decimal result, and % with negative numbers may differ from the diagram.",
+    "pseudoNote": "Pseudocode generated from the diagram. It updates on every change.",
+    "saveTitle": "Save the diagram",
+    "fileName": "File name",
+    "download": "Download file",
+    "saveNote": "The .flusso file holds the whole diagram: reopen it from File → Open.",
+    "openTitle": "Open a diagram",
+    "pickFile": "Choose a file…",
+    "dropHere": "or drop a .flusso file here",
+    "examples": "Ready-made examples",
+    "pngTitle": "Export as image",
+    "pngErr": "Could not create the image: the diagram is too large",
+    "pngDl": "Download PNG",
+    "pngNote": "If the download does not start, long-press (or right-click) the image and choose “Save image”.",
+    "cancel": "Cancel",
+    "close": "Close",
+    "loadedOk": "Diagram loaded",
+    "badFile": "This file does not contain a valid diagram.",
+    "deleted": "Block deleted",
+    "copiedBlk": "Block copied",
+    "e_syntax": "I don't understand “{0}” here",
+    "e_end": "The expression is incomplete",
+    "e_str": "Missing closing quote",
+    "e_empty": "The field is empty",
+    "e_undef": "Variable {0} has no value yet",
+    "e_div0": "Division by zero",
+    "e_big": "Number too large",
+    "e_type": "Wrong data types for {0}",
+    "e_strmix": "Text cannot be joined with {0:mix}: use str(), for example \"Total: \" + str(n)",
+    "mix": {
+      "int": "a number",
+      "float": "a number",
+      "bool": "a logical value",
+      "arr": "an array"
+    },
+    "e_fn": "Unknown function: {0}",
+    "e_args": "{0} takes {1} arguments",
+    "e_idx": "Invalid index: {0}",
+    "e_notarr": "{0} is not an array",
+    "e_lv": "A variable name is needed here",
+    "e_bool": "The condition must give TRUE or FALSE (for example x > 0)",
+    "e_loop": "Too many steps: maybe an infinite loop?",
+    "e_step0": "The loop step cannot be 0",
+    "e_sqrt": "Square root of a negative number",
+    "e_num": "“{0}” is not a number"
+  },
+  "pseudo": {
+    "start": "BEGIN",
+    "end": "END",
+    "read": "READ",
+    "write": "WRITE",
+    "if": "IF",
+    "then": "THEN",
+    "else": "ELSE",
+    "endif": "END IF",
+    "while": "WHILE",
+    "do": "DO",
+    "endwhile": "END WHILE",
+    "repeat": "REPEAT",
+    "repwhile": "WHILE",
+    "for": "FOR",
+    "from": "FROM",
+    "to": "TO",
+    "step": "STEP",
+    "endfor": "END FOR",
+    "noln": "(no new line)",
+    "vars": "VARIABLES",
+    "kinds": {
+      "int": "int",
+      "float": "float",
+      "str": "string",
+      "bool": "bool"
+    },
+    "arrOf": "ARRAY OF"
+  },
+  "python": {
+    "generated": "Generated by FlussoLab",
+    "array": "array",
+    "arrayOf": "array of"
+  },
+  "guide": "<h3>How to use it</h3><ul>\n<li>Tap a <b>+</b> on a line to insert a block there. <b>OUT</b> writes and stays on the line, <b>OUTLN</b> writes and starts a new line.</li>\n<li><b>Explain</b> shows next to each block what it does. <b>Options</b> has the ≥ ≤ ≠ symbols and light or dark theme.</li>\n<li>Tap a block to edit it in the <b>Block</b> panel. Blocks with an error have a dashed red border.</li>\n<li><b>Run</b> starts the program. <b>Step</b> runs one block at a time and shows the variables.</li>\n<li><b>Save</b> creates a <code>.flusso</code> file to hand in. <b>File → Export submission (ZIP)</b> puts all open diagrams in one file, as <code>.flusso</code> and as images. <b>Open</b> loads it back. <b>Image</b> exports the diagram as PNG.</li>\n<li>Your work stays saved in this browser even if you close the page.</li></ul>\n<h3>Expressions</h3><table>\n<tr><td>+ − *</td><td>arithmetic; between two texts, + joins them: <code>\"Hi \" + name</code>, for a number use <code>str(n)</code></td></tr>\n<tr><td>/</td><td>division, as in C: between two <code>int</code> the result is an <code>int</code> (<code>7 / 2</code> → 3); if one is <code>float</code> the result is <code>float</code> (<code>7.0 / 2</code> → 3.5)</td></tr>\n<tr><td>(float) (int)</td><td>type cast: <code>(float) s / n</code> → division with decimals; <code>(int) 3.9</code> → 3</td></tr>\n<tr><td>mod  %</td><td>remainder: <code>7 mod 3</code> and <code>7 % 3</code> are the same</td></tr>\n<tr><td>^</td><td>power</td></tr>\n<tr><td>== !=</td><td>equal, not equal. A single <code>=</code> is only for assignment</td></tr>\n<tr><td>&lt; &lt;= &gt; &gt;=</td><td>comparisons</td></tr>\n<tr><td>AND OR NOT</td><td>also && || !</td></tr>\n<tr><td>true, false</td><td>boolean values</td></tr>\n<tr><td>v[i]</td><td>array element; created by assigning <code>v[0] = 5</code> or reading <code>v[i]</code></td></tr>\n<tr><td>i++  i--</td><td>in the assignment block: adds or subtracts 1 from an integer variable</td></tr></table>\n<h3>Variable types</h3><p>By default the type is automatic: the value decides it. You can declare it where the variable is born, for example <code>IN int n</code>, <code>float avg = (float) s / n</code> or <code>FOR int i = 1 TO 10</code>, or with the <b>VAR</b> block. The types are <code>int</code> (whole numbers), <code>float</code> (numbers with decimals, <code>double</code> works too), <code>string</code> (text) and <code>bool</code> (true or false). For an array write <code>v[]</code>. Type words cannot be used as variable names. FlussoLab reports a value of the wrong type; with IN, a <code>string</code> variable keeps the text as typed, even if it is digits.</p>\n<h3>Functions</h3><p><code>sqrt abs int float round floor ceil pow min max sin cos tan random() randint(a,b) len str num</code></p>\n<h3>Shortcuts</h3><p><kbd>Del</kbd> deletes the selected block · <kbd>Ctrl</kbd>+<kbd>Z</kbd> undo · <kbd>Ctrl</kbd>+<kbd>C</kbd>/<kbd>V</kbd> copy and paste after the selected block</p>\n<h3>The project</h3><p>FlussoLab is free and its code is open to everyone, but it cannot be used to make money. It runs entirely in the browser: nothing to install, Chromebooks and tablets included.</p>",
+  "examples": [
+    {
+      "name": "Average of grades",
+      "tags": "For, If",
+      "main": [
+        {
+          "t": "output",
+          "e": "\"How many grades? \"",
+          "ln": false
+        },
+        {
+          "t": "input",
+          "v": "n"
+        },
+        {
+          "t": "assign",
+          "v": "s",
+          "e": "0"
+        },
+        {
+          "t": "for",
+          "v": "i",
+          "a": "1",
+          "b": "n",
+          "s": "1",
+          "body": [
+            {
+              "t": "output",
+              "e": "\"Grade \"",
+              "ln": false
+            },
+            {
+              "t": "output",
+              "e": "i",
+              "ln": false
+            },
+            {
+              "t": "output",
+              "e": "\": \"",
+              "ln": false
+            },
+            {
+              "t": "input",
+              "v": "grade"
+            },
+            {
+              "t": "assign",
+              "v": "s",
+              "e": "s + grade"
+            }
+          ]
+        },
+        {
+          "t": "assign",
+          "v": "float avg",
+          "e": "(float) s / n"
+        },
+        {
+          "t": "output",
+          "e": "\"Average: \"",
+          "ln": false
+        },
+        {
+          "t": "output",
+          "e": "round(avg * 100) / 100.0"
+        },
+        {
+          "t": "if",
+          "c": "avg >= 6",
+          "y": [
+            {
+              "t": "output",
+              "e": "\"Pass\""
+            }
+          ],
+          "n": [
+            {
+              "t": "output",
+              "e": "\"Fail\""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Times table",
+      "tags": "For",
+      "main": [
+        {
+          "t": "input",
+          "v": "n"
+        },
+        {
+          "t": "for",
+          "v": "i",
+          "a": "1",
+          "b": "10",
+          "s": "1",
+          "body": [
+            {
+              "t": "output",
+              "e": "n",
+              "ln": false
+            },
+            {
+              "t": "output",
+              "e": "\" x \"",
+              "ln": false
+            },
+            {
+              "t": "output",
+              "e": "i",
+              "ln": false
+            },
+            {
+              "t": "output",
+              "e": "\" = \"",
+              "ln": false
+            },
+            {
+              "t": "output",
+              "e": "n * i"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Prime number",
+      "tags": "While, AND, mod",
+      "main": [
+        {
+          "t": "input",
+          "v": "n"
+        },
+        {
+          "t": "assign",
+          "v": "d",
+          "e": "2"
+        },
+        {
+          "t": "assign",
+          "v": "prime",
+          "e": "true"
+        },
+        {
+          "t": "while",
+          "c": "d * d <= n AND prime",
+          "body": [
+            {
+              "t": "if",
+              "c": "n mod d == 0",
+              "y": [
+                {
+                  "t": "assign",
+                  "v": "prime",
+                  "e": "false"
+                }
+              ],
+              "n": []
+            },
+            {
+              "t": "assign",
+              "v": "d",
+              "e": "d + 1"
+            }
+          ]
+        },
+        {
+          "t": "if",
+          "c": "prime AND n > 1",
+          "y": [
+            {
+              "t": "output",
+              "e": "n",
+              "ln": false
+            },
+            {
+              "t": "output",
+              "e": "\" is prime\""
+            }
+          ],
+          "n": [
+            {
+              "t": "output",
+              "e": "n",
+              "ln": false
+            },
+            {
+              "t": "output",
+              "e": "\" is not prime\""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Sum until zero",
+      "tags": "Do… while",
+      "main": [
+        {
+          "t": "assign",
+          "v": "s",
+          "e": "0"
+        },
+        {
+          "t": "do",
+          "c": "x != 0",
+          "body": [
+            {
+              "t": "input",
+              "v": "x"
+            },
+            {
+              "t": "assign",
+              "v": "s",
+              "e": "s + x"
+            }
+          ]
+        },
+        {
+          "t": "output",
+          "e": "\"Total: \"",
+          "ln": false
+        },
+        {
+          "t": "output",
+          "e": "s"
+        }
+      ]
+    },
+    {
+      "name": "Array maximum",
+      "tags": "Arrays",
+      "main": [
+        {
+          "t": "input",
+          "v": "n"
+        },
+        {
+          "t": "for",
+          "v": "i",
+          "a": "0",
+          "b": "n - 1",
+          "s": "1",
+          "body": [
+            {
+              "t": "input",
+              "v": "v[i]"
+            }
+          ]
+        },
+        {
+          "t": "assign",
+          "v": "biggest",
+          "e": "v[0]"
+        },
+        {
+          "t": "for",
+          "v": "i",
+          "a": "1",
+          "b": "n - 1",
+          "s": "1",
+          "body": [
+            {
+              "t": "if",
+              "c": "v[i] > biggest",
+              "y": [
+                {
+                  "t": "assign",
+                  "v": "biggest",
+                  "e": "v[i]"
+                }
+              ],
+              "n": []
+            }
+          ]
+        },
+        {
+          "t": "output",
+          "e": "\"Maximum: \"",
+          "ln": false
+        },
+        {
+          "t": "output",
+          "e": "biggest"
+        }
+      ]
+    }
+  ]
+}

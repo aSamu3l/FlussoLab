@@ -40,6 +40,7 @@ FlussoLab si può installare e funziona anche senza internet:
 ## Contribuire
 
 Segnalazioni e proposte sono benvenute: leggi [CONTRIBUTING.md](CONTRIBUTING.md).
+Vuoi FlussoLab nella tua lingua? Basta aggiungere un file nella cartella [`lang/`](lang): trovi i passaggi in CONTRIBUTING.md.
 
 ## Autore
 

@@ -3,7 +3,15 @@ const FL = (() => {
 'use strict';
 class FErr extends Error { constructor(key, ...args) { super(key); this.key = key; this.args = args; } }
 let BOOLN = ['FALSO', 'VERO'];
-function setBoolNames(f, t) { BOOLN = [f, t]; }
+// true/false (and vero/falso) always work; the names of the current language work too
+const BW = { t: new Set(['true', 'vero']), f: new Set(['false', 'falso']) };
+let BWL = { t: BW.t, f: BW.f };
+function setBoolNames(f, t) {
+  BOOLN = [f, t];
+  const w = x => String(x).toLowerCase();
+  BWL = { t: new Set([...BW.t, ...(/^[\p{L}_]+$/u.test(t) ? [w(t)] : [])]), f: new Set([...BW.f, ...(/^[\p{L}_]+$/u.test(f) ? [w(f)] : [])]) };
+  cache.clear();
+}
 
 /* ---------- lexer ---------- */
 const QD = '"“”„', QS = "'‘’";
@@ -32,8 +40,8 @@ function lex(s) {
       let j = i; while (j < s.length && /[A-Za-z0-9_\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u024F]/.test(s[j])) j++;
       const w = s.slice(i, j), lw = w.toLowerCase();
       if (['and', 'or', 'not', 'mod', 'div'].includes(lw)) out.push({ k: 'op', v: lw });
-      else if (lw === 'true' || lw === 'vero') out.push({ k: 'bool', v: true });
-      else if (lw === 'false' || lw === 'falso') out.push({ k: 'bool', v: false });
+      else if (BWL.t.has(lw)) out.push({ k: 'bool', v: true });
+      else if (BWL.f.has(lw)) out.push({ k: 'bool', v: false });
       else out.push({ k: 'id', v: w });
       i = j; continue;
     }
@@ -154,8 +162,8 @@ function parseInput(raw) {
   if (/^[-+]?\d+$/.test(s)) return BigInt(s.replace('+', ''));
   if (/^[-+]?(\d+[.,]\d*|[.,]\d+)$/.test(s)) return parseFloat(s.replace(',', '.'));
   const l = s.toLowerCase();
-  if (l === 'vero' || l === 'true') return true;
-  if (l === 'falso' || l === 'false') return false;
+  if (BWL.t.has(l)) return true;
+  if (BWL.f.has(l)) return false;
   return s;
 }
 const OPN = { '+': '+', '-': '-', '*': '*', '/': '/', mod: 'mod', div: 'div', '^': '^', '<': '<', '<=': '<=', '>': '>', '>=': '>=', and: 'AND', or: 'OR', not: 'NOT' };
@@ -486,16 +494,10 @@ function firstError(main) {
 }
 
 /* ---------- pseudocode ---------- */
-const PK = {
-  it: { start: 'INIZIO', end: 'FINE', read: 'LEGGI', write: 'SCRIVI', if: 'SE', then: 'ALLORA', else: 'ALTRIMENTI', endif: 'FINE SE',
-    while: 'MENTRE', do: 'ESEGUI', endwhile: 'FINE MENTRE', repeat: 'RIPETI', repwhile: 'MENTRE', for: 'PER', from: 'DA', to: 'A', step: 'PASSO', endfor: 'FINE PER', noln: '(senza andare a capo)',
-    vars: 'VARIABILI', kinds: { int: 'int', float: 'float', str: 'string', bool: 'bool' }, arrOf: 'VETTORE DI' },
-  en: { start: 'BEGIN', end: 'END', read: 'READ', write: 'WRITE', if: 'IF', then: 'THEN', else: 'ELSE', endif: 'END IF',
-    while: 'WHILE', do: 'DO', endwhile: 'END WHILE', repeat: 'REPEAT', repwhile: 'WHILE', for: 'FOR', from: 'FROM', to: 'TO', step: 'STEP', endfor: 'END FOR', noln: '(no new line)',
-    vars: 'VARIABLES', kinds: { int: 'int', float: 'float', str: 'string', bool: 'bool' }, arrOf: 'ARRAY OF' },
-};
-function toPseudoLines(main, lang) {
-  const K = PK[lang] || PK.it, L = [{ s: K.start, id: null }];
+
+// K: the "pseudo" section of a language file (lang/xx.json)
+function toPseudoLines(main, K) {
+  const L = [{ s: K.start, id: null }];
   (function walk(seq, d) {
     const ind = '    '.repeat(d);
     const P = (s, b) => L.push({ s: ind + s, id: b ? b.id : null });
@@ -539,7 +541,7 @@ function toPseudoLines(main, lang) {
   L.push({ s: K.end, id: null });
   return L;
 }
-function toPseudo(main, lang) { return toPseudoLines(main, lang).map(l => l.s).join('\n'); }
+function toPseudo(main, K) { return toPseudoLines(main, K).map(l => l.s).join('\n'); }
 
 /* ---------- Python ---------- */
 const PYOP = { or: ['or', 1], and: ['and', 2], '=': ['==', 4], '!=': ['!=', 4], '<': ['<', 4], '<=': ['<=', 4], '>': ['>', 4], '>=': ['>=', 4],
@@ -602,7 +604,9 @@ function pyE(n, U) {
   return { s: '?', p: 9 };
 }
 function pyPrint(ast, U, ln) { return `print(${pyE(ast, U).s}${ln === false ? ', end=""' : ''})`; }
-function toPython(main, lang) {
+// T: the "python" section of a language file (lang/xx.json), for the comments
+function toPython(main, T) {
+  T = T || {};
   const U = new Set(), arrays = new Set(), L = [];
   U.ints = new Set();
   const DK = Object.create(null), declK = n => DK[n] || null;
@@ -652,7 +656,7 @@ function toPython(main, lang) {
         case 'decl': {
           let its; try { its = parseDecl(b.v); } catch (e) { its = []; }
           const pt = { int: 'int', float: 'float', str: 'str', bool: 'bool' }[b.k] || 'object';
-          for (const it of its) { if (it.arr) { arrays.add(pyName(it.n)); L.push(`${ind}# ${pyName(it.n)}: ${lang === 'en' ? 'array of' : 'vettore di'} ${pt}`); } else L.push(`${ind}${pyName(it.n)}: ${pt}`); }
+          for (const it of its) { if (it.arr) { arrays.add(pyName(it.n)); L.push(`${ind}# ${pyName(it.n)}: ${T.arrayOf || 'array of'} ${pt}`); } else L.push(`${ind}${pyName(it.n)}: ${pt}`); }
           if (!its.length) L.push(ind + 'pass');
           break;
         }
@@ -685,10 +689,10 @@ function toPython(main, lang) {
       }
     }
   })(main, 0);
-  const H = [lang === 'en' ? '# Generated by FlussoLab' : '# Generato da FlussoLab'];
+  const H = ['# ' + (T.generated || 'FlussoLab')];
   if (U.has('math')) H.push('import math');
   if (U.has('random')) H.push('import random');
-  if (arrays.size) { H.push(''); for (const a of arrays) H.push(`${a} = {}  # ${lang === 'en' ? 'array' : 'vettore'}`); }
+  if (arrays.size) { H.push(''); for (const a of arrays) H.push(`${a} = {}  # ${T.array || 'array'}`); }
   H.push('');
   return H.join('\n') + '\n' + L.join('\n') + '\n';
 }

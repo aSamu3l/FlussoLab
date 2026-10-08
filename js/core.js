@@ -9,7 +9,7 @@ function setBoolNames(f, t) { BOOLN = [f, t]; }
 const QD = '"“”„', QS = "'‘’";
 const TWO = { '<=': '<=', '>=': '>=', '==': '=', '!=': '!=', '<>': '!=', '&&': 'and', '||': 'or', '**': '^' };
 const ONE = { '+': '+', '-': '-', '−': '-', '*': '*', '×': '*', '/': '/', '÷': '/', '%': 'mod', '^': '^',
-  '<': '<', '>': '>', '=': '=', '!': 'not', '(': '(', ')': ')', '[': '[', ']': ']', ',': ',',
+  '<': '<', '>': '>', '!': 'not', '(': '(', ')': ')', '[': '[', ']': ']', ',': ',',
   '≤': '<=', '≥': '>=', '≠': '!=' };
 function lex(s) {
   const out = []; let i = 0;
@@ -20,7 +20,7 @@ function lex(s) {
       let j = i; while (j < s.length && /[0-9.]/.test(s[j])) j++;
       const txt = s.slice(i, j);
       if (txt.split('.').length > 2) throw new FErr('syntax', txt);
-      out.push({ k: 'num', v: parseFloat(txt) }); i = j; continue;
+      out.push(txt.includes('.') ? { k: 'num', v: parseFloat(txt), t: txt } : { k: 'num', v: BigInt(txt), t: txt }); i = j; continue;
     }
     if (QD.includes(c) || QS.includes(c)) {
       const fam = QD.includes(c) ? QD : QS;
@@ -39,6 +39,7 @@ function lex(s) {
     }
     const two = s.slice(i, i + 2);
     if (TWO[two]) { out.push({ k: 'op', v: TWO[two] }); i += 2; continue; }
+    if (c === '=') throw new FErr('assigneq');
     if (ONE[c]) { out.push({ k: 'op', v: ONE[c] }); i++; continue; }
     throw new FErr('syntax', c);
   }
@@ -47,6 +48,7 @@ function lex(s) {
 }
 
 /* ---------- parser (Pratt) ---------- */
+const CASTS = { int: 'int', float: 'float', double: 'float' };
 const BP = { or: 1, and: 2, '=': 4, '!=': 4, '<': 4, '<=': 4, '>': 4, '>=': 4, '+': 5, '-': 5, '*': 6, '/': 6, mod: 6, div: 6, '^': 8 };
 const cache = new Map();
 function tokText(tk) { return tk.k === 'str' ? '"' + tk.v + '"' : String(tk.v); }
@@ -75,7 +77,7 @@ function parseRaw(src) {
   }
   function prefix() {
     const tk = next();
-    if (tk.k === 'num') return { k: 'num', v: tk.v };
+    if (tk.k === 'num') return { k: 'num', v: tk.v, t: tk.t };
     if (tk.k === 'str') return post({ k: 'str', v: tk.v });
     if (tk.k === 'bool') return { k: 'bool', v: tk.v };
     if (tk.k === 'id') {
@@ -91,7 +93,11 @@ function parseRaw(src) {
       return post({ k: 'var', n: tk.v });
     }
     if (tk.k === 'op') {
-      if (tk.v === '(') { const e = expr(0); expect(')'); return post(e); }
+      if (tk.v === '(') {
+        const a = toks[p], c = toks[p + 1];
+        if (a && a.k === 'id' && CASTS[a.v.toLowerCase()] && c && isOp(c, ')')) { p += 2; return { k: 'cast', to: CASTS[a.v.toLowerCase()], a: expr(7) }; }
+        const e = expr(0); expect(')'); return post(e);
+      }
       if (tk.v === '-') return { k: 'un', op: '-', a: expr(7) };
       if (tk.v === '+') return expr(7);
       if (tk.v === 'not') return { k: 'un', op: 'not', a: expr(3) };
@@ -123,25 +129,29 @@ function parseLV(src) {
   if (RESERVED.has(n.n.toLowerCase())) throw new FErr('reserved', n.n);
   return a;
 }
-const RESERVED = new Set(['int', 'integer', 'real', 'float', 'double', 'string', 'str', 'bool', 'boolean']);
+const RESERVED = new Set(['int', 'float', 'double', 'string', 'bool']);
 function splitList(s) { return String(s || '').split(',').map(x => x.trim()).filter(Boolean); }
 
-/* ---------- values ---------- */
+/* ---------- values ----------
+   int   -> JS BigInt  (7, -3): division between ints truncates, like in C
+   float -> JS Number  (3.5, 7.0)                                            */
+const isNum = v => typeof v === 'number' || typeof v === 'bigint';
 function fmtIn(v) { return typeof v === 'string' ? '"' + v + '"' : fmt(v); }
 function fmt(v) {
+  if (typeof v === 'bigint') return String(v);
   if (typeof v === 'number') {
     if (!isFinite(v)) return String(v);
-    if (Number.isInteger(v)) return String(v);
+    if (Number.isInteger(v)) return Math.abs(v) < 1e16 ? v.toFixed(1) : String(v);
     return String(parseFloat(v.toPrecision(12)));
   }
   if (typeof v === 'boolean') return v ? BOOLN[1] : BOOLN[0];
   if (Array.isArray(v)) return '[' + Array.from(v, x => x === undefined ? '·' : fmtIn(x)).join(', ') + ']';
   return String(v);
 }
-function typeOf(v) { return Array.isArray(v) ? 'arr' : typeof v === 'number' ? 'num' : typeof v === 'boolean' ? 'bool' : 'str'; }
+function typeOf(v) { return Array.isArray(v) ? 'arr' : typeof v === 'bigint' ? 'int' : typeof v === 'number' ? 'float' : typeof v === 'boolean' ? 'bool' : 'str'; }
 function parseInput(raw) {
   const s = String(raw).trim();
-  if (/^[-+]?\d+$/.test(s)) return parseInt(s, 10);
+  if (/^[-+]?\d+$/.test(s)) return BigInt(s.replace('+', ''));
   if (/^[-+]?(\d+[.,]\d*|[.,]\d+)$/.test(s)) return parseFloat(s.replace(',', '.'));
   const l = s.toLowerCase();
   if (l === 'vero' || l === 'true') return true;
@@ -149,31 +159,52 @@ function parseInput(raw) {
   return s;
 }
 const OPN = { '+': '+', '-': '-', '*': '*', '/': '/', mod: 'mod', div: 'div', '^': '^', '<': '<', '<=': '<=', '>': '>', '>=': '>=', and: 'AND', or: 'OR', not: 'NOT' };
-function num(a, op) { if (typeof a !== 'number') throw new FErr('type', OPN[op] || op); }
+function num(a, op) { if (!isNum(a)) throw new FErr('type', OPN[op] || op); }
 function bool(a, op) { if (typeof a !== 'boolean') throw new FErr('type', OPN[op] || op); }
-function idxOk(i) { if (typeof i !== 'number' || !Number.isInteger(i) || i < 0 || i > 1e6) throw new FErr('idx', fmt(i)); }
-function eq(a, b) {
-  if (Array.isArray(a) || Array.isArray(b)) return a === b;
-  return a === b;
+function idxOk(i) { if (typeof i !== 'bigint' || i < 0n || i > 1000000n) throw new FErr('idx', fmt(i)); return Number(i); }
+function eq(a, b) { return isNum(a) && isNum(b) ? a == b : a === b; } // eslint-disable-line eqeqeq
+function toInt(x, op) {
+  num(x, op); if (typeof x === 'bigint') return x;
+  if (!isFinite(x)) throw new FErr('num', fmt(x));
+  return BigInt(Math.trunc(x));
 }
+function arith(op, a, b) {
+  num(a, op); num(b, op);
+  if (typeof a === 'bigint' && typeof b === 'bigint') {
+    switch (op) {
+      case '+': return a + b; case '-': return a - b; case '*': return a * b;
+      case '/': case 'div': if (b === 0n) throw new FErr('div0'); return a / b;
+      case 'mod': if (b === 0n) throw new FErr('div0'); return a % b;
+      case '^': return (b >= 0n && b <= 4096n) ? a ** b : Number(a) ** Number(b);
+    }
+  }
+  const x = Number(a), y = Number(b);
+  switch (op) {
+    case '+': return x + y; case '-': return x - y; case '*': return x * y;
+    case '/': if (y === 0) throw new FErr('div0'); return x / y;
+    case 'div': if (y === 0) throw new FErr('div0'); return toInt(x / y, op);
+    case 'mod': if (y === 0) throw new FErr('div0'); return x % y;
+    case '^': return x ** y;
+  }
+}
+const F1 = (name, f) => [1, a => { num(a, name); return f(Number(a)); }];
 const FN = {
-  sqrt: [1, a => { num(a, 'sqrt'); if (a < 0) throw new FErr('sqrt'); return Math.sqrt(a); }],
-  abs: [1, a => { num(a, 'abs'); return Math.abs(a); }],
-  int: [1, a => { num(a, 'int'); return Math.trunc(a); }],
-  round: [1, a => { num(a, 'round'); return Math.round(a); }],
-  floor: [1, a => { num(a, 'floor'); return Math.floor(a); }],
-  ceil: [1, a => { num(a, 'ceil'); return Math.ceil(a); }],
-  pow: [2, (a, b) => { num(a, 'pow'); num(b, 'pow'); return Math.pow(a, b); }],
-  min: [2, (a, b) => { num(a, 'min'); num(b, 'min'); return Math.min(a, b); }],
-  max: [2, (a, b) => { num(a, 'max'); num(b, 'max'); return Math.max(a, b); }],
-  sin: [1, a => { num(a, 'sin'); return Math.sin(a); }],
-  cos: [1, a => { num(a, 'cos'); return Math.cos(a); }],
-  tan: [1, a => { num(a, 'tan'); return Math.tan(a); }],
+  sqrt: [1, a => { num(a, 'sqrt'); if (a < 0) throw new FErr('sqrt'); return Math.sqrt(Number(a)); }],
+  abs: [1, a => { num(a, 'abs'); return typeof a === 'bigint' ? (a < 0n ? -a : a) : Math.abs(a); }],
+  int: [1, a => toInt(a, 'int')],
+  float: [1, a => { num(a, 'float'); return Number(a); }],
+  round: [1, a => toInt(typeof a === 'bigint' ? a : (num(a, 'round'), Math.round(a)), 'round')],
+  floor: [1, a => toInt(typeof a === 'bigint' ? a : (num(a, 'floor'), Math.floor(a)), 'floor')],
+  ceil: [1, a => toInt(typeof a === 'bigint' ? a : (num(a, 'ceil'), Math.ceil(a)), 'ceil')],
+  pow: [2, (a, b) => arith('^', a, b)],
+  min: [2, (a, b) => { num(a, 'min'); num(b, 'min'); return b < a ? b : a; }],
+  max: [2, (a, b) => { num(a, 'max'); num(b, 'max'); return b > a ? b : a; }],
+  sin: F1('sin', Math.sin), cos: F1('cos', Math.cos), tan: F1('tan', Math.tan),
   random: [0, () => Math.random()],
-  randint: [2, (a, b) => { num(a, 'randint'); num(b, 'randint'); a = Math.ceil(a); b = Math.floor(b); return a + Math.floor(Math.random() * (b - a + 1)); }],
-  len: [1, a => { if (Array.isArray(a) || typeof a === 'string') return a.length; throw new FErr('type', 'len'); }],
+  randint: [2, (a, b) => { const lo = toInt(a, 'randint'), hi = toInt(b, 'randint'); return lo + BigInt(Math.floor(Math.random() * (Number(hi - lo) + 1))); }],
+  len: [1, a => { if (Array.isArray(a) || typeof a === 'string') return BigInt(a.length); throw new FErr('type', 'len'); }],
   str: [1, a => fmt(a)],
-  num: [1, a => { if (typeof a === 'number') return a; const v = parseInput(fmt(a)); if (typeof v !== 'number') throw new FErr('num', fmt(a)); return v; }],
+  num: [1, a => { if (isNum(a)) return a; const v = parseInput(fmt(a)); if (!isNum(v)) throw new FErr('num', fmt(a)); return v; }],
 };
 
 /* ---------- evaluator ---------- */
@@ -186,8 +217,8 @@ function ev(n, env) {
     case 'idx': {
       const o = ev(n.o, env), i = ev(n.i, env);
       if (!Array.isArray(o) && typeof o !== 'string') throw new FErr('notarr', exprName(n.o));
-      idxOk(i);
-      const v = o[i];
+      const k = idxOk(i);
+      const v = o[k];
       if (v === undefined) throw new FErr('idx', fmt(i));
       return v;
     }
@@ -196,6 +227,10 @@ function ev(n, env) {
       if (!f) throw new FErr('fn', n.n);
       if (f[0] !== n.args.length) throw new FErr('args', n.n, f[0]);
       return f[1](...n.args.map(a => ev(a, env)));
+    }
+    case 'cast': {
+      const a = ev(n.a, env);
+      return n.to === 'int' ? toInt(a, '(int)') : (num(a, '(float)'), Number(a));
     }
     case 'un': {
       const a = ev(n.a, env);
@@ -213,18 +248,13 @@ function ev(n, env) {
       switch (n.op) {
         case '+':
           if (typeof a === 'string' || typeof b === 'string') return fmt(a) + fmt(b);
-          num(a, '+'); num(b, '+'); return a + b;
-        case '-': num(a, '-'); num(b, '-'); return a - b;
-        case '*': num(a, '*'); num(b, '*'); return a * b;
-        case '/': num(a, '/'); num(b, '/'); if (b === 0) throw new FErr('div0'); return a / b;
-        case 'mod': num(a, 'mod'); num(b, 'mod'); if (b === 0) throw new FErr('div0'); return a % b;
-        case 'div': num(a, 'div'); num(b, 'div'); if (b === 0) throw new FErr('div0'); return Math.trunc(a / b);
-        case '^': num(a, '^'); num(b, '^'); return Math.pow(a, b);
+          return arith('+', a, b);
+        case '-': case '*': case '/': case 'mod': case 'div': case '^': return arith(n.op, a, b);
         case '=': return eq(a, b);
         case '!=': return !eq(a, b);
         default: {
-          const ok = (typeof a === 'number' && typeof b === 'number') || (typeof a === 'string' && typeof b === 'string');
-          if (!ok && ((typeof a === 'string' && typeof b === 'number') || (typeof a === 'number' && typeof b === 'string'))) throw new FErr('cmpmix', OPN[n.op]);
+          const ok = (isNum(a) && isNum(b)) || (typeof a === 'string' && typeof b === 'string');
+          if (!ok && ((typeof a === 'string' && isNum(b)) || (isNum(a) && typeof b === 'string'))) throw new FErr('cmpmix', OPN[n.op]);
           if (!ok) throw new FErr('type', OPN[n.op]);
           if (n.op === '<') return a < b; if (n.op === '<=') return a <= b;
           if (n.op === '>') return a > b; return a >= b;
@@ -243,7 +273,7 @@ function container(n, env) {
     return v;
   }
   if (n.k === 'idx') {
-    const parent = container(n.o, env); const i = ev(n.i, env); idxOk(i);
+    const parent = container(n.o, env); const i = idxOk(ev(n.i, env));
     if (parent[i] === undefined) parent[i] = [];
     if (!Array.isArray(parent[i])) throw new FErr('notarr', exprName(n.o));
     return parent[i];
@@ -252,11 +282,11 @@ function container(n, env) {
 }
 function assign(lv, val, env) {
   if (lv.k === 'var') { env[lv.n] = val; return; }
-  const c = container(lv.o, env); const i = ev(lv.i, env); idxOk(i);
+  const c = container(lv.o, env); const i = idxOk(ev(lv.i, env));
   c[i] = val;
 }
 /* ---------- declared types ---------- */
-const KINDS = ['int', 'real', 'str', 'bool'];
+const KINDS = ['int', 'float', 'str', 'bool'];
 function parseDecl(src) {
   const items = splitList(src);
   if (!items.length) throw new FErr('empty');
@@ -267,8 +297,7 @@ function parseDecl(src) {
     return { n: m[1], arr: !!m[2] };
   });
 }
-const KALIAS = { int: 'int', integer: 'int', real: 'real', float: 'real', double: 'real',
-  string: 'str', str: 'str', bool: 'bool', boolean: 'bool' };
+const KALIAS = { int: 'int', float: 'float', double: 'float', string: 'str', bool: 'bool' };
 // "int n", "reale media", "v[i]" -> { k: 'int' | null, src: 'n', lv: <ast> }
 function lvTyped(src) {
   const m = /^\s*([A-Za-z]+)\s+(\S.*)$/.exec(String(src || ''));
@@ -278,30 +307,32 @@ function lvTyped(src) {
 function declare(T, env, name, k, arr) {
   const old = T[name];
   if (old && (old.k !== k || old.arr !== arr)) throw new FErr('redecl', name);
-  if (!old && Object.prototype.hasOwnProperty.call(env, name)) checkType({ k: 'var', n: name }, env[name], { [name]: { k, arr } });
+  if (!old && Object.prototype.hasOwnProperty.call(env, name)) env[name] = checkType({ k: 'var', n: name }, env[name], { [name]: { k, arr } });
   T[name] = { k, arr };
 }
 function declTyped(ty, T, env) { if (ty.k) declare(T, env, lvRoot(ty.lv).n, ty.k, ty.lv.k === 'idx'); return ty.lv; }
 function kindOK(k, v) {
-  if (k === 'int') return typeof v === 'number' && Number.isInteger(v);
-  if (k === 'real') return typeof v === 'number';
+  if (k === 'int') return typeof v === 'bigint';
+  if (k === 'float') return isNum(v);
   if (k === 'str') return typeof v === 'string';
   return typeof v === 'boolean';
 }
 function lvRoot(lv) { let n = lv; while (n.k === 'idx') n = n.o; return n; }
+// checks a value against the declared type; an int stored in a float variable becomes a float, as in C
 function checkType(lv, val, T) {
-  if (!T) return;
-  const r = lvRoot(lv), d = T[r.n]; if (!d) return;
-  if (lv.k === 'var' && d.arr) { if (!Array.isArray(val)) throw new FErr('tarr', r.n, d.k); return; }
-  if (lv.k === 'var' || d.arr) { if (Array.isArray(val) || !kindOK(d.k, val)) throw new FErr('tdecl', r.n, d.k, fmt(val)); }
+  if (!T) return val;
+  const r = lvRoot(lv), d = T[r.n]; if (!d) return val;
+  if (lv.k === 'var' && d.arr) { if (!Array.isArray(val)) throw new FErr('tarr', r.n, d.k); return val; }
+  if (Array.isArray(val) || !kindOK(d.k, val)) throw new FErr('tdecl', r.n, d.k, fmt(val));
+  return d.k === 'float' ? Number(val) : val;
 }
-function setVar(lv, val, env, T) { checkType(lv, val, T); assign(lv, val, env); }
+function setVar(lv, val, env, T) { assign(lv, checkType(lv, val, T), env); }
 function parseTyped(raw, k, name) {
   const s = String(raw).trim();
   if (k === 'str') return String(raw);
   const v = parseInput(s);
-  if (k === 'bool' ? typeof v !== 'boolean' : (typeof v !== 'number' || (k === 'int' && !Number.isInteger(v)))) throw new FErr('tin', s, k, name);
-  return v;
+  if (k === 'bool' ? typeof v !== 'boolean' : (k === 'int' ? typeof v !== 'bigint' : !isNum(v))) throw new FErr('tin', s, k, name);
+  return k === 'float' ? Number(v) : v;
 }
 function cond(src, env) {
   const v = ev(parse(src), env);
@@ -335,8 +366,8 @@ function* exec(seq, env, io) {
         const lv = b.inc ? parseLV(b.v) : declTyped(lvTyped(b.v), T, env);
         if (b.inc) {
           const cur = ev(lv, env), r = lvRoot(lv), d = T[r.n];
-          if (typeof cur !== 'number' || !Number.isInteger(cur) || (d && d.k !== 'int')) throw new FErr('incint', b.inc, r.n);
-          const v = cur + (b.inc === '++' ? 1 : -1); setVar(lv, v, env, T); tr('as', b, { value: v }); break;
+          if (typeof cur !== 'bigint' || (d && d.k !== 'int')) throw new FErr('incint', b.inc, r.n);
+          const v = cur + (b.inc === '++' ? 1n : -1n); setVar(lv, v, env, T); tr('as', b, { value: v }); break;
         }
         const v = ev(parse(b.e), env); setVar(lv, v, env, T); tr('as', b, { value: v }); break;
       }
@@ -356,9 +387,9 @@ function* exec(seq, env, io) {
       case 'for': {
         const lv = declTyped(lvTyped(b.v), T, env);
         const from = ev(parse(b.a), env), to = ev(parse(b.b), env);
-        const st = String(b.s ?? '').trim() ? ev(parse(b.s), env) : 1;
+        const st = String(b.s ?? '').trim() ? ev(parse(b.s), env) : 1n;
         num(from, 'for'); num(to, 'for'); num(st, 'for');
-        if (st === 0) throw new FErr('step0');
+        if (st == 0) throw new FErr('step0'); // eslint-disable-line eqeqeq
         setVar(lv, from, env, T);
         for (;;) {
           const cur = ev(lv, env); num(cur, 'for');
@@ -367,7 +398,7 @@ function* exec(seq, env, io) {
           if (!go) break;
           yield* exec(b.body, env, io);
           yield { t: 'at', b };
-          setVar(lv, ev(lv, env) + st, env, T);
+          setVar(lv, arith('+', ev(lv, env), st), env, T);
         }
         break;
       }
@@ -394,7 +425,7 @@ function usedVars(n, out = []) {
     case 'var': out.push(n.n); break;
     case 'idx': usedVars(n.o, out); usedVars(n.i, out); break;
     case 'call': n.args.forEach(a => usedVars(a, out)); break;
-    case 'un': usedVars(n.a, out); break;
+    case 'un': case 'cast': usedVars(n.a, out); break;
     case 'bin': usedVars(n.a, out); usedVars(n.b, out); break;
   }
   return out;
@@ -448,10 +479,10 @@ function firstError(main) {
 const PK = {
   it: { start: 'INIZIO', end: 'FINE', read: 'LEGGI', write: 'SCRIVI', if: 'SE', then: 'ALLORA', else: 'ALTRIMENTI', endif: 'FINE SE',
     while: 'MENTRE', do: 'ESEGUI', endwhile: 'FINE MENTRE', repeat: 'RIPETI', repwhile: 'MENTRE', for: 'PER', from: 'DA', to: 'A', step: 'PASSO', endfor: 'FINE PER', noln: '(senza andare a capo)',
-    vars: 'VARIABILI', kinds: { int: 'int', real: 'real', str: 'string', bool: 'bool' }, arrOf: 'VETTORE DI' },
+    vars: 'VARIABILI', kinds: { int: 'int', float: 'float', str: 'string', bool: 'bool' }, arrOf: 'VETTORE DI' },
   en: { start: 'BEGIN', end: 'END', read: 'READ', write: 'WRITE', if: 'IF', then: 'THEN', else: 'ELSE', endif: 'END IF',
     while: 'WHILE', do: 'DO', endwhile: 'END WHILE', repeat: 'REPEAT', repwhile: 'WHILE', for: 'FOR', from: 'FROM', to: 'TO', step: 'STEP', endfor: 'END FOR', noln: '(no new line)',
-    vars: 'VARIABLES', kinds: { int: 'int', real: 'real', str: 'string', bool: 'bool' }, arrOf: 'ARRAY OF' },
+    vars: 'VARIABLES', kinds: { int: 'int', float: 'float', str: 'string', bool: 'bool' }, arrOf: 'ARRAY OF' },
 };
 function toPseudoLines(main, lang) {
   const K = PK[lang] || PK.it, L = [{ s: K.start, id: null }];
@@ -512,9 +543,10 @@ const PYKW = new Set(['and', 'as', 'assert', 'break', 'class', 'continue', 'def'
 function pyName(n) { return PYKW.has(n) ? n + '_' : n; }
 function pyE(n, U) {
   switch (n.k) {
-    case 'num': return { s: String(n.v), p: 9 };
+    case 'num': return { s: n.t || String(n.v), p: 9 };
     case 'str': return { s: JSON.stringify(n.v), p: 9 };
     case 'bool': return { s: n.v ? 'True' : 'False', p: 9 };
+    case 'cast': { const a = pyE(n.a, U); return { s: `${n.to}(${a.s})`, p: 9 }; }
     case 'var': return { s: pyName(n.n), p: 9 };
     case 'idx': { const o = pyE(n.o, U); return { s: (o.p < 9 ? `(${o.s})` : o.s) + '[' + pyE(n.i, U).s + ']', p: 9 }; }
     case 'call': {
@@ -553,10 +585,10 @@ function toPython(main, lang) {
   const U = new Set(), arrays = new Set(), L = [];
   let hasInput = false;
   const E = (src) => { try { return pyE(parse(src), U).s; } catch (e) { return `...  # ${src}`; } };
-  const PYT = { int: 'int', real: 'float', str: 'str', bool: 'bool' };
+  const PYT = { int: 'int', float: 'float', str: 'str', bool: 'bool' };
   const LVT = (src) => { try { const ty = lvTyped(src); const n = pyE(ty.lv, U).s; return ty.k && ty.lv.k === 'var' ? `${n}: ${PYT[ty.k]}` : n; } catch (e) { return LV(src); } };
   const LV = (src) => { try { return pyE(lvTyped(src).lv, U).s; } catch (e) { return pyName(String(src || 'x').replace(/\W/g, '') || 'x'); } };
-  const lit = (s) => { try { const a = parse(s); if (a.k === 'num') return a.v; if (a.k === 'un' && a.op === '-' && a.a.k === 'num') return -a.a.v; } catch (e) {} return null; };
+  const lit = (s) => { try { const a = parse(s); if (a.k === 'num') return Number(a.v); if (a.k === 'un' && a.op === '-' && a.a.k === 'num') return -Number(a.a.v); } catch (e) {} return null; };
   const noteArr = (src) => { try { let n = lvTyped(src).lv; if (n.k !== 'idx') return; while (n.k === 'idx') n = n.o; arrays.add(pyName(n.n)); } catch (e) {} };
   (function walk(seq, d) {
     const ind = '    '.repeat(d);
@@ -572,7 +604,7 @@ function toPython(main, lang) {
         case 'assign': noteArr(b.v); L.push(b.inc ? `${ind}${LV(b.v)} ${b.inc === '++' ? '+' : '-'}= 1` : `${ind}${LVT(b.v)} = ${E(b.e)}`); break;
         case 'decl': {
           let its; try { its = parseDecl(b.v); } catch (e) { its = []; }
-          const pt = { int: 'int', real: 'float', str: 'str', bool: 'bool' }[b.k] || 'object';
+          const pt = { int: 'int', float: 'float', str: 'str', bool: 'bool' }[b.k] || 'object';
           for (const it of its) { if (it.arr) { arrays.add(pyName(it.n)); L.push(`${ind}# ${pyName(it.n)}: ${lang === 'en' ? 'array of' : 'vettore di'} ${pt}`); } else L.push(`${ind}${pyName(it.n)}: ${pt}`); }
           if (!its.length) L.push(ind + 'pass');
           break;
@@ -619,9 +651,10 @@ const SRC = { or: ['OR', 1], and: ['AND', 2], '=': ['==', 4], '!=': ['!=', 4], '
   '+': ['+', 5], '-': ['-', 5], '*': ['*', 6], '/': ['/', 6], mod: ['mod', 6], div: ['div', 6], '^': ['^', 8] };
 function srcE(n) {
   switch (n.k) {
-    case 'num': return { s: String(n.v), p: 9 };
+    case 'num': return { s: n.t || String(n.v), p: 9 };
     case 'str': return { s: '"' + n.v + '"', p: 9 };
-    case 'bool': return { s: n.v ? 'vero' : 'falso', p: 9 };
+    case 'bool': return { s: n.v ? 'true' : 'false', p: 9 };
+    case 'cast': { const a = srcE(n.a); return { s: `(${n.to}) ` + (a.p < 7 ? `(${a.s})` : a.s), p: 7 }; }
     case 'var': return { s: n.n, p: 9 };
     case 'idx': { const o = srcE(n.o); return { s: (o.p < 9 ? `(${o.s})` : o.s) + '[' + srcE(n.i).s + ']', p: 9 }; }
     case 'call': return { s: `${n.n}(${n.args.map(a => srcE(a).s).join(', ')})`, p: 9 };

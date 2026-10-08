@@ -2,7 +2,7 @@
 'use strict';
 /* ====== Project settings: fill these in before publishing ====== */
 const CONFIG = {
-  version: '0.4.2',
+  version: '0.5.0',
   author: 'aSamu3l',
   github: 'https://github.com/aSamu3l',
   repo: 'https://github.com/aSamu3l/FlussoLab',
@@ -69,14 +69,15 @@ const I18N = {
     legendT: 'I blocchi',
     insertHere: 'Inserisci qui', pasteHere: 'Incolla il blocco copiato',
     console: 'Console', vars: 'Variabili', noVars: 'Nessuna variabile ancora.', thName: 'Nome', thVal: 'Valore', thType: 'Tipo',
-    ty: { num: 'numero', str: 'testo', bool: 'logico', arr: 'vettore' },
-    tyk: { int: 'int', real: 'real', str: 'string', bool: 'bool' }, f_type: 'Tipo', f_declvars: 'Variabili',
+    ty: { int: 'int', float: 'float', str: 'string', bool: 'bool', arr: 'vettore' },
+    tyk: { int: 'int', float: 'float', str: 'string', bool: 'bool' }, f_type: 'Tipo', f_declvars: 'Variabili',
     n_decl: k => `le variabili saranno di tipo ${k}`, n_inc: (v, op) => op === '++' ? `aumenta ${v} di 1` : `diminuisce ${v} di 1`, vecOf: 'vettore di',
     e_tdecl: (n, k, v) => `«${n}» è di tipo ${t('tyk')[k]}: non può contenere ${v}`,
     e_tin: (v, k, n) => `«${v}» non è un valore ${t('tyk')[k]} valido per ${n}`,
     e_tarr: (n, k) => `«${n}» è un vettore di ${t('tyk')[k]}: assegna i singoli elementi, ad esempio ${n}[0]`,
     e_incint: (op, n) => `${op} si può usare solo su variabili intere: «${n}» non è un intero`,
     e_reserved: n => `«${n}» è il nome di un tipo: non si può usare come nome di variabile`,
+    e_assigneq: 'Per confrontare si usa ==: il singolo = serve solo ad assegnare',
     e_redecl: n => `«${n}» è già stata dichiarata con un altro tipo`,
     e_declname: x => `«${x}» non è un nome di variabile valido`, e_kind: 'Scegli un tipo',
     consoleIdle: 'Premi Esegui per avviare il programma, oppure Passo per seguirlo un blocco alla volta.',
@@ -150,14 +151,15 @@ const I18N = {
     legendT: 'Blocks',
     insertHere: 'Insert here', pasteHere: 'Paste copied block',
     console: 'Console', vars: 'Variables', noVars: 'No variables yet.', thName: 'Name', thVal: 'Value', thType: 'Type',
-    ty: { num: 'number', str: 'text', bool: 'boolean', arr: 'array' },
-    tyk: { int: 'int', real: 'real', str: 'string', bool: 'bool' }, f_type: 'Type', f_declvars: 'Variables',
+    ty: { int: 'int', float: 'float', str: 'string', bool: 'bool', arr: 'array' },
+    tyk: { int: 'int', float: 'float', str: 'string', bool: 'bool' }, f_type: 'Type', f_declvars: 'Variables',
     n_decl: k => `the variables will be of type ${k}`, n_inc: (v, op) => op === '++' ? `adds 1 to ${v}` : `subtracts 1 from ${v}`, vecOf: 'array of',
     e_tdecl: (n, k, v) => `“${n}” is of type ${t('tyk')[k]}: it cannot hold ${v}`,
     e_tin: (v, k, n) => `“${v}” is not a valid ${t('tyk')[k]} value for ${n}`,
     e_tarr: (n, k) => `“${n}” is an array of ${t('tyk')[k]}: assign single elements, for example ${n}[0]`,
     e_incint: (op, n) => `${op} works only on integer variables: “${n}” is not an integer`,
     e_reserved: n => `“${n}” is a type name: it cannot be used as a variable name`,
+    e_assigneq: 'To compare use ==: a single = is only for assignment',
     e_redecl: n => `“${n}” was already declared with another type`,
     e_declname: x => `“${x}” is not a valid variable name`, e_kind: 'Choose a type',
     consoleIdle: 'Press Run to start the program, or Step to follow it one block at a time.',
@@ -194,7 +196,7 @@ const EX = [
   { it: ['Media dei voti', 'Per, Se'], en: ['Average of grades', 'For, If'], name: 'Media dei voti', main: [
     { t: 'output', e: '"Quanti voti? "', ln: false }, { t: 'input', v: 'n' }, { t: 'assign', v: 's', e: '0' },
     { t: 'for', v: 'i', a: '1', b: 'n', s: '1', body: [{ t: 'output', e: '"Voto "', ln: false }, { t: 'output', e: 'i', ln: false }, { t: 'output', e: '": "', ln: false }, { t: 'input', v: 'voto' }, { t: 'assign', v: 's', e: 's + voto' }] },
-    { t: 'assign', v: 'media', e: 's / n' }, { t: 'output', e: '"Media: "', ln: false }, { t: 'output', e: 'round(media * 100) / 100' },
+    { t: 'assign', v: 'float media', e: '(float) s / n' }, { t: 'output', e: '"Media: "', ln: false }, { t: 'output', e: 'round(media * 100) / 100.0' },
     { t: 'if', c: 'media >= 6', y: [{ t: 'output', e: '"Sufficiente"' }], n: [{ t: 'output', e: '"Insufficiente"' }] }] },
   { it: ['Tabellina', 'Per'], en: ['Times table', 'For'], name: 'Tabellina', main: [
     { t: 'input', v: 'n' },
@@ -202,7 +204,7 @@ const EX = [
   { it: ['Numero primo', 'Mentre, AND, mod'], en: ['Prime number', 'While, AND, mod'], name: 'Numero primo', main: [
     { t: 'input', v: 'n' }, { t: 'assign', v: 'd', e: '2' }, { t: 'assign', v: 'primo', e: 'vero' },
     { t: 'while', c: 'd * d <= n AND primo', body: [
-      { t: 'if', c: 'n mod d = 0', y: [{ t: 'assign', v: 'primo', e: 'falso' }], n: [] }, { t: 'assign', v: 'd', e: 'd + 1' }] },
+      { t: 'if', c: 'n mod d == 0', y: [{ t: 'assign', v: 'primo', e: 'falso' }], n: [] }, { t: 'assign', v: 'd', e: 'd + 1' }] },
     { t: 'if', c: 'primo AND n > 1', y: [{ t: 'output', e: 'n', ln: false }, { t: 'output', e: '" è primo"' }], n: [{ t: 'output', e: 'n', ln: false }, { t: 'output', e: '" non è primo"' }] }] },
   { it: ['Somma fino a zero', 'Ripeti… mentre'], en: ['Sum until zero', 'Do… while'], name: 'Somma fino a zero', main: [
     { t: 'assign', v: 's', e: '0' },
@@ -329,7 +331,7 @@ function validBlock(b) {
     case 'output': str('e'); b.ln = b.ln !== false; return true;
     case 'comment': str('text'); return true;
     case 'assign': str('v'); str('e'); if (b.inc !== '++' && b.inc !== '--') delete b.inc; return true;
-    case 'decl': str('v'); if (!FL.KINDS.includes(b.k)) b.k = 'int'; return true;
+    case 'decl': str('v'); if (b.k === 'real') b.k = 'float'; if (!FL.KINDS.includes(b.k)) b.k = 'int'; return true;
     case 'if': str('c'); if (!b.n) b.n = []; return arr('y') && arr('n');
     case 'while': case 'do': str('c'); return arr('body');
     case 'for': ['v', 'a', 'b', 's'].forEach(str); return arr('body');
@@ -1181,16 +1183,18 @@ const GUIDE = {
     <li><b>Salva</b> crea un file <code>.flusso</code> da consegnare. <b>Apri</b> lo ricarica. <b>Immagine</b> esporta il diagramma in PNG.</li>
     <li>Il lavoro resta salvato in questo browser anche se chiudi la pagina.</li></ul>
     <h3>Espressioni</h3><table>
-    <tr><td>+ − * /</td><td>operazioni; con un testo, + unisce: <code>"Ciao " + nome</code></td></tr>
-    <tr><td>mod, div, ^</td><td>resto, divisione intera, potenza</td></tr>
-    <tr><td>= == != &lt;&gt;</td><td>uguale, diverso (nelle condizioni = e == sono uguali)</td></tr>
+    <tr><td>+ − *</td><td>operazioni; con un testo, + unisce: <code>"Ciao " + nome</code></td></tr>
+    <tr><td>/</td><td>divisione, come in C: tra due <code>int</code> il risultato è un <code>int</code> (<code>7 / 2</code> → 3); se uno dei due è <code>float</code> il risultato è <code>float</code> (<code>7.0 / 2</code> → 3.5)</td></tr>
+    <tr><td>(float) (int)</td><td>conversione di tipo: <code>(float) s / n</code> → divisione con i decimali; <code>(int) 3.9</code> → 3</td></tr>
+    <tr><td>mod, ^</td><td>resto, potenza</td></tr>
+    <tr><td>== !=</td><td>uguale, diverso. Il singolo <code>=</code> serve solo per assegnare</td></tr>
     <tr><td>&lt; &lt;= &gt; &gt;=</td><td>confronti</td></tr>
     <tr><td>AND OR NOT</td><td>anche && || !</td></tr>
-    <tr><td>vero, falso</td><td>valori logici</td></tr>
+    <tr><td>true, false</td><td>valori logici (vanno bene anche vero, falso)</td></tr>
     <tr><td>v[i]</td><td>elemento di un vettore; si crea assegnando <code>v[0] = 5</code> o leggendo <code>v[i]</code></td></tr>
     <tr><td>i++  i--</td><td>nel blocco assegnazione: aumenta o diminuisce di 1 una variabile intera</td></tr></table>
-    <h3>Tipi delle variabili</h3><p>Di base il tipo è automatico: lo decide il valore. Puoi dichiararlo dove la variabile nasce, ad esempio <code>IN int n</code>, <code>real media = s / n</code> o <code>FOR int i = 1 TO 10</code>, oppure con il blocco <b>VAR</b>. I tipi sono <code>int</code>, <code>real</code>, <code>string</code>, <code>bool</code> (vanno bene anche <code>integer</code>, <code>float</code>, <code>double</code>, <code>str</code>, <code>boolean</code>). Per un vettore scrivi <code>v[]</code>. Le parole dei tipi non si possono usare come nomi di variabile. FlussoLab segnala se metti un valore del tipo sbagliato; con IN, una variabile <code>string</code> tiene il testo così com'è, anche se sono cifre.</p>
-    <h3>Funzioni</h3><p><code>sqrt abs int round floor ceil pow min max sin cos tan random() randint(a,b) len str num</code></p>
+    <h3>Tipi delle variabili</h3><p>Di base il tipo è automatico: lo decide il valore. Puoi dichiararlo dove la variabile nasce, ad esempio <code>IN int n</code>, <code>float media = (float) s / n</code> o <code>FOR int i = 1 TO 10</code>, oppure con il blocco <b>VAR</b>. I tipi sono <code>int</code> (numeri interi), <code>float</code> (numeri con la virgola, va bene anche <code>double</code>), <code>string</code> (testo) e <code>bool</code> (vero o falso). Per un vettore scrivi <code>v[]</code>. Le parole dei tipi non si possono usare come nomi di variabile. FlussoLab segnala se metti un valore del tipo sbagliato; con IN, una variabile <code>string</code> tiene il testo così com'è, anche se sono cifre.</p>
+    <h3>Funzioni</h3><p><code>sqrt abs int float round floor ceil pow min max sin cos tan random() randint(a,b) len str num</code></p>
     <h3>Scorciatoie</h3><p><kbd>Canc</kbd> elimina il blocco selezionato · <kbd>Ctrl</kbd>+<kbd>Z</kbd> annulla · <kbd>Ctrl</kbd>+<kbd>C</kbd>/<kbd>V</kbd> copia e incolla dopo il blocco selezionato</p>
     <h3>Il progetto</h3><p>FlussoLab è gratuito e il suo codice è aperto a tutti, ma non può essere usato per guadagnarci. Funziona interamente nel browser: niente da installare, anche su Chromebook e tablet.</p>`,
   en: `<h3>How to use it</h3><ul>
@@ -1201,16 +1205,18 @@ const GUIDE = {
     <li><b>Save</b> creates a <code>.flusso</code> file to hand in. <b>Open</b> loads it back. <b>Image</b> exports the diagram as PNG.</li>
     <li>Your work stays saved in this browser even if you close the page.</li></ul>
     <h3>Expressions</h3><table>
-    <tr><td>+ − * /</td><td>arithmetic; with text, + joins: <code>"Hi " + name</code></td></tr>
-    <tr><td>mod, div, ^</td><td>remainder, integer division, power</td></tr>
-    <tr><td>= == != &lt;&gt;</td><td>equal, not equal (in conditions = and == are the same)</td></tr>
+    <tr><td>+ − *</td><td>arithmetic; with text, + joins: <code>"Hi " + name</code></td></tr>
+    <tr><td>/</td><td>division, as in C: between two <code>int</code> the result is an <code>int</code> (<code>7 / 2</code> → 3); if one is <code>float</code> the result is <code>float</code> (<code>7.0 / 2</code> → 3.5)</td></tr>
+    <tr><td>(float) (int)</td><td>type cast: <code>(float) s / n</code> → division with decimals; <code>(int) 3.9</code> → 3</td></tr>
+    <tr><td>mod, ^</td><td>remainder, power</td></tr>
+    <tr><td>== !=</td><td>equal, not equal. A single <code>=</code> is only for assignment</td></tr>
     <tr><td>&lt; &lt;= &gt; &gt;=</td><td>comparisons</td></tr>
     <tr><td>AND OR NOT</td><td>also && || !</td></tr>
     <tr><td>true, false</td><td>boolean values</td></tr>
     <tr><td>v[i]</td><td>array element; created by assigning <code>v[0] = 5</code> or reading <code>v[i]</code></td></tr>
     <tr><td>i++  i--</td><td>in the assignment block: adds or subtracts 1 from an integer variable</td></tr></table>
-    <h3>Variable types</h3><p>By default the type is automatic: the value decides it. You can declare it where the variable is born, for example <code>IN int n</code>, <code>real avg = s / n</code> or <code>FOR int i = 1 TO 10</code>, or with the <b>VAR</b> block. The types are <code>int</code>, <code>real</code>, <code>string</code>, <code>bool</code> (<code>integer</code>, <code>float</code>, <code>double</code>, <code>str</code>, <code>boolean</code> work too). For an array write <code>v[]</code>. Type words cannot be used as variable names. FlussoLab reports a value of the wrong type; with IN, a <code>string</code> variable keeps the text as typed, even if it is digits.</p>
-    <h3>Functions</h3><p><code>sqrt abs int round floor ceil pow min max sin cos tan random() randint(a,b) len str num</code></p>
+    <h3>Variable types</h3><p>By default the type is automatic: the value decides it. You can declare it where the variable is born, for example <code>IN int n</code>, <code>float avg = (float) s / n</code> or <code>FOR int i = 1 TO 10</code>, or with the <b>VAR</b> block. The types are <code>int</code> (whole numbers), <code>float</code> (numbers with decimals, <code>double</code> works too), <code>string</code> (text) and <code>bool</code> (true or false). For an array write <code>v[]</code>. Type words cannot be used as variable names. FlussoLab reports a value of the wrong type; with IN, a <code>string</code> variable keeps the text as typed, even if it is digits.</p>
+    <h3>Functions</h3><p><code>sqrt abs int float round floor ceil pow min max sin cos tan random() randint(a,b) len str num</code></p>
     <h3>Shortcuts</h3><p><kbd>Del</kbd> deletes the selected block · <kbd>Ctrl</kbd>+<kbd>Z</kbd> undo · <kbd>Ctrl</kbd>+<kbd>C</kbd>/<kbd>V</kbd> copy and paste after the selected block</p>
     <h3>The project</h3><p>FlussoLab is free and its code is open to everyone, but it cannot be used to make money. It runs entirely in the browser: nothing to install, Chromebooks and tablets included.</p>`,
 };

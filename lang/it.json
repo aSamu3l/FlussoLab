@@ -291,7 +291,9 @@
     "exShareT": "Condividi l'esercizio",
     "blkOff": "Disattiva",
     "blkOn": "Riattiva",
-    "blkOffNote": "Blocco disattivato: durante l'esecuzione viene saltato, e anche nella verifica degli esercizi."
+    "blkOffNote": "Blocco disattivato: durante l'esecuzione viene saltato, e anche nella verifica degli esercizi.",
+    "examplesM": "Esempi…",
+    "examplesNote": "Scegli un esempio: si apre in una nuova scheda, pronto da eseguire e modificare."
   },
   "pseudo": {
     "start": "INIZIO",

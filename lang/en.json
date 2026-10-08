@@ -291,7 +291,9 @@
     "exShareT": "Share the exercise",
     "blkOff": "Disable",
     "blkOn": "Enable",
-    "blkOffNote": "Disabled block: it is skipped when the program runs, and when exercises are checked."
+    "blkOffNote": "Disabled block: it is skipped when the program runs, and when exercises are checked.",
+    "examplesM": "Examples…",
+    "examplesNote": "Pick an example: it opens in a new tab, ready to run and edit."
   },
   "pseudo": {
     "start": "BEGIN",

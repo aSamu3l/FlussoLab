@@ -1114,7 +1114,6 @@ function cmdOpen() {
   openDlg(`<h2>${esc(t('openTitle'))}</h2>
     <div class="drop" id="drop"><input type="file" id="fileIn" accept=".flusso" hidden>
       <button class="btn primary" id="pick">${esc(t('pickFile'))}</button><span>${esc(t('dropHere'))}</span></div>
-    <div><b style="display:block;margin-bottom:6px">${esc(t('examples'))}</b><div class="exlist">${langPart('examples').map((x, i) => `<button data-ex="${i}">${esc(x.name)}<small>${esc(x.tags || '')}</small></button>`).join('')}</div></div>
     <div class="foot"><button class="btn" data-close>${esc(t('close'))}</button></div>`);
   const fin = $('#fileIn'), drop = $('#drop');
   $('#pick').onclick = () => fin.click();
@@ -1123,10 +1122,14 @@ function cmdOpen() {
   drop.ondragover = e => { e.preventDefault(); drop.classList.add('over'); };
   drop.ondragleave = () => drop.classList.remove('over');
   drop.ondrop = e => { e.preventDefault(); drop.classList.remove('over'); readFile(e.dataTransfer.files[0]); };
-  $$('[data-ex]', dlg).forEach(b => b.onclick = () => {
-    dlg.close(); loadExample(+b.dataset.ex);
-  });
 };
+// Help → Examples: the ready-made diagrams of the current language; one click opens it in the editor
+function cmdExamples() {
+  openDlg(`<h2>${esc(t('examples'))}</h2><p style="margin:0">${esc(t('examplesNote'))}</p>
+    <div class="exlist">${langPart('examples').map((x, i) => `<button data-ex="${i}">${esc(x.name)}<small>${esc(x.tags || '')}</small></button>`).join('')}</div>
+    <div class="foot"><button class="btn" data-close>${esc(t('close'))}</button></div>`);
+  $$('[data-ex]', dlg).forEach(b => b.onclick = () => { dlg.close(); loadExample(+b.dataset.ex); });
+}
 function tryLoad(text) {
   let o; try { o = JSON.parse(text); } catch (e) { toast(t('badFile')); return; }
   try { if (dlg.open) dlg.close(); if (openDoc(o)) toast(t('loadedOk')); }
@@ -1267,8 +1270,7 @@ function pasteBlock() {
 const MENUS = {
   file: () => [
     ['new', t('new'), ''], ['open', t('open') + '…', 'Ctrl+O'], ['save', t('save') + '…', 'Ctrl+S'], ['share', t('shareM'), ''], ['exercise', prog.ex ? t('exEditM') : t('exM'), ''], ['png', t('png') + '…', ''], ['zip', t('zipM'), ''], '-',
-    ['install', t('installM'), ''], '-',
-    { head: t('examples') }, ...langPart('examples').map((x, i) => ['ex:' + i, x.name, '']),
+    ['install', t('installM'), ''],
   ],
   edit: () => {
     const f = sel && find(sel);
@@ -1282,7 +1284,7 @@ const MENUS = {
     ['zin', t('zoomIn'), '+'], ['zout', t('zoomOut'), '−'], ['z100', t('zoom100'), ''],
   ],
   help: () => [
-    ['help', t('helpT'), 'F1'], ['about', t('aboutM'), ''], '-', { head: t('language') },
+    ['help', t('helpT'), 'F1'], ['examples', t('examplesM'), ''], ['about', t('aboutM'), ''], '-', { head: t('language') },
     ...LANGS.map(l => ['lang:' + l.code, l.name, '', false, lang === l.code, true]),
   ],
 };
@@ -1371,6 +1373,7 @@ function runCmd(c) {
   if (c === 'zout') return setZoom(zoom - 0.1);
   if (c === 'z100') return setZoom(1);
   if (c === 'help') return cmdHelp();
+  if (c === 'examples') return cmdExamples();
   if (c === 'about') return cmdAbout();
   if (c.startsWith('lang:')) {
     const code = c.slice(5);

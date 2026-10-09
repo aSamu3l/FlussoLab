@@ -131,6 +131,7 @@ footer a{color:var(--muted)}
   .pair{grid-template-columns:1fr;gap:0}
   .phone{max-width:260px}
 }
+@media (max-width: 380px){ .top nav a:not(.btn){display:none} }
 @media (max-width: 480px){
   body{font-size:17px}
   .btn.big{width:100%;text-align:center}

@@ -295,14 +295,15 @@ pre.code{margin:0;font:13px/1.55 var(--f-mono);background:var(--paper);border:1p
 .extests{display:grid;gap:10px}
 .extest{border:1px solid var(--rule);border-radius:9px;padding:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px 10px}
 .extest .lbl{font-size:12px;font-weight:700;color:var(--muted)}
+.extest .exio{display:grid;gap:4px;min-width:0}
+.extest textarea{min-height:76px}
 .extest .act{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .extest .act .sp{flex:1}
 .extest .msg{grid-column:1/-1;color:var(--red);font-size:12.5px}
-.dlg.wide{max-height:calc(100vh - 60px)}
 dialog.wide{width:min(720px,calc(100vw - 32px))}
 @media (max-width: 560px){ .extest{grid-template-columns:1fr} }
 /* dialogs */
-dialog{border:1px solid var(--rule);border-radius:14px;padding:0;background:var(--surface);color:var(--ink);box-shadow:var(--shadow);width:min(560px,calc(100vw - 32px));max-height:calc(100vh - 48px)}
+dialog{border:1px solid var(--rule);border-radius:14px;padding:0;background:var(--surface);color:var(--ink);box-shadow:var(--shadow);width:min(560px,calc(100vw - 32px));max-height:calc(100vh - 48px);max-height:calc(100dvh - 32px);overflow:auto}
 dialog::backdrop{background:rgb(10 16 26 / .45)}
 .dlg{padding:20px 22px;display:grid;gap:14px}
 .dlg h2{margin:0;font:800 21px/1.15 var(--f-display);text-wrap:balance}
@@ -362,6 +363,19 @@ kbd{font:12px var(--f-mono);border:1px solid var(--rule);border-bottom-width:2px
   .updbar{left:12px;right:12px;transform:none;bottom:calc(72px + env(safe-area-inset-bottom,0px));max-width:none}
   .zoom{right:10px;bottom:10px}
   .tabs button{padding:11px 10px 9px}
+}
+/* phone held sideways: little height, so diagram and panel stay side by side */
+@media (orientation: landscape) and (max-height: 500px) and (max-width: 1000px){
+  html,body{height:100%}
+  .app{height:100%;padding-bottom:0}
+  .main{grid-template-columns:minmax(0,1fr) 290px;grid-template-rows:none}
+  .panel{border-left:1px solid var(--rule);border-top:0}
+  .tabpane{overflow:auto}
+  .con{max-height:38vh}
+  .runbar{position:static;box-shadow:none;border:0;padding:2px 0;background:none;gap:5px}
+  .rb{flex:none;height:34px}
+  .toast{bottom:16px}
+  .updbar{bottom:16px}
 }
 @media (pointer: coarse){
   input,textarea,.field input,.inform input,.pname,.dlg input[type=text]{font-size:16px}

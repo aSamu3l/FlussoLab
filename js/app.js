@@ -2,7 +2,7 @@
 'use strict';
 /* ====== Project settings ====== */
 const CONFIG = {
-  version: '0.10.0',
+  version: '0.10.1',
   author: 'aSamu3l',
   github: 'https://github.com/aSamu3l',
   repo: 'https://github.com/aSamu3l/FlussoLab',
@@ -1025,8 +1025,8 @@ function renderEx() {
 function cmdExercise() {
   const ex = prog.ex ? JSON.parse(JSON.stringify(prog.ex)) : { text: '', mode: 'exact', tests: [{ in: [], out: '', hidden: false }] };
   const row = (x, i) => `<div class="extest" data-i="${i}">
-      <label class="lbl" for="exIn${i}">${esc(t('exIn'))}</label><label class="lbl" for="exOut${i}">${esc(t('exOut'))}</label>
-      <textarea id="exIn${i}" rows="3" data-k="in">${esc(x.in.join('\n'))}</textarea><textarea id="exOut${i}" rows="3" data-k="out">${esc(x.out)}</textarea>
+      <div class="exio"><label class="lbl" for="exIn${i}">${esc(t('exIn'))}</label><textarea id="exIn${i}" rows="3" data-k="in">${esc(x.in.join('\n'))}</textarea></div>
+      <div class="exio"><label class="lbl" for="exOut${i}">${esc(t('exOut'))}</label><textarea id="exOut${i}" rows="3" data-k="out">${esc(x.out)}</textarea></div>
       <div class="act"><label class="check sm"><input type="checkbox" data-k="hidden" ${x.hidden ? 'checked' : ''}> ${esc(t('exHidden'))}</label><span class="sp"></span>
         <button class="btn" type="button" data-calc="${i}">${esc(t('exCalc'))}</button><button class="btn danger" type="button" data-del="${i}" aria-label="${esc(t('exRemove'))}">×</button></div>
       <div class="msg" hidden></div></div>`;
@@ -1389,6 +1389,8 @@ function applyLang() {
   $$('[data-i18n-ph]').forEach(el => el.placeholder = t(el.dataset.i18nPh));
   $$('[data-i18n-title]').forEach(el => { el.title = t(el.dataset.i18nTitle); el.setAttribute('aria-label', t(el.dataset.i18nTitle)); });
   setRunUI(); syncTrace(); renderDiagram(); renderPanel(); renderCode(); renderEx();
+  if (!$('#installBar').hidden) showInstallBar();
+  if (!$('#updBar').hidden && updApply) window.flussoUpdate(updApply);
   if (con.dataset.idle) clearConsole(); else renderVars();
 }
 
@@ -1431,10 +1433,12 @@ const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platfor
 const hasManifest = !!document.querySelector('link[rel="manifest"]');
 function installDismissed() { const v = +store.get('installNo') || 0; return Date.now() - v < 14 * 864e5; }
 function showInstallBar() {
+  if (!booted) { whenReady.push(showInstallBar); return; } // texts are not loaded yet
   if (!hasManifest || isStandalone() || installDismissed()) return;
   if (!installEvt && !isIOS) return;
   $('#installMsg').textContent = t('installAsk');
   $('#installYes').textContent = installEvt ? t('installBtn') : t('installHowBtn');
+  $('#installNo').setAttribute('aria-label', t('close'));
   $('#installBar').hidden = false;
 }
 function hideInstallBar() { $('#installBar').hidden = true; }
@@ -1454,6 +1458,8 @@ if ('launchQueue' in window) {
   });
 }
 window.flussoUpdate = (apply) => {
+  if (!booted) { whenReady.push(() => window.flussoUpdate(apply)); return; }
+  updApply = apply;
   const el = $('#updBar');
   el.querySelector('span').textContent = t('updAvail');
   const btn = el.querySelector('button'); btn.textContent = t('updNow');
@@ -1462,7 +1468,8 @@ window.flussoUpdate = (apply) => {
 };
 
 /* ================= boot ================= */
-let booted = false;
+let booted = false, updApply = null;
+const whenReady = []; // things that need the texts, waiting for the language file
 (async function boot() {
   // texts first: the language files are small and, once installed, come from the offline cache
   try { const l = await getJSON('lang/languages.json'); if (Array.isArray(l) && l.length) LANGS = l.filter(x => x && x.code && x.name); } catch (e) {}
@@ -1486,6 +1493,7 @@ let booted = false;
   renderTabs();
   booted = true;
   clearConsole(); applyLang(); syncNet();
+  whenReady.splice(0).forEach(f => f());
   openFromLink();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => renderDiagram());
 })();

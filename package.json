@@ -1,0 +1,14 @@
+{
+  "name": "flussolab-server",
+  "version": "0.1.0",
+  "description": "Server for FlussoLab verifiche: keeps the teacher's verifiche and receives the students' submissions.",
+  "private": true,
+  "license": "CC-BY-NC-SA-4.0",
+  "main": "src/server.js",
+  "engines": { "node": ">=22.13" },
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning src/server.js",
+    "test": "node --disable-warning=ExperimentalWarning --test tests/*.test.js",
+    "sync-core": "node -e \"fetch('https://raw.githubusercontent.com/aSamu3l/FlussoLab/main/js/core.js').then(r=>r.text()).then(t=>require('fs').writeFileSync('core/core.js',t))\""
+  }
+}

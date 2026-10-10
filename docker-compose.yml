@@ -1,0 +1,22 @@
+# FlussoLab server · stack for Portainer (Stacks → Add stack → Web editor) or `docker compose up -d`.
+# Change the values marked with ←, then open http://<server>:8080/admin to create the teacher's account.
+services:
+  flussolab-server:
+    image: ghcr.io/asamu3l/flussolab-server:latest
+    container_name: flussolab-server
+    restart: unless-stopped
+    ports:
+      - "8080:8080"            # ← left number: the port on your machine
+    environment:
+      # site of the app the students use: only it may read the verifiche and hand them in
+      ALLOWED_ORIGINS: "https://flussolab.s3l.it"
+      APP_URL: "https://flussolab.s3l.it/"
+      # 1 when the server is behind a proxy (Nginx Proxy Manager, Caddy, Traefik…): it reads the real IP of the students
+      TRUST_PROXY: "1"
+      # optional: create the teacher's account at the first start instead of from the page
+      # ADMIN_EMAIL: "prof@scuola.it"
+      # ADMIN_PASSWORD: "change-me-please"
+    volumes:
+      - flussolab-data:/data   # verifiche and submissions: back up this volume
+volumes:
+  flussolab-data:

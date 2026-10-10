@@ -8,6 +8,9 @@ services:
     ports:
       - "8080:8080"            # ← left number: the port on your machine
     environment:
+      # user that runs the server and owns the data (never root)
+      PUID: "1000"
+      PGID: "1000"
       # site of the app the students use: only it may read the verifiche and hand them in
       ALLOWED_ORIGINS: "https://flussolab.s3l.it"
       APP_URL: "https://flussolab.s3l.it/"
@@ -18,5 +21,7 @@ services:
       # ADMIN_PASSWORD: "change-me-please"
     volumes:
       - flussolab-data:/data   # verifiche and submissions: back up this volume
+      # or a folder on the host (it is given to PUID:PGID at start):
+      # - ./data:/data
 volumes:
   flussolab-data:

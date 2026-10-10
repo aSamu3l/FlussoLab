@@ -45,6 +45,8 @@ docker run -d --name flussolab-server --restart unless-stopped \
 
 Poi configura il reverse proxy come sopra e apri `/admin`.
 
+**Utente:** il server gira come utente **1000:1000**, mai come root. All'avvio il container dà la cartella dei dati a quell'utente, anche se usi una cartella del computer (`./data:/data`) che appartiene a root. Per un altro utente imposta `PUID` e `PGID`.
+
 ## Impostazioni
 
 | Variabile | Predefinito | A cosa serve |
@@ -53,6 +55,7 @@ Poi configura il reverse proxy come sopra e apri `/admin`.
 | `APP_URL` | `https://flussolab.s3l.it/` | Indirizzo dell'app usato nei link per la classe. |
 | `TRUST_PROXY` | vuoto | Metti `1` se il server è dietro un reverse proxy: così legge l'IP vero degli studenti. |
 | `ADMIN_EMAIL`, `ADMIN_PASSWORD` | vuoti | Facoltativi: creano l'account del docente al primo avvio. |
+| `PUID`, `PGID` | `1000` | Utente e gruppo con cui gira il server e a cui appartengono i dati. |
 | `PORT` | `8080` | Porta interna del container. |
 | `DATA_DIR` | `/data` | Dove salva il database (un solo file). |
 
@@ -61,7 +64,7 @@ Poi configura il reverse proxy come sopra e apri `/admin`.
 **Password dimenticata**
 
 ```sh
-docker exec -it flussolab-server node src/server.js reset-admin prof@scuola.it nuova-password
+docker exec -it -u 1000:1000 flussolab-server node src/server.js reset-admin prof@scuola.it nuova-password
 ```
 
 **Aggiornare**

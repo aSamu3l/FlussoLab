@@ -8,7 +8,16 @@ const { DatabaseSync } = require('node:sqlite');
 const SCHEMA = 1;
 
 function open(dir) {
-  fs.mkdirSync(dir, { recursive: true });
+  try {
+    fs.mkdirSync(dir, { recursive: true });
+    fs.accessSync(dir, fs.constants.W_OK);
+  } catch (e) {
+    const who = typeof process.getuid === 'function' ? `${process.getuid()}:${process.getgid()}` : '?';
+    console.error(`FlussoLab: la cartella dei dati ${dir} non è scrivibile dall'utente ${who}.\n` +
+      `Dai la cartella a quell'utente (es. sudo chown -R ${who} <cartella>) oppure avvia il container senza "user:" e usa PUID/PGID.\n` +
+      `The data folder ${dir} is not writable by user ${who}.`);
+    process.exit(1);
+  }
   const db = new DatabaseSync(path.join(dir, 'flussolab.db'));
   db.exec('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;');
   db.exec(`

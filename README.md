@@ -45,6 +45,8 @@ docker run -d --name flussolab-server --restart unless-stopped \
 
 Then set up the reverse proxy as above and open `/admin`.
 
+**User:** the server runs as user **1000:1000**, never as root. At start the container gives the data folder to that user, even a host folder (`./data:/data`) owned by root. For another user set `PUID` and `PGID`.
+
 ## Settings
 
 | Variable | Default | What it does |
@@ -53,6 +55,7 @@ Then set up the reverse proxy as above and open `/admin`.
 | `APP_URL` | `https://flussolab.s3l.it/` | App address used in the class links. |
 | `TRUST_PROXY` | empty | Set to `1` behind a reverse proxy, so the real IP of students is read. |
 | `ADMIN_EMAIL`, `ADMIN_PASSWORD` | empty | Optional: create the teacher's account at the first start. |
+| `PUID`, `PGID` | `1000` | User and group running the server and owning the data. |
 | `PORT` | `8080` | Port inside the container. |
 | `DATA_DIR` | `/data` | Where the database (a single file) is kept. |
 
@@ -61,7 +64,7 @@ Then set up the reverse proxy as above and open `/admin`.
 **Forgotten password**
 
 ```sh
-docker exec -it flussolab-server node src/server.js reset-admin teacher@school.org new-password
+docker exec -it -u 1000:1000 flussolab-server node src/server.js reset-admin teacher@school.org new-password
 ```
 
 **Update**

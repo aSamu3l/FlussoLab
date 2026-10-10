@@ -116,7 +116,8 @@ function validTests(a) {
 function validVer(x) {
   if (!x || typeof x !== 'object') return null;
   return { title: String(x.title ?? ''), text: String(x.text ?? ''), tests: validTests(x.tests), hidden: Math.max(0, x.hidden | 0),
-    nlocks: Math.max(0, x.nlocks | 0), server: String(x.server ?? ''), vid: String(x.vid ?? ''), variant: String(x.variant ?? ''), closes: String(x.closes ?? '') };
+    nlocks: Math.max(0, x.nlocks | 0), server: String(x.server ?? ''), vid: String(x.vid ?? ''), variant: String(x.variant ?? ''), closes: String(x.closes ?? ''),
+    code: String(x.code ?? ''), sent: x.sent && typeof x.sent === 'object' ? { at: String(x.sent.at || ''), n: x.sent.n | 0 } : null };
 }
 const docOf = o => {
   const d = { name: nameOf(o), main: o.main };
@@ -1056,6 +1057,9 @@ function renderEx() {
         <dl><dt>${esc(t('exInLbl'))}</dt><dd>${esc(x.in.join(', ') || '—')}</dd><dt>${esc(t('exWant'))}</dt><dd>${esc(x.out || t('exNothing'))}</dd></dl>
         ${exRes && !exRes.ver[i].ok ? testResult(exRes.ver[i], x.in, x.out, true) : ''}</li>`).join('') + '</ul>' +
       (ver.hidden ? `<p class="note">${esc(t('verHidden', ver.hidden))}</p>` : '') + '</div>';
+    if (ver.server) h += `<div class="sect handin"><div class="exbar" style="margin:0"><button class="btn primary" id="verSubmit">${esc(t('verSubmit'))}</button>
+      <span class="note" style="margin:0">${esc(t('verSubmitTo', verHost(ver)))} · <b>${esc(ver.code)}</b>${ver.closes ? ' · ' + esc(t('verClosesAt', fmtWhen(ver.closes))) : ''}</span></div>
+      ${ver.sent ? `<p class="sent">✓ ${esc(t('verSentN', fmtWhen(ver.sent.at), ver.sent.n))}</p>` : ''}</div>`;
   }
   h += `<div class="sect"><h3>${esc(t('myTests'))}</h3>` + (mine.length ? '' : `<p class="note">${esc(t('myTestsNone'))}</p>`) +
     mine.map((x, i) => `<div class="mytest${exRes ? (exRes.mine[i].ok ? ' ok' : ' ko') : ''}" data-i="${i}">
@@ -1082,6 +1086,7 @@ function renderEx() {
     exRes = { ver: ver ? ver.tests.map(x => FL.checkTest(prog.main, x, 'exact', nl)) : [], mine: (prog.tests || []).map(x => FL.checkTest(prog.main, x, prog.tmode, nl)) };
     renderEx();
   };
+  if ($('#verSubmit')) $('#verSubmit').onclick = cmdSubmit;
   $('#tAdd').onclick = () => { snap(); prog.tests = [...(prog.tests || []), { in: [], out: '' }]; exRes = null; renderEx(); persist(); $(`#tIn${prog.tests.length - 1}`).focus(); };
   if ($('#tMode')) $('#tMode').onchange = e => { snap(); prog.tmode = e.target.value; exRes = null; renderEx(); persist(); };
   $$('[data-del]', box).forEach(b => b.onclick = () => { snap(); prog.tests.splice(+b.dataset.del, 1); if (!prog.tests.length) delete prog.tests; exRes = null; renderEx(); persist(); });
@@ -1096,6 +1101,70 @@ function renderEx() {
     };
   });
   $$('[data-step]', box).forEach(b => b.onclick = () => startRun('step', JSON.parse(b.dataset.step)));
+}
+
+/* ---------- verifiche on a teacher's server ----------
+   Link: flussolab.s3l.it/#v=server-host/ID. The app asks the server for the verifica with the student's code and,
+   at the end, sends the diagram with the same code. No login and nothing else ever goes to the server. */
+const PROTOCOL = 1;
+function serverBase(hostPath) {
+  const local = /^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?(\/|$)|\.(localhost|test)(:\d+)?(\/|$)/.test(hostPath);
+  return (local ? 'http://' : 'https://') + hostPath.replace(/\/+$/, '');
+}
+const verHost = ver => ver.server.replace(/^https?:\/\//, '');
+const fmtWhen = s => s ? new Date(s).toLocaleString(lang === 'it' ? 'it-IT' : lang, { dateStyle: 'medium', timeStyle: 'short' }) : '';
+async function verFetch(url, opts) {
+  const r = await fetch(url, opts);
+  let j = {}; try { j = await r.json(); } catch (e) {}
+  return { ...j, http: r.status };
+}
+async function openVerifica(ref) {
+  const m = /^(.+)\/([A-Za-z0-9]{4,16})$/.exec(decodeURIComponent(ref));
+  if (!m) { toast(t('badLink')); return; }
+  const base = serverBase(m[1]), vid = m[2], host = base.replace(/^https?:\/\//, '');
+  let head;
+  try { head = await verFetch(`${base}/api/v/${vid}`); } catch (e) { toast(t('verNoServer', host)); return; }
+  if (head.http !== 200 || !head.title) { toast(t('badLink')); return; }
+  if (head.protocol !== PROTOCOL) { toast(t('verProto')); return; }
+  const vstat = head.status;
+  const msg = vstat === 'soon' ? t('verSoon', head.title, fmtWhen(head.opens)) : vstat === 'closed' ? t('verClosed', head.title) : '';
+  openDlg(`<h2>${esc(head.title)}</h2>${msg ? `<p>${esc(msg)}</p><div class="foot"><button class="btn primary" data-close>${esc(t('close'))}</button></div>` :
+    `<p>${esc(t('verCodeP'))}</p><form id="vcf" class="field" style="margin:0"><label for="vcode">${esc(t('verCodeT'))}</label>
+     <input type="text" id="vcode" autocomplete="off" autocapitalize="characters" spellcheck="false" style="font-family:var(--f-mono);font-size:20px;letter-spacing:.08em;text-transform:uppercase">
+     <div class="msg" id="vmsg"></div></form><p>${esc(t('verSubmitTo', host))}${head.closes ? ' · ' + esc(t('verClosesAt', fmtWhen(head.closes))) : ''}</p>
+     <div class="foot"><button class="btn" data-close>${esc(t('cancel'))}</button><button class="btn primary" id="vgo">${esc(t('verOpenBtn'))}</button></div>`}`);
+  if (msg) return;
+  const go = async e => {
+    if (e) e.preventDefault();
+    const code = $('#vcode').value.trim(); if (!code) return;
+    let r; try { r = await verFetch(`${base}/api/v/${vid}?code=${encodeURIComponent(code)}`); } catch (err) { $('#vmsg').textContent = t('verNoServer', host); return; }
+    if (r.http === 403) { $('#vmsg').textContent = t('verCodeBad'); return; }
+    if (!r.main) { $('#vmsg').textContent = r.status === 'closed' ? t('verErrClosed') : t('verErrSoon'); return; }
+    dlg.close();
+    // the same verifica and code already open in a tab: go back to it, the work is there
+    const i = tabs.findIndex((T, k) => { try { const o = k === cur ? prog : JSON.parse(T.data); return o.ver && o.ver.vid === vid && o.ver.code === r.code && o.ver.server === base; } catch (e2) { return false; } });
+    if (i >= 0) { if (i !== cur) activate(i); switchTab('ex'); return; }
+    const doc = { name: r.title + (r.variant ? ' · ' + r.variant : ''), main: r.main,
+      ver: { title: r.title, text: r.text, tests: r.tests, hidden: r.hidden, nlocks: r.nlocks, server: base, vid, variant: r.variant, closes: r.closes, code: r.code } };
+    if (openDoc(doc)) { toast(t('verOpened')); switchTab('ex'); }
+  };
+  $('#vcf').onsubmit = go; $('#vgo').onclick = go; $('#vcode').focus();
+}
+function cmdSubmit() {
+  const ver = prog.ver; if (!ver || !ver.server) return;
+  openDlg(`<h2>${esc(t('verSubmit'))}</h2><p>${esc(t('verSubmitQ', verHost(ver), ver.code))}</p><p class="msg" id="smsg" style="color:var(--red)"></p>
+    <div class="foot"><button class="btn" data-close>${esc(t('cancel'))}</button><button class="btn primary" id="sgo">${esc(t('verSubmit'))}</button></div>`);
+  $('#sgo').onclick = async () => {
+    $('#sgo').disabled = true;
+    const d = JSON.parse(ser()), doc = { name: d.name, main: d.main, dev: d.dev || [], altered: !!d.altered };
+    let r;
+    try { r = await verFetch(`${ver.server}/api/v/${ver.vid}/submit`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: ver.code, doc, device: DEV }) }); }
+    catch (e) { $('#smsg').textContent = t('verNoServer', verHost(ver)); $('#sgo').disabled = false; return; }
+    if (!r.ok) { $('#smsg').textContent = r.error === 'closed' ? t('verErrClosed') : r.error === 'soon' ? t('verErrSoon') : r.error === 'code' ? t('verCodeBad') : t('verNoServer', verHost(ver)); $('#sgo').disabled = false; return; }
+    dlg.close();
+    prog.ver.sent = { at: r.at, n: r.n }; persist(); renderEx();
+    toast(t('verSent', fmtWhen(r.at)));
+  };
 }
 
 /* ---------- share link: the whole diagram is inside the link (see shareEncode in core.js) ---------- */
@@ -1122,6 +1191,7 @@ function openFromLink() {
   const h = location.hash.slice(1);
   if (!h) return;
   history.replaceState(null, '', location.pathname + location.search);
+  if (h.startsWith('v=')) return openVerifica(h.slice(2));
   let doc; try { doc = FL.shareDecode(h); } catch (e) { toast(t('badLink')); return; }
   const d = { name: doc.name, main: doc.main }; if (doc.ex && doc.ex.tests.length) { d.tests = doc.ex.tests; d.tmode = doc.ex.mode; }
   try { if (openDoc(d)) toast(t('linkOpened')); } catch (e) { toast(t('badLink')); }

@@ -309,6 +309,8 @@ pre.code{margin:0;font:13px/1.55 var(--f-mono);background:var(--paper);border:1p
 .devinfo .dev{font:12px var(--f-mono);background:var(--surface-2);padding:1px 5px;border-radius:4px}
 .devinfo .dev.me{background:var(--pen-soft);color:var(--pen)}
 .altered{color:var(--red);font-weight:700;font-size:13px;margin:0 0 6px}
+.handin{border:1px solid var(--pen);background:var(--pen-soft);border-radius:9px;padding:10px 12px}
+.handin .sent{margin:8px 0 0;color:var(--green);font-weight:700;font-size:13.5px}
 /* exercise editor (teacher) */
 .dlg textarea{font:14px var(--f-mono);padding:8px 10px;border:1px solid var(--rule);border-radius:7px;background:var(--paper);width:100%;resize:vertical;color:var(--ink)}
 .dlg textarea.prose{font-family:var(--f-body)}

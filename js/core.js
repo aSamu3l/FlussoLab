@@ -363,7 +363,7 @@ function* exec(seq, env, io) {
   const tr = io.trace || (() => {});
   const T = io.types || (io.types = Object.create(null));
   for (const b of seq) {
-    if (b.t === 'comment' || b.off) continue; // a disabled block is skipped
+    if (b.t === 'comment' || (b.off && !b.lock)) continue; // a disabled block is skipped (a locked one never)
     yield { t: 'at', b };
     switch (b.t) {
       case 'input': {
@@ -379,7 +379,7 @@ function* exec(seq, env, io) {
         }
         break;
       }
-      case 'output': { const txt = fmt(ev(parse(b.e), env)); tr('out', b, { text: txt }); io.out(txt, b.ln !== false); break; }
+      case 'output': { const txt = fmt(ev(parse(b.e), env)); tr('out', b, { text: txt }); io.out(txt, b.ln !== false, b); break; }
       case 'assign': {
         const lv = b.inc ? parseLV(b.v) : declTyped(lvTyped(b.v), T, env);
         if (b.inc) {
@@ -430,7 +430,7 @@ function knownVars(main) {
   const K = new Set();
   (function walk(seq) {
     for (const b of seq) {
-      if (b.off) continue;
+      if (b.off && !b.lock) continue;
       if (b.t === 'input') splitList(b.v).forEach(v => { const r = rootName(v); if (r) K.add(r); });
       if (b.t === 'assign' || b.t === 'for') { const r = rootName(b.v); if (r) K.add(r); }
       if (b.t === 'comment' || b.t === 'decl') continue;
@@ -487,7 +487,7 @@ function firstError(main) {
   (function walk(seq) {
     for (const b of seq) {
       if (found) return;
-      if (b.off) continue;
+      if (b.off && !b.lock) continue;
       const e = staticErr(b, known); if (e) { found = { b, e }; return; }
       if (b.t === 'if') { walk(b.y); walk(b.n); } else if (b.body) walk(b.body);
     }
@@ -738,20 +738,44 @@ function negate(n) {
 function invertCond(src) { return srcE(negate(parse(src))).s; }
 
 /* ---------- exercises: run a program with given inputs and compare what it writes ---------- */
+// locked: values written by the locked OUT blocks of a verifica, the only ones that are checked
 function runTest(main, inputs, maxSteps = 200000) {
-  const env = Object.create(null); let out = '';
-  const g = exec(main, env, { out: (s, ln) => { out += s + (ln ? '\n' : ''); } });
+  const env = Object.create(null); let out = ''; const locked = [];
+  const g = exec(main, env, { out: (s, ln, b) => { out += s + (ln ? '\n' : ''); if (b && b.lock) locked.push(s); } });
   let k = 0, steps = 0, v;
   try {
     for (;;) {
       const r = g.next(v); v = undefined;
       if (r.done) break;
-      if (r.value.t === 'at') { if (++steps > maxSteps) return { out, err: new FErr('loop'), b: r.value.b }; continue; }
-      if (k >= inputs.length) return { out, err: new FErr('moreinput'), b: r.value.b };
+      if (r.value.t === 'at') { if (++steps > maxSteps) return { out, locked, err: new FErr('loop'), b: r.value.b }; continue; }
+      if (k >= inputs.length) return { out, locked, err: new FErr('moreinput'), b: r.value.b };
       v = String(inputs[k++]);
     }
-  } catch (e) { if (!(e instanceof FErr)) throw e; return { out, err: e }; }
-  return { out, err: null };
+  } catch (e) { if (!(e instanceof FErr)) throw e; return { out, locked, err: e }; }
+  return { out, locked, err: null };
+}
+// one written value against the expected one: same text, or same number (small tolerance, 7 = 7.0)
+function sameVal(got, want) {
+  const a = String(got).trim(), b = String(want).trim();
+  if (a === b) return true;
+  const num = x => /^[-+]?(\d+([.,]\d*)?|[.,]\d+)$/.test(x) ? parseFloat(x.replace(',', '.')) : null;
+  const x = num(a), y = num(b);
+  if (x !== null && y !== null) return Math.abs(x - y) <= 1e-6 * Math.max(1, Math.abs(y));
+  const tf = v => ({ true: 't', vero: 't', false: 'f', falso: 'f' })[v.toLowerCase()] || null;
+  return tf(a) !== null && tf(a) === tf(b);
+}
+// locked blocks: walk the diagram from top to bottom (like it is drawn) and collect them
+function lockedBlocks(main) {
+  const out = [];
+  (function walk(seq) { for (const b of seq) { if (b.lock) out.push(b); if (b.t === 'if') { walk(b.y); walk(b.n); } else if (b.body) walk(b.body); } })(main);
+  return out;
+}
+// they can be moved, but none can be missing and their order must stay the teacher's one
+function lockErr(main, n) {
+  const L = lockedBlocks(main);
+  for (let k = 1; k <= n; k++) if (!L.some(b => b.lk === k)) return new FErr('lockmissing', k);
+  for (let j = 1; j < L.length; j++) if (!(L[j].lk > L[j - 1].lk)) return new FErr('lockorder');
+  return null;
 }
 // lines without trailing spaces and without empty lines at the end
 function outLines(s) { const l = String(s ?? '').replace(/\r/g, '').split('\n').map(x => x.trimEnd()); while (l.length && !l[l.length - 1]) l.pop(); return l; }
@@ -760,11 +784,19 @@ function sameOut(got, want, mode) {
   if (mode === 'last') return (a[a.length - 1] || '').trim() === (b[b.length - 1] || '').trim();
   return a.length === b.length && a.every((x, j) => x === b[j]);
 }
-function checkTest(main, test, mode) {
+// with locked OUT blocks only their values are compared, one expected line per value
+function checkTest(main, test, mode, nlocks = 0) {
+  const le = nlocks ? lockErr(main, nlocks) : null;
+  if (le) return { ok: false, out: '', locked: [], err: le };
   const pre = firstError(main);
-  if (pre) return { ok: false, out: '', err: pre.e, b: pre.b };
+  if (pre) return { ok: false, out: '', locked: [], err: pre.e, b: pre.b };
   const r = runTest(main, test.in || []);
-  return { ...r, ok: !r.err && sameOut(r.out, test.out, mode) };
+  if (r.err) return { ...r, ok: false };
+  if (lockedBlocks(main).some(b => b.t === 'output')) {
+    const want = outLines(test.out);
+    return { ...r, ok: r.locked.length === want.length && r.locked.every((v, j) => sameVal(v, want[j])) };
+  }
+  return { ...r, ok: sameOut(r.out, test.out, mode) };
 }
 
 /* ---------- share links ----------
@@ -920,6 +952,6 @@ function shareDecode(code) {
   try { return unpackDoc(new TextDecoder('utf-8', { fatal: true }).decode(new Uint8Array(bytes))); } catch (e) { throw new FErr('badlink'); }
 }
 
-return { runTest, checkTest, sameOut, outLines, shareEncode, shareDecode, packDoc, KINDS, parseDecl, lvTyped, toPseudoLines, invertCond, knownVars, firstError, FErr, parse, parseLV, splitList, exec, fmt, typeOf, parseInput, staticErr, toPseudo, toPython, setBoolNames, FN };
+return { runTest, checkTest, sameOut, sameVal, outLines, lockedBlocks, lockErr, shareEncode, shareDecode, packDoc, KINDS, parseDecl, lvTyped, toPseudoLines, invertCond, knownVars, firstError, FErr, parse, parseLV, splitList, exec, fmt, typeOf, parseInput, staticErr, toPseudo, toPython, setBoolNames, FN };
 })();
 if (typeof module !== 'undefined') module.exports = FL;

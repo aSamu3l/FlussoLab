@@ -2,7 +2,7 @@
 'use strict';
 /* ====== Project settings ====== */
 const CONFIG = {
-  version: '0.10.1',
+  version: '1.0.0',
   author: 'aSamu3l',
   github: 'https://github.com/aSamu3l',
   repo: 'https://github.com/aSamu3l/FlussoLab',
@@ -20,6 +20,18 @@ const opts = Object.assign({ explain: false, sym: false, theme: 'auto', trace: t
 function saveOpts() { store.set('prefs', JSON.stringify(opts)); }
 function applyTheme() { const r = document.documentElement; if (opts.theme === 'auto') r.removeAttribute('data-theme'); else r.setAttribute('data-theme', opts.theme); }
 applyTheme();
+/* ================= device code =================
+   A random code made the first time FlussoLab opens in a browser. Files remember on which devices they were
+   created and edited, so a teacher can spot a file passed from one student to another. No personal data. */
+const DEV = (() => {
+  let d = store.get('device');
+  if (!/^[A-Z0-9]{6}$/.test(d || '')) {
+    const A = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    d = Array.from(crypto.getRandomValues(new Uint8Array(6)), x => A[x % 32]).join(''); store.set('device', d);
+  }
+  return d;
+})();
+
 /* ================= i18n =================
    Every text is in lang/<code>.json; lang/languages.json lists the languages shown in the Help menu.
    A missing text falls back to English, then to Italian. In a text, {0} {1} … are replaced by the
@@ -94,17 +106,45 @@ function mk(type) {
 }
 const nameOf = o => typeof (o && o.name) === 'string' ? o.name : '';
 const replacer = (k, v) => (k === 'id' || k[0] === '_') ? undefined : v;
-// an exercise made by the teacher: text, how to compare the output, tests with inputs and expected output
-function validEx(x) {
-  if (!x || typeof x !== 'object' || !Array.isArray(x.tests)) return null;
-  const tests = x.tests.slice(0, 50).filter(v => v && typeof v === 'object').map(v => ({
+// tests: anyone can add them to a diagram (inputs, one per line, and the expected output)
+function validTests(a) {
+  return (Array.isArray(a) ? a : []).slice(0, 50).filter(v => v && typeof v === 'object').map(v => ({
     in: (Array.isArray(v.in) ? v.in : String(v.in ?? '').split('\n')).map(String).map(z => z.trim()).filter(Boolean),
-    out: String(v.out ?? ''), hidden: !!v.hidden }));
-  return { text: String(x.text ?? ''), mode: x.mode === 'last' ? 'last' : 'exact', tests };
+    out: String(v.out ?? '') }));
 }
-const docOf = o => { const ex = validEx(o && o.ex); return ex ? { name: nameOf(o), main: o.main, ex } : { name: nameOf(o), main: o.main }; };
+// a verifica received from a teacher's server: read-only text and tests, plus how many hidden tests and locked blocks
+function validVer(x) {
+  if (!x || typeof x !== 'object') return null;
+  return { title: String(x.title ?? ''), text: String(x.text ?? ''), tests: validTests(x.tests), hidden: Math.max(0, x.hidden | 0),
+    nlocks: Math.max(0, x.nlocks | 0), server: String(x.server ?? ''), vid: String(x.vid ?? ''), variant: String(x.variant ?? ''), closes: String(x.closes ?? '') };
+}
+const docOf = o => {
+  const d = { name: nameOf(o), main: o.main };
+  let tests = validTests(o && o.tests), tmode = o && o.tmode;
+  if (!tests.length && o && o.ex) { tests = validTests(o.ex.tests); tmode = o.ex.mode; } // files made with the old exercise editor
+  if (tests.length) { d.tests = tests; d.tmode = tmode === 'last' ? 'last' : 'exact'; }
+  const ver = validVer(o && o.ver); if (ver) d.ver = ver;
+  const dev = (Array.isArray(o && o.dev) ? o.dev : []).filter(x => x && /^[A-Z0-9]{4,8}$/.test(x.d)).slice(-30).map(x => ({ d: x.d, t: String(x.t || '').slice(0, 16) }));
+  if (dev.length) d.dev = dev;
+  if (o && o.altered === true) d.altered = true;
+  return d;
+};
+// check code saved in files: if someone edits the file outside FlussoLab it no longer matches
+function sigOf(d) {
+  const str = 'flussolab|' + JSON.stringify([d.name, d.main, d.dev || [], d.tests || [], d.ver || null, !!d.altered], replacer);
+  let h = 0x811c9dc5; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
+  return h.toString(16).padStart(8, '0');
+}
+function fileJson(doc, extra) { const d = docOf(doc); d.sig = sigOf(d); return JSON.stringify({ format: 'flussolab', version: 1, ...d, ...extra }, replacer, 2); }
+// every change notes this device in the diagram's history (once per device in a row)
+function touchDev() {
+  const L = prog.dev && prog.dev[prog.dev.length - 1];
+  if (L && L.d === DEV) return;
+  (prog.dev = prog.dev || []).push({ d: DEV, t: new Date().toISOString().slice(0, 16) });
+  if (prog.dev.length > 30) prog.dev.splice(1, prog.dev.length - 30);
+}
 const ser = () => JSON.stringify(docOf(prog), replacer);
-function snap() { hist.push(ser()); if (hist.length > 150) hist.shift(); fut.length = 0; markDirty(); }
+function snap() { hist.push(ser()); if (hist.length > 150) hist.shift(); fut.length = 0; touchDev(); markDirty(); }
 function restore(s) { closePop(); hideCtx(); ctxSlot = null; const o = JSON.parse(s); prog = docOf(o); assignIds(prog.main); sel = null; $('#pname').value = prog.name; }
 function undo() { if (!hist.length) return; stopRun(); fut.push(ser()); restore(hist.pop()); markDirty(); afterChange(true); }
 function redo() { if (!fut.length) return; stopRun(); hist.push(ser()); restore(fut.pop()); markDirty(); afterChange(true); }
@@ -113,7 +153,7 @@ function redo() { if (!fut.length) return; stopRun(); hist.push(ser()); restore(
 const MAXTABS = 10;
 let tabs = [], cur = 0, tabSeq = 0;
 function markDirty() { if (tabs[cur] && !tabs[cur].dirty) { tabs[cur].dirty = true; renderTabs(); } }
-function isBlank() { return !prog.main.length && !String(prog.name).trim() && !prog.ex; }
+function isBlank() { return !prog.main.length && !String(prog.name).trim() && !(prog.tests && prog.tests.length) && !prog.ver; }
 function tabSnapshot() { const T = tabs[cur]; if (!T) return; T.data = ser(); T.hist = hist; T.fut = fut; T.zoom = zoom; }
 function activate(i) {
   stopRun(true); closePop(); if (typeof tip !== 'undefined') tip.hidden = true;
@@ -178,6 +218,7 @@ const MENU = ['decl', 'input', 'output', 'outln', 'assign', 'if', 'while', 'do',
 function validBlock(b) {
   if (!b || typeof b !== 'object' || !TYPES.includes(b.t)) return false;
   if (b.off !== true) delete b.off;
+  if (b.lock !== true) { delete b.lock; delete b.lk; } else b.lk = Math.max(1, b.lk | 0);
   const str = k => { if (b[k] == null) b[k] = ''; b[k] = String(b[k]); };
   const arr = k => Array.isArray(b[k]) && b[k].every(validBlock);
   switch (b.t) {
@@ -328,6 +369,7 @@ function buildSVG(P, interactive) {
     const k = KIND[b.t], lab = label(b);
     let cls = 'blk';
     if (offDepth) cls += ' off';
+    if (b.lock) cls += ' lock';
     if (interactive) {
       if (!offDepth && FL.staticErr(b, known)) cls += ' bad';
       if (b.id === sel) cls += ' sel';
@@ -358,6 +400,8 @@ function buildSVG(P, interactive) {
       if (b.t === 'assign') o.push(`<rect class="shape" x="${l}" y="${y}" width="${w}" height="${BH}" rx="4" style="${st(k)}"/>`);
       else { const sk = 12; o.push(`<polygon class="shape" points="${l + sk},${y} ${l + w},${y} ${l + w - sk},${y + BH} ${l},${y + BH}" style="${st(k)}"/>`); badge(Math.min(l + 16, x - 14 - bw(kw(b))), y - 7, kw(b), k); }
       text(x, y + BH / 2 + (b.t === 'assign' ? 0 : 1), lab);
+      if (b.lock) { const px = l + w - 22, py = y - 8; // padlock: the block comes from the teacher's verifica
+        o.push(`<g class="padlock"><rect x="${px - 3}" y="${py - 1}" width="16" height="16" rx="8" style="fill:${P.wire}"/><rect x="${px + 1}" y="${py + 6}" width="8" height="6" rx="1.2" style="fill:#fff"/><path d="M${px + 2.6} ${py + 6.5}v-2a2.4 2.4 0 0 1 4.8 0v2" style="fill:none;stroke:#fff;stroke-width:1.4"/></g>`); }
       o.push('</g>');
       return;
     }
@@ -468,7 +512,7 @@ function insertType(ty) {
   if (!popSlot) return;
   stopRun(); snap();
   let nb;
-  if (ty === '__paste') { nb = JSON.parse(clip); assignIds([nb]); }
+  if (ty === '__paste') nb = fromClip();
   else { nb = mk(ty); if (ty === 'output') nb.ln = false; nb.id = nid(); }
   popSlot.arr.splice(popSlot.idx, 0, nb);
   closePop();
@@ -533,8 +577,8 @@ $('#svgHost').addEventListener('contextmenu', e => {
       ['up', '\u2191 ' + t('up'), '', !f || f.idx === 0], ['down', '\u2193 ' + t('down'), '', !f || f.idx === f.arr.length - 1]];
     if (hasC) items.push('-', ['inv', t('invert'), '']);
     if (f && f.b.t === 'if') items.push(['swap', t('swap'), '']);
-    if (f) items.push('-', ['off', f.b.off ? t('blkOn') : t('blkOff'), '']);
-    items.push('-', ['del', t('del'), 'Canc']);
+    if (f && !hasLock(f.b)) items.push('-', ['off', f.b.off ? t('blkOn') : t('blkOff'), '']);
+    items.push('-', ['del', t('del'), 'Canc', !!(f && hasLock(f.b))]);
     showCtx(items, e.clientX, e.clientY);
     return;
   }
@@ -656,27 +700,27 @@ function renderPanel() {
     if (kind === 'kind') return `<div class="field"><label for="f-${key}">${esc(t(lab))}</label>
       <select id="f-${key}" data-k="${key}" data-kind="kind">${FL.KINDS.map(k => `<option value="${k}" ${b.k === k ? 'selected' : ''}>${esc(t('tyk')[k])}</option>`).join('')}</select></div>`;
     return `<div class="field"><label for="f-${key}">${esc(t(lab))}</label>
-      <input id="f-${key}" data-k="${key}" data-kind="${kind}" value="${esc(val)}" placeholder="${esc(ph || '')}" spellcheck="false" autocapitalize="off" autocomplete="off" class="${showErr ? 'bad' : ''}">
+      <input id="f-${key}" data-k="${key}" data-kind="${kind}" value="${esc(val)}" placeholder="${esc(ph || '')}" spellcheck="false" autocapitalize="off" autocomplete="off" class="${showErr ? 'bad' : ''}"${b.lock ? ' readonly' : ''}>
       <div class="msg" id="m-${key}">${esc(showErr)}</div></div>`;
   };
   let fields;
   if (b.t === 'for') fields = fieldHTML(defs[0]) + `<div class="row3">${defs.slice(1).map(fieldHTML).join('')}</div>`;
   else fields = defs.map(fieldHTML).join('');
   const tk = b.t === 'output' && b.ln !== false ? 'outln' : b.t;
-  if (b.t === 'output') fields += `<label class="check"><input type="checkbox" id="f-ln" ${b.ln !== false ? 'checked' : ''}> ${esc(t('f_ln'))}</label>`;
+  if (b.t === 'output') fields += `<label class="check"><input type="checkbox" id="f-ln" ${b.ln !== false ? 'checked' : ''}${b.lock ? ' disabled' : ''}> ${esc(t('f_ln'))}</label>`;
   if (b.c !== undefined) {
     let ok = true; try { FL.parse(b.c); } catch (e) { ok = false; }
     fields += `<div class="grp" style="margin:-2px 0 12px"><button class="btn" data-act="inv" ${ok ? '' : 'disabled'}>⇄ ${esc(t('invert'))}</button>${b.t === 'if' ? `<button class="btn" data-act="swap">${esc(t('swap'))}</button>` : ''}</div>`;
   }
   box.innerHTML = `<div class="bhead">${typeIcon(tk)}<div><h3>${esc(t('types')[tk])}</h3><p>${esc(noteOf(b))}</p></div></div>
-    ${b.off ? `<p class="offnote">${esc(t('blkOffNote'))}</p>` : ''}${fields}<div class="perr" id="blkErr" hidden></div>
+    ${b.lock ? `<p class="offnote">🔒 ${esc(t('lockNote'))}</p>` : b.off ? `<p class="offnote">${esc(t('blkOffNote'))}</p>` : ''}${fields}<div class="perr" id="blkErr" hidden></div>
     <div class="actions">
       <button class="btn" data-act="up" ${f.idx === 0 ? 'disabled' : ''}>↑ ${esc(t('up'))}</button>
       <button class="btn" data-act="down" ${f.idx === f.arr.length - 1 ? 'disabled' : ''}>↓ ${esc(t('down'))}</button>
       <button class="btn" data-act="dup">${esc(t('dup'))}</button>
       <button class="btn" data-act="copy">${esc(t('copy'))}</button>
-      <button class="btn" data-act="off">${esc(b.off ? t('blkOn') : t('blkOff'))}</button>
-      <button class="btn danger" data-act="del">${esc(t('del'))}</button>
+      ${hasLock(b) ? '' : `<button class="btn" data-act="off">${esc(b.off ? t('blkOn') : t('blkOff'))}</button>
+      <button class="btn danger" data-act="del">${esc(t('del'))}</button>`}
     </div>`;
 }
 function updBlkErr() {
@@ -717,14 +761,18 @@ function blockAct(act) {
   stopRun(); snap();
   if (act === 'up' && f.idx > 0) { f.arr.splice(f.idx - 1, 0, f.arr.splice(f.idx, 1)[0]); }
   if (act === 'down' && f.idx < f.arr.length - 1) { f.arr.splice(f.idx + 1, 0, f.arr.splice(f.idx, 1)[0]); }
-  if (act === 'dup') { const c = JSON.parse(JSON.stringify(f.b, replacer)); assignIds([c]); f.arr.splice(f.idx + 1, 0, c); sel = c.id; }
+  if (act === 'dup') { const c = JSON.parse(JSON.stringify(f.b, replacer)); unlock(c); assignIds([c]); f.arr.splice(f.idx + 1, 0, c); sel = c.id; }
   if (act === 'del') { deleteSel(f); return; }
   if (act === 'inv') { try { f.b.c = FL.invertCond(f.b.c); toast(t('inverted')); } catch (e) {} }
   if (act === 'swap') { const y = f.b.y; f.b.y = f.b.n; f.b.n = y; toast(t('swapped')); }
-  if (act === 'off') { if (f.b.off) delete f.b.off; else f.b.off = true; }
+  if (act === 'off') { if (hasLock(f.b)) { hist.pop(); toast(t('lockNoDel')); return; } if (f.b.off) delete f.b.off; else f.b.off = true; }
   afterChange(true);
 }
-function deleteSel(f) {
+// locked blocks (and blocks that contain them) cannot be deleted; cutting one moves it
+const hasLock = b => !!FL.lockedBlocks([b]).length;
+function unlock(b) { FL.lockedBlocks([b]).forEach(x => { delete x.lock; delete x.lk; }); }
+function deleteSel(f, cut) {
+  if (!cut && hasLock(f.b)) { hist.pop(); toast(t('lockNoDel')); return; }
   f.arr.splice(f.idx, 1);
   sel = f.arr[Math.min(f.idx, f.arr.length - 1)]?.id || null;
   afterChange(true); toast(t('deleted'));
@@ -985,81 +1033,69 @@ async function triggerDownload(href, name, data) {
 }
 
 
-/* ================= exercises ================= */
-// student: the "Exercise" tab with the task, the Check button and one line per test
-let exRes = null;
-function renderEx() {
-  const has = !!prog.ex;
-  $('#tabExBtn').hidden = !has;
-  if (!has) { if (curTab === 'ex') switchTab('block'); return; }
-  if (curTab !== 'ex') return;
-  const ex = prog.ex, box = $('#tab-ex');
-  let h = `<div class="sect"><h3>${esc(t('exText'))}</h3><p class="extask">${esc(ex.text || '—')}</p>
-    <p class="note">${esc(ex.mode === 'last' ? t('exModeLastNote') : t('exModeExactNote'))}</p></div>
-    <div class="exbar"><button class="btn primary" id="exCheck">${esc(t('exCheck'))}</button><span style="flex:1"></span>
-    <button class="btn" id="exShare">${esc(t('exShare'))}</button><button class="btn" id="exEdit">${esc(t('exEditM'))}</button></div>`;
-  if (!ex.tests.length) h += `<p class="note">${esc(t('exNoTests'))}</p>`;
-  if (exRes) {
-    const ok = exRes.filter(r => r.ok).length;
-    h += `<div class="exsum${ok === exRes.length ? ' ok' : ''}" role="status">${esc(ok === exRes.length ? t('exAll') : t('exSummary', ok, exRes.length))}</div><ul class="exres">`;
-    exRes.forEach((r, i) => {
-      const tst = ex.tests[i];
-      h += `<li class="${r.ok ? 'ok' : 'ko'}"><div class="h"><span>${esc(tst.hidden ? t('exHiddenTest', i + 1) : t('exTest', i + 1))}</span><span class="mark" aria-label="${r.ok ? 'OK' : 'KO'}">${r.ok ? '✓' : '✗'}</span></div>`;
-      if (!tst.hidden && !r.ok) {
-        h += `<dl><dt>${esc(t('exInLbl'))}</dt><dd>${esc(tst.in.join(', ') || '—')}</dd><dt>${esc(t('exWant'))}</dt><dd>${esc(tst.out || t('exNothing'))}</dd>
-          <dt>${esc(t('exGot'))}</dt><dd>${esc(r.out.replace(/\n$/, '') || t('exNothing'))}</dd></dl>`;
-        if (r.err) h += `<div class="err">${esc(emsg(r.err))}</div>`;
-        h += `<div class="exbar" style="margin:8px 0 0"><button class="btn" data-exstep="${i}">${esc(t('exStep'))}</button></div>`;
-      } else if (tst.hidden && !r.ok && r.err) h += `<div class="err">${esc(emsg(r.err))}</div>`;
-      h += '</li>';
-    });
-    h += '</ul>';
-  }
-  box.innerHTML = h;
-  $('#exCheck').onclick = () => { FL.setBoolNames(t('FALSE'), t('TRUE')); exRes = ex.tests.map(x => FL.checkTest(prog.main, x, ex.mode)); renderEx(); };
-  $('#exEdit').onclick = cmdExercise;
-  $('#exShare').onclick = cmdShare;
-  $$('[data-exstep]', box).forEach(b => b.onclick = () => startRun('step', ex.tests[+b.dataset.exstep].in));
+/* ================= tests ================= */
+// The "Tests" tab: everyone can write tests for a diagram; a verifica from a teacher's server adds its own
+// read-only tests (hidden ones are only counted). With locked OUT blocks only what they write is compared.
+let exRes = null, testSnap = false;
+const lockOuts = () => FL.lockedBlocks(prog.main).some(b => b.t === 'output');
+function testResult(r, inputs, want, noWant) {
+  if (!r) return '';
+  if (r.ok) return '<div class="tres ok">✓</div>';
+  const got = lockOuts() ? r.locked.join('\n') : r.out.replace(/\n$/, '');
+  return `<div class="tres ko"><dl>${noWant ? '' : `<dt>${esc(t('exWant'))}</dt><dd>${esc(want || t('exNothing'))}</dd>`}<dt>${esc(t('exGot'))}</dt><dd>${esc(got || t('exNothing'))}</dd></dl>
+    ${r.err ? `<div class="err">${esc(emsg(r.err))}</div>` : ''}<button class="btn sm" data-step="${esc(JSON.stringify(inputs))}">${esc(t('exStep'))}</button></div>`;
 }
-// teacher: write the task and the tests; "Compute" runs the open diagram to fill the expected output
-function cmdExercise() {
-  const ex = prog.ex ? JSON.parse(JSON.stringify(prog.ex)) : { text: '', mode: 'exact', tests: [{ in: [], out: '', hidden: false }] };
-  const row = (x, i) => `<div class="extest" data-i="${i}">
-      <div class="exio"><label class="lbl" for="exIn${i}">${esc(t('exIn'))}</label><textarea id="exIn${i}" rows="3" data-k="in">${esc(x.in.join('\n'))}</textarea></div>
-      <div class="exio"><label class="lbl" for="exOut${i}">${esc(t('exOut'))}</label><textarea id="exOut${i}" rows="3" data-k="out">${esc(x.out)}</textarea></div>
-      <div class="act"><label class="check sm"><input type="checkbox" data-k="hidden" ${x.hidden ? 'checked' : ''}> ${esc(t('exHidden'))}</label><span class="sp"></span>
-        <button class="btn" type="button" data-calc="${i}">${esc(t('exCalc'))}</button><button class="btn danger" type="button" data-del="${i}" aria-label="${esc(t('exRemove'))}">×</button></div>
-      <div class="msg" hidden></div></div>`;
-  const read = () => {
-    ex.text = $('#exTextIn').value; ex.mode = $('#exModeIn').value;
-    ex.tests = $$('.extest', dlg).map(r => ({ in: r.querySelector('[data-k=in]').value.split('\n').map(z => z.trim()).filter(Boolean), out: r.querySelector('[data-k=out]').value, hidden: r.querySelector('[data-k=hidden]').checked }));
+function renderEx() {
+  if (curTab !== 'ex') return;
+  const box = $('#tab-ex'), ver = prog.ver, mine = prog.tests || [];
+  let h = '';
+  if (ver) {
+    h += `<div class="sect"><h3>${esc(ver.title || t('verT'))}</h3><p class="extask">${esc(ver.text || '—')}</p></div>
+      <div class="sect"><h3>${esc(t('verTests'))}</h3><ul class="exres">` +
+      ver.tests.map((x, i) => `<li class="${exRes ? (exRes.ver[i].ok ? 'ok' : 'ko') : ''}"><div class="h"><span>${esc(t('exTest', i + 1))}</span>${exRes ? `<span class="mark">${exRes.ver[i].ok ? '✓' : '✗'}</span>` : ''}</div>
+        <dl><dt>${esc(t('exInLbl'))}</dt><dd>${esc(x.in.join(', ') || '—')}</dd><dt>${esc(t('exWant'))}</dt><dd>${esc(x.out || t('exNothing'))}</dd></dl>
+        ${exRes && !exRes.ver[i].ok ? testResult(exRes.ver[i], x.in, x.out, true) : ''}</li>`).join('') + '</ul>' +
+      (ver.hidden ? `<p class="note">${esc(t('verHidden', ver.hidden))}</p>` : '') + '</div>';
+  }
+  h += `<div class="sect"><h3>${esc(t('myTests'))}</h3>` + (mine.length ? '' : `<p class="note">${esc(t('myTestsNone'))}</p>`) +
+    mine.map((x, i) => `<div class="mytest${exRes ? (exRes.mine[i].ok ? ' ok' : ' ko') : ''}" data-i="${i}">
+      <div class="exio"><label class="lbl" for="tIn${i}">${esc(t('exIn'))}</label><textarea id="tIn${i}" rows="2" data-k="in" spellcheck="false">${esc(x.in.join('\n'))}</textarea></div>
+      <div class="exio"><label class="lbl" for="tOut${i}">${esc(t('exOut'))}</label><textarea id="tOut${i}" rows="2" data-k="out" spellcheck="false">${esc(x.out)}</textarea></div>
+      <button class="btn danger tdel" data-del="${i}" aria-label="${esc(t('exRemove'))}">×</button>
+      ${exRes ? testResult(exRes.mine[i], x.in, x.out) : ''}</div>`).join('') +
+    `<div class="exbar"><button class="btn" id="tAdd">${esc(t('exAdd'))}</button>` +
+    (lockOuts() ? '' : `<select id="tMode" aria-label="${esc(t('exMode'))}"><option value="exact"${prog.tmode !== 'last' ? ' selected' : ''}>${esc(t('exModeExact'))}</option><option value="last"${prog.tmode === 'last' ? ' selected' : ''}>${esc(t('exModeLast'))}</option></select>`) + '</div></div>';
+  const n = mine.length + (ver ? ver.tests.length : 0);
+  h += `<div class="exbar"><button class="btn primary" id="exCheck" ${n ? '' : 'disabled'}>${esc(t('exCheck'))}</button></div>`;
+  if (exRes) {
+    const all = [...exRes.ver, ...exRes.mine], ok = all.filter(r => r.ok).length;
+    h += `<div class="exsum${ok === all.length ? ' ok' : ''}" role="status">${esc(ok === all.length ? t('exAll') : t('exSummary', ok, all.length))}</div>`;
+  }
+  const devs = prog.dev || [];
+  if (devs.length || prog.altered) h += `<div class="sect devinfo">${prog.altered ? `<p class="altered">⚠ ${esc(t('fileAltered'))}</p>` : ''}
+    ${devs.length ? `<p class="note">${esc(t('devHist'))} ${devs.map(x => `<span class="dev${x.d === DEV ? ' me' : ''}" title="${esc(x.t.replace('T', ' '))}">${esc(x.d)}</span>`).join(' → ')}</p>` : ''}
+    <p class="note">${esc(t('devThis', DEV))}</p></div>`;
+  box.innerHTML = h;
+  $('#exCheck').onclick = () => {
+    FL.setBoolNames(t('FALSE'), t('TRUE'));
+    const nl = ver ? ver.nlocks : 0;
+    exRes = { ver: ver ? ver.tests.map(x => FL.checkTest(prog.main, x, 'exact', nl)) : [], mine: (prog.tests || []).map(x => FL.checkTest(prog.main, x, prog.tmode, nl)) };
+    renderEx();
   };
-  const draw = () => {
-    openDlg(`<h2>${esc(prog.ex ? t('exEditM') : t('exT'))}</h2>
-      <div class="field" style="margin:0"><label for="exTextIn">${esc(t('exText'))}</label><textarea id="exTextIn" class="prose" rows="3" placeholder="${esc(t('exTextPh'))}">${esc(ex.text)}</textarea></div>
-      <div class="field" style="margin:0"><label for="exModeIn">${esc(t('exMode'))}</label><select id="exModeIn"><option value="exact"${ex.mode !== 'last' ? ' selected' : ''}>${esc(t('exModeExact'))}</option><option value="last"${ex.mode === 'last' ? ' selected' : ''}>${esc(t('exModeLast'))}</option></select></div>
-      <div><b style="display:block;margin-bottom:6px">${esc(t('exTests'))}</b><div class="extests">${ex.tests.map(row).join('')}</div>
-      <p class="note">${esc(t('exCalcNote'))}</p><button class="btn" type="button" id="exAdd">${esc(t('exAdd'))}</button></div>
-      <div class="foot">${prog.ex ? `<button class="btn danger" id="exDel">${esc(t('exDelete'))}</button><span style="flex:1"></span>` : ''}<button class="btn" data-close>${esc(t('cancel'))}</button><button class="btn primary" id="exSave">${esc(t('save'))}</button></div>`);
-    dlg.classList.add('wide');
-    $('#exAdd').onclick = () => { read(); ex.tests.push({ in: [], out: '', hidden: false }); draw(); $$('.extest textarea', dlg).slice(-2)[0].focus(); };
-    $$('[data-del]', dlg).forEach(b => b.onclick = () => { read(); ex.tests.splice(+b.dataset.del, 1); draw(); });
-    $$('[data-calc]', dlg).forEach(b => b.onclick = () => {
-      read(); const i = +b.dataset.calc, r = dlg.querySelector(`.extest[data-i="${i}"]`), msg = r.querySelector('.msg');
-      FL.setBoolNames(t('FALSE'), t('TRUE'));
-      const pre = FL.firstError(prog.main), res = pre ? { err: pre.e, out: '' } : FL.runTest(prog.main, ex.tests[i].in);
-      if (res.err) { msg.textContent = emsg(res.err); msg.hidden = false; return; }
-      msg.hidden = true; r.querySelector('[data-k=out]').value = FL.outLines(res.out).join('\n');
-    });
-    if ($('#exDel')) $('#exDel').onclick = () => { snap(); delete prog.ex; dlg.close(); afterChange(false); switchTab('block'); };
-    $('#exSave').onclick = () => {
-      read();
-      ex.tests = ex.tests.filter(x => x.in.length || x.out.trim());
-      if (!ex.tests.length) { toast(t('exNeedTest')); return; }
-      snap(); prog.ex = validEx(ex); dlg.close(); afterChange(false); switchTab('ex');
+  $('#tAdd').onclick = () => { snap(); prog.tests = [...(prog.tests || []), { in: [], out: '' }]; exRes = null; renderEx(); persist(); $(`#tIn${prog.tests.length - 1}`).focus(); };
+  if ($('#tMode')) $('#tMode').onchange = e => { snap(); prog.tmode = e.target.value; exRes = null; renderEx(); persist(); };
+  $$('[data-del]', box).forEach(b => b.onclick = () => { snap(); prog.tests.splice(+b.dataset.del, 1); if (!prog.tests.length) delete prog.tests; exRes = null; renderEx(); persist(); });
+  $$('.mytest textarea', box).forEach(ta => {
+    ta.onfocus = () => { testSnap = false; };
+    ta.oninput = () => {
+      if (!testSnap) { snap(); testSnap = true; }
+      const T = prog.tests[+ta.closest('.mytest').dataset.i];
+      if (ta.dataset.k === 'in') T.in = ta.value.split('\n').map(z => z.trim()).filter(Boolean); else T.out = ta.value;
+      if (exRes) { exRes = null; $$('.tres, .exsum', box).forEach(e => e.remove()); $$('.mytest, .exres li', box).forEach(e => e.classList.remove('ok', 'ko')); }
+      persist();
     };
-  };
-  draw();
+  });
+  $$('[data-step]', box).forEach(b => b.onclick = () => startRun('step', JSON.parse(b.dataset.step)));
 }
 
 /* ---------- share link: the whole diagram is inside the link (see shareEncode in core.js) ---------- */
@@ -1068,16 +1104,13 @@ function shareBase() {
 }
 function cmdShare() {
   const doc = JSON.parse(ser());
-  // an exercise is shared without the diagram by default: the open diagram is usually the teacher's solution
-  const make = withMain => shareBase() + '#' + FL.shareEncode(doc.ex && !withMain ? { ...doc, main: [] } : doc);
-  let link = make(false);
-  openDlg(`<h2>${esc(doc.ex ? t('exShareT') : t('shareT'))}</h2>
-    ${doc.ex ? `<div class="radios"><label><input type="radio" name="shWhat" value="0" checked> <span>${esc(t('shareExNo'))}</span></label><label><input type="radio" name="shWhat" value="1"> <span>${esc(t('shareExWith'))}</span></label></div>` : ''}
+  // the tests travel in the link; a teacher's verifica (and its locked blocks) does not
+  const link = shareBase() + '#' + FL.shareEncode({ name: doc.name, main: doc.main, ex: doc.tests ? { text: '', mode: doc.tmode, tests: doc.tests } : null });
+  openDlg(`<h2>${esc(t('shareT'))}</h2>
     <div class="field" style="margin:0"><input type="text" id="shareLink" readonly value="${esc(link)}" aria-label="${esc(t('shareT'))}"></div>
     <p>${esc(t('shareNote'))}</p><p id="shareLongP"${link.length > 2000 ? '' : ' hidden'}>${esc(t('shareLong', link.length))}</p>
     <div class="foot"><button class="btn" data-close>${esc(t('close'))}</button>${navigator.share ? `<button class="btn" id="shareSys">${esc(t('shareSys'))}</button>` : ''}<button class="btn primary" id="shareCopy">${esc(t('copyLink'))}</button></div>`);
   const inp = $('#shareLink'); inp.addEventListener('focus', () => inp.select());
-  $$('[name=shWhat]', dlg).forEach(r => r.onchange = () => { link = make(r.value === '1'); inp.value = link; $('#shareLongP').hidden = link.length <= 2000; $('#shareLongP').textContent = t('shareLong', link.length); });
   $('#shareCopy').onclick = async () => {
     try { await navigator.clipboard.writeText(link); } catch (e) { inp.focus(); inp.select(); try { document.execCommand('copy'); } catch (e2) { return; } }
     toast(t('copied'));
@@ -1090,12 +1123,13 @@ function openFromLink() {
   if (!h) return;
   history.replaceState(null, '', location.pathname + location.search);
   let doc; try { doc = FL.shareDecode(h); } catch (e) { toast(t('badLink')); return; }
-  try { if (openDoc(doc)) { toast(t(doc.ex ? 'exOpened' : 'linkOpened')); if (doc.ex) switchTab('ex'); } } catch (e) { toast(t('badLink')); }
+  const d = { name: doc.name, main: doc.main }; if (doc.ex && doc.ex.tests.length) { d.tests = doc.ex.tests; d.tmode = doc.ex.mode; }
+  try { if (openDoc(d)) toast(t('linkOpened')); } catch (e) { toast(t('badLink')); }
 }
 addEventListener('hashchange', () => { if (booted) openFromLink(); });
 
 function cmdSave() {
-  const json = JSON.stringify({ format: 'flussolab', version: 1, ...docOf(prog) }, replacer, 2);
+  const json = fileJson(prog);
   openDlg(`<h2>${esc(t('saveTitle'))}</h2>
     <div class="field" style="margin:0"><label for="saveName">${esc(t('fileName'))}</label><input type="text" id="saveName" value="${esc(fileBase())}"></div>
     <p>${esc(t('saveNote'))}</p>
@@ -1132,6 +1166,8 @@ function cmdExamples() {
 }
 function tryLoad(text) {
   let o; try { o = JSON.parse(text); } catch (e) { toast(t('badFile')); return; }
+  // a file with a history but a wrong check code was edited outside FlussoLab: it stays marked
+  if (o && Array.isArray(o.main) && o.main.every(validBlock) && (o.dev || o.sig) && o.sig !== sigOf(docOf(o))) o.altered = true;
   try { if (dlg.open) dlg.close(); if (openDoc(o)) toast(t('loadedOk')); }
   catch (e) { toast(t('badFile')); }
 }
@@ -1229,7 +1265,7 @@ function cmdExportZip() {
         while (used.has(base)) base += '_';
         used.add(base);
         if (wantF) {
-          const json = JSON.stringify({ format: 'flussolab', version: 1, ...docOf(doc), author: who }, replacer, 2);
+          const json = fileJson(doc, { author: who });
           files.push({ name: base + '.flusso', data: enc.encode(json) });
         }
         if (wantP) {
@@ -1259,9 +1295,14 @@ function cmdAbout() {
 }
 function cmdHelp() { openDlg(`<h2>${esc(t('helpT'))}</h2><div class="guide">${langPart('guide')}</div><div class="foot"><button class="btn primary" data-close>${esc(t('close'))}</button></div>`); }
 function loadExample(i) { const x = langPart('examples')[i]; if (!x) return; if (openDoc({ name: x.name, main: JSON.parse(JSON.stringify(x.main)) })) toast(t('loadedOk')); }
+function fromClip() {
+  const nb = JSON.parse(clip), have = new Set(FL.lockedBlocks(prog.main).map(b => b.lk));
+  FL.lockedBlocks([nb]).forEach(x => { if (have.has(x.lk)) { delete x.lock; delete x.lk; } });
+  assignIds([nb]); return nb;
+}
 function pasteBlock() {
   if (!clip) return; stopRun(); snap();
-  const f = sel && find(sel); const nb = JSON.parse(clip); assignIds([nb]);
+  const f = sel && find(sel); const nb = fromClip();
   if (f) f.arr.splice(f.idx + 1, 0, nb); else prog.main.push(nb);
   sel = nb.id; afterChange(true);
 }
@@ -1269,7 +1310,7 @@ function pasteBlock() {
 /* ================= menu bar ================= */
 const MENUS = {
   file: () => [
-    ['new', t('new'), ''], ['open', t('open') + '…', 'Ctrl+O'], ['save', t('save') + '…', 'Ctrl+S'], ['share', t('shareM'), ''], ['exercise', prog.ex ? t('exEditM') : t('exM'), ''], ['png', t('png') + '…', ''], ['zip', t('zipM'), ''], '-',
+    ['new', t('new'), ''], ['open', t('open') + '…', 'Ctrl+O'], ['save', t('save') + '…', 'Ctrl+S'], ['share', t('shareM'), ''], ['png', t('png') + '…', ''], ['zip', t('zipM'), ''], '-',
     ['install', t('installM'), ''],
   ],
   edit: () => {
@@ -1347,7 +1388,6 @@ function runCmd(c) {
   if (c === 'open') return cmdOpen();
   if (c === 'save') return cmdSave();
   if (c === 'share') return cmdShare();
-  if (c === 'exercise') return cmdExercise();
   if (c === 'png') return cmdPng();
   if (c === 'zip') return cmdExportZip();
   if (c === 'install') return cmdInstall();
@@ -1363,7 +1403,7 @@ function runCmd(c) {
   if (c === 'trace') { opts.trace = !opts.trace; saveOpts(); syncTrace(); return; }
   if (c === 'link') { opts.link = !opts.link; saveOpts(); hoverLink(null, false); return; }
   if (c === 'py') { opts.py = !opts.py; saveOpts(); renderCode(); return; }
-  if (c === 'cut' && f) { clip = JSON.stringify(f.b, replacer); stopRun(); snap(); return deleteSel(f); }
+  if (c === 'cut' && f) { clip = JSON.stringify(f.b, replacer); stopRun(); snap(); return deleteSel(f, true); }
   if (c === 'up' || c === 'down') { const btn = document.createElement('button'); btn.dataset.act = c; return blockAct(c); }
   if ((c === 'inv' || c === 'swap' || c === 'off') && f) return blockAct(c);
   if (c.startsWith('ins:')) { const sl = ctxSlot; if (sl) { popSlot = sl; insertType(c.slice(4)); } return; }

@@ -289,6 +289,26 @@ pre.code{margin:0;font:13px/1.55 var(--f-mono);background:var(--paper);border:1p
 .exres dt{color:var(--muted);font-size:12px;font-weight:700;padding-top:2px}
 .exres dd{margin:0;font:13px/1.4 var(--f-mono);white-space:pre-wrap;word-break:break-word;font-variant-ligatures:none}
 .exres .err{color:var(--red);margin-top:6px}
+/* own tests in the Tests tab */
+.mytest{border:1px solid var(--rule);border-radius:9px;padding:9px;display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end;margin-bottom:8px}
+.mytest.ok{border-color:var(--green)} .mytest.ko{border-color:var(--red);background:var(--red-soft)}
+.mytest textarea{font:13px/1.4 var(--f-mono);padding:6px 8px;border:1px solid var(--rule);border-radius:7px;background:var(--paper);width:100%;resize:vertical;min-height:52px;color:var(--ink)}
+.mytest .lbl{font-size:11.5px;font-weight:700;color:var(--muted)}
+.mytest .exio{display:grid;gap:3px;min-width:0}
+.mytest .tres{grid-column:1/-1;font-size:13px}
+.tres.ok{color:var(--green);font-weight:700}
+.tres dl{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;margin:0 0 6px}
+.tres dt{color:var(--muted);font-size:12px;font-weight:700}
+.tres dd{margin:0;font:13px/1.4 var(--f-mono);white-space:pre-wrap;word-break:break-word}
+.tres .err{color:var(--red);margin-bottom:6px}
+#tMode{font:13px var(--f-body);padding:6px 8px;border:1px solid var(--rule);border-radius:7px;background:var(--paper);color:var(--ink)}
+.btn.sm{padding:4px 9px;font-size:12.5px}
+.blk.lock .shape{stroke-width:2.6}
+@media (max-width: 420px){ .mytest{grid-template-columns:1fr} .mytest .tdel{justify-self:end} }
+.devinfo{margin-top:22px;padding-top:12px;border-top:1px solid var(--rule)}
+.devinfo .dev{font:12px var(--f-mono);background:var(--surface-2);padding:1px 5px;border-radius:4px}
+.devinfo .dev.me{background:var(--pen-soft);color:var(--pen)}
+.altered{color:var(--red);font-weight:700;font-size:13px;margin:0 0 6px}
 /* exercise editor (teacher) */
 .dlg textarea{font:14px var(--f-mono);padding:8px 10px;border:1px solid var(--rule);border-radius:7px;background:var(--paper);width:100%;resize:vertical;color:var(--ink)}
 .dlg textarea.prose{font-family:var(--f-body)}

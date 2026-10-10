@@ -343,3 +343,39 @@ test('blocchi disattivati', () => {
   // una variabile letta solo in un blocco disattivato non esiste
   assert.equal(FL.firstError([{ t: 'input', v: 'k', off: true }, { t: 'output', e: 'k' }]).e.key, 'nodef');
 });
+
+// Blocchi fissi di una verifica: si controllano solo i valori scritti dagli OUT fissi.
+test('blocchi fissi: controllo, ordine, validazione dell\'input', () => {
+  const main = [
+    { t: 'output', e: '"Quante persone? "', ln: false },
+    { t: 'do', c: 'persone <= 0', body: [{ t: 'input', v: 'persone', lock: true, lk: 1 }] },
+    { t: 'input', v: 'prezzo', lock: true, lk: 2 },
+    { t: 'assign', v: 'guadagno', e: 'persone * prezzo' },
+    { t: 'output', e: '"Hai guadagnato "', ln: false },
+    { t: 'output', e: 'guadagno', lock: true, lk: 3 }];
+  assert.equal(FL.checkTest(main, { in: ['-2', '0', '4', '2.5'], out: '10' }, 'exact', 3).ok, true);
+  assert.equal(FL.checkTest(main, { in: ['4', '2.5'], out: '10.0' }, 'exact', 3).ok, true);
+  assert.equal(FL.checkTest(main, { in: ['4', '2.5'], out: '11' }, 'exact', 3).ok, false);
+  // ordine cambiato e blocco mancante
+  const swapped = [main[2], main[1], ...main.slice(3)];
+  assert.equal(FL.checkTest(swapped, { in: ['4', '2'], out: '8' }, 'exact', 3).err.key, 'lockorder');
+  assert.equal(FL.checkTest(main.slice(0, 5), { in: ['4', '2'], out: '8' }, 'exact', 3).err.key, 'lockmissing');
+  // un blocco fisso disattivato viene comunque eseguito
+  const offd = main.map(b => b.lk === 3 ? { ...b, off: true } : b);
+  assert.equal(FL.checkTest(offd, { in: ['4', '2.5'], out: '10' }, 'exact', 3).ok, true);
+  assert.equal(FL.sameVal('0.30000000000000004', '0.3'), true);
+  assert.equal(FL.sameVal('VERO', 'true'), true);
+});
+
+// Validazione dell'input: IN fisso, poi un ciclo con un IN aggiunto dallo studente che richiede il valore.
+test('blocchi fissi: IN aggiunto dallo studente per richiedere un valore sbagliato', () => {
+  const main = [
+    { t: 'input', v: 'n', lock: true, lk: 1 },
+    { t: 'while', c: 'n <= 0', body: [{ t: 'output', e: '"Errore, riprova"' }, { t: 'input', v: 'n' }] },
+    { t: 'assign', v: 'doppio', e: 'n * 2' },
+    { t: 'output', e: 'doppio', lock: true, lk: 2 }];
+  assert.equal(FL.checkTest(main, { in: ['-3', '0', '5'], out: '10' }, 'exact', 2).ok, true);
+  assert.equal(FL.checkTest(main, { in: ['4'], out: '8' }, 'exact', 2).ok, true);
+  const r = FL.checkTest(main, { in: ['-3'], out: '10' }, 'exact', 2);
+  assert.equal(r.err.key, 'moreinput');
+});

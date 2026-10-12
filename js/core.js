@@ -749,6 +749,7 @@ function runTest(main, inputs, maxSteps = 200000) {
       if (r.done) break;
       if (r.value.t === 'at') { if (++steps > maxSteps) return { out, locked, err: new FErr('loop'), b: r.value.b }; continue; }
       if (k >= inputs.length) return { out, locked, err: new FErr('moreinput'), b: r.value.b };
+      if (out && !out.endsWith('\n')) out += '\n'; // like the console: the student presses Enter, so the line ends
       v = String(inputs[k++]);
     }
   } catch (e) { if (!(e instanceof FErr)) throw e; return { out, locked, err: e }; }
@@ -781,8 +782,8 @@ function lockErr(main, n) {
 function outLines(s) { const l = String(s ?? '').replace(/\r/g, '').split('\n').map(x => x.trimEnd()); while (l.length && !l[l.length - 1]) l.pop(); return l; }
 function sameOut(got, want, mode) {
   const a = outLines(got), b = outLines(want);
-  if (mode === 'last') return (a[a.length - 1] || '').trim() === (b[b.length - 1] || '').trim();
-  return a.length === b.length && a.every((x, j) => x === b[j]);
+  if (mode === 'last') return sameVal(a[a.length - 1] || '', b[b.length - 1] || '');
+  return a.length === b.length && a.every((x, j) => sameVal(x, b[j]));
 }
 // with locked OUT blocks only their values are compared, one expected line per value
 function checkTest(main, test, mode, nlocks = 0) {

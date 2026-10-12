@@ -2,7 +2,7 @@
 'use strict';
 /* ====== Project settings ====== */
 const CONFIG = {
-  version: '1.0.0',
+  version: '1.0.1',
   author: 'aSamu3l',
   github: 'https://github.com/aSamu3l',
   repo: 'https://github.com/aSamu3l/FlussoLab',
@@ -1039,10 +1039,12 @@ async function triggerDownload(href, name, data) {
 // read-only tests (hidden ones are only counted). With locked OUT blocks only what they write is compared.
 let exRes = null, testSnap = false;
 const lockOuts = () => FL.lockedBlocks(prog.main).some(b => b.t === 'output');
-function testResult(r, inputs, want, noWant) {
+function testResult(r, inputs, want, noWant, last) {
   if (!r) return '';
   if (r.ok) return '<div class="tres ok">✓</div>';
-  const got = lockOuts() ? r.locked.join('\n') : r.out.replace(/\n$/, '');
+  const lines = FL.outLines(r.out);
+  const got = lockOuts() ? r.locked.join('\n') : last ? lines[lines.length - 1] || '' : lines.join('\n');
+  if (last && !lockOuts()) { const w = FL.outLines(want); want = w[w.length - 1] || ''; }
   return `<div class="tres ko"><dl>${noWant ? '' : `<dt>${esc(t('exWant'))}</dt><dd>${esc(want || t('exNothing'))}</dd>`}<dt>${esc(t('exGot'))}</dt><dd>${esc(got || t('exNothing'))}</dd></dl>
     ${r.err ? `<div class="err">${esc(emsg(r.err))}</div>` : ''}<button class="btn sm" data-step="${esc(JSON.stringify(inputs))}">${esc(t('exStep'))}</button></div>`;
 }
@@ -1066,7 +1068,7 @@ function renderEx() {
       <div class="exio"><label class="lbl" for="tIn${i}">${esc(t('exIn'))}</label><textarea id="tIn${i}" rows="2" data-k="in" spellcheck="false">${esc(x.in.join('\n'))}</textarea></div>
       <div class="exio"><label class="lbl" for="tOut${i}">${esc(t('exOut'))}</label><textarea id="tOut${i}" rows="2" data-k="out" spellcheck="false">${esc(x.out)}</textarea></div>
       <button class="btn danger tdel" data-del="${i}" aria-label="${esc(t('exRemove'))}">×</button>
-      ${exRes ? testResult(exRes.mine[i], x.in, x.out) : ''}</div>`).join('') +
+      ${exRes ? testResult(exRes.mine[i], x.in, x.out, false, prog.tmode === 'last') : ''}</div>`).join('') +
     `<div class="exbar"><button class="btn" id="tAdd">${esc(t('exAdd'))}</button>` +
     (lockOuts() ? '' : `<select id="tMode" aria-label="${esc(t('exMode'))}"><option value="exact"${prog.tmode !== 'last' ? ' selected' : ''}>${esc(t('exModeExact'))}</option><option value="last"${prog.tmode === 'last' ? ' selected' : ''}>${esc(t('exModeLast'))}</option></select>`) + '</div></div>';
   const n = mine.length + (ver ? ver.tests.length : 0);

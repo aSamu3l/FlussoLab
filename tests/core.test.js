@@ -323,6 +323,12 @@ test('esercizi: prove, confronto dell\'output e link', () => {
   assert.equal(FL.runTest([{ t: 'while', c: 'true', body: [] }], [], 1000).err.key, 'loop');
   assert.equal(FL.checkTest([{ t: 'output', e: 'x' }], { in: [], out: '' }, 'exact').err.key, 'nodef');
   assert.equal(FL.sameOut('a  \nb\n\n', 'a\nb', 'exact'), true);
+  // an IN ends the line, like Enter in the console; numbers are compared with tolerance
+  const ask = [{ t: 'decl', k: 'int', v: 'n' }, { t: 'output', e: '"Numero: "', ln: false }, { t: 'input', v: 'n' }, { t: 'output', e: '"Doppio: "', ln: false }, { t: 'output', e: 'n * 2' }];
+  assert.equal(FL.runTest(ask, ['3']).out, 'Numero: \nDoppio: 6\n');
+  assert.equal(FL.checkTest(ask, { in: ['3'], out: 'Numero:\nDoppio: 6' }, 'exact').ok, true);
+  assert.equal(FL.checkTest(ask, { in: ['3'], out: 'Doppio: 6' }, 'last').ok, true);
+  assert.equal(FL.sameOut('7.0', '7', 'last'), true);
   const ex = { text: 'Stampa il massimo\ndi n numeri', mode: 'last', tests: [{ in: ['2', '5', '1'], out: 'Massimo: 5', hidden: false }, { in: ['1', '-3'], out: 'Massimo: -3', hidden: true }] };
   const back = FL.shareDecode(FL.shareEncode({ name: 'Massimo', main: [], ex }));
   assert.deepEqual(back, { name: 'Massimo', main: [], ex });

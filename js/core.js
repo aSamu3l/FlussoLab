@@ -15,7 +15,7 @@ function setBoolNames(f, t) {
 
 /* ---------- lexer ---------- */
 const QD = '"“”„', QS = "'‘’";
-const TWO = { '<=': '<=', '>=': '>=', '==': '=', '!=': '!=', '<>': '!=', '&&': 'and', '||': 'or', '**': '^' };
+const TWO = { '<=': '<=', '>=': '>=', '==': '=', '!=': '!=', '<>': '!=', '&&': 'and', '||': 'or', '**': '^', '//': 'div' };
 const ONE = { '+': '+', '-': '-', '−': '-', '*': '*', '×': '*', '/': '/', '÷': '/', '%': 'mod', '^': '^',
   '<': '<', '>': '>', '!': 'not', '(': '(', ')': ')', '[': '[', ']': ']', ',': ',',
   '≤': '<=', '≥': '>=', '≠': '!=' };
@@ -184,7 +184,11 @@ function arith(op, a, b) {
     switch (op) {
       case '+': return a + b; case '-': return a - b;
       case '*': if (bits(a) + bits(b) > MAXBITS) throw new FErr('big'); return a * b;
-      case '/': case 'div': if (b === 0n) throw new FErr('div0'); return a / b;
+      case '/': if (b === 0n) throw new FErr('div0'); return Number(a) / Number(b); // / always gives decimals: 7 / 2 = 3.5
+      case 'div': { // // is the integer division, rounded down: 7 // 2 = 3, -7 // 2 = -4
+        if (b === 0n) throw new FErr('div0');
+        const q = a / b; return a % b !== 0n && (a < 0n) !== (b < 0n) ? q - 1n : q;
+      }
       case 'mod': if (b === 0n) throw new FErr('div0'); return a % b;
       case '^':
         if (b < 0n) return Number(a) ** Number(b);
@@ -198,7 +202,7 @@ function arith(op, a, b) {
   switch (op) {
     case '+': return x + y; case '-': return x - y; case '*': return x * y;
     case '/': if (y === 0) throw new FErr('div0'); return x / y;
-    case 'div': if (y === 0) throw new FErr('div0'); return toInt(x / y, op);
+    case 'div': if (y === 0) throw new FErr('div0'); return toInt(Math.floor(x / y), op);
     case 'mod': if (y === 0) throw new FErr('div0'); return x % y;
     case '^': return x ** y;
   }
@@ -341,6 +345,7 @@ function checkType(lv, val, T) {
   if (!T) return val;
   const r = lvRoot(lv), d = T[r.n]; if (!d) return val;
   if (lv.k === 'var' && d.arr) { if (!Array.isArray(val)) throw new FErr('tarr', r.n, d.k); return val; }
+  if (d.k === 'int' && typeof val === 'number') throw new FErr('tdeclint', r.n, d.k, fmt(val)); // often a / that should be //
   if (Array.isArray(val) || !kindOK(d.k, val)) throw new FErr('tdecl', r.n, d.k, fmt(val));
   return d.k === 'float' ? Number(val) : val;
 }
@@ -567,7 +572,7 @@ function pyInt(n, ints) {
     case 'cast': return n.to === 'int';
     case 'call': return ['int', 'round', 'floor', 'ceil', 'len', 'randint'].includes(n.n) || (['abs', 'min', 'max'].includes(n.n) && n.args.every(a => pyInt(a, ints)));
     case 'un': return n.op === '-' && pyInt(n.a, ints);
-    case 'bin': return ['+', '-', '*', '/', 'mod', 'div', '^'].includes(n.op) && pyInt(n.a, ints) && pyInt(n.b, ints);
+    case 'bin': return ['+', '-', '*', 'mod', 'div', '^'].includes(n.op) && pyInt(n.a, ints) && pyInt(n.b, ints);
   }
   return false;
 }
@@ -591,10 +596,10 @@ function pyE(n, U) {
       return { s: 'not ' + (a.p < 3 ? `(${a.s})` : a.s), p: 3 };
     }
     case 'bin': {
-      // between two values known to be int, / is an integer division as in the diagram: int(a / b) truncates like C
-      if (n.op === 'div' || (n.op === '/' && pyInt(n.a, U.ints) && pyInt(n.b, U.ints))) {
+      // // with a float gives a float in Python (7.5 // 2 = 3.0), in the diagram always an int
+      if (n.op === 'div' && !(pyInt(n.a, U.ints) && pyInt(n.b, U.ints))) {
         const fa = pyE(n.a, U), fb = pyE(n.b, U);
-        return { s: `int(${fa.p < 6 ? `(${fa.s})` : fa.s} / ${fb.p <= 6 ? `(${fb.s})` : fb.s})`, p: 9 };
+        return { s: `int(${fa.p < 6 ? `(${fa.s})` : fa.s} // ${fb.p <= 6 ? `(${fb.s})` : fb.s})`, p: 9 };
       }
       const [sym, p] = PYOP[n.op];
       const a = pyE(n.a, U), b = pyE(n.b, U);
@@ -703,7 +708,7 @@ function toPython(main, T) {
 
 /* ---------- source printer & condition inversion ---------- */
 const SRC = { or: ['OR', 1], and: ['AND', 2], '=': ['==', 4], '!=': ['!=', 4], '<': ['<', 4], '<=': ['<=', 4], '>': ['>', 4], '>=': ['>=', 4],
-  '+': ['+', 5], '-': ['-', 5], '*': ['*', 6], '/': ['/', 6], mod: ['mod', 6], div: ['div', 6], '^': ['^', 8] };
+  '+': ['+', 5], '-': ['-', 5], '*': ['*', 6], '/': ['/', 6], mod: ['mod', 6], div: ['//', 6], '^': ['^', 8] };
 function srcE(n) {
   switch (n.k) {
     case 'num': return { s: n.t || String(n.v), p: 9 };

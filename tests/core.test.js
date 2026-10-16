@@ -38,18 +38,25 @@ test('aritmetica e precedenze', () => {
   assert.equal(show('-7 % 3'), '-1');
 });
 
-test('divisione come in C', () => {
-  assert.equal(show('7 / 2'), '3');
-  assert.equal(show('-7 / 2'), '-3');
+test('divisione: / con i decimali, // intera', () => {
+  assert.equal(show('7 / 2'), '3.5');
+  assert.equal(show('6 / 2'), '3.0');
   assert.equal(show('7.0 / 2'), '3.5');
-  assert.equal(show('7 / 2.0'), '3.5');
-  assert.equal(show('10 / 4 * 2'), '4');
+  assert.equal(show('10 / 4 * 2'), '5.0');
   assert.equal(errKey(() => show('7 / 0')), 'div0');
+  assert.equal(show('7 // 2'), '3');
+  assert.equal(show('-7 // 2'), '-4');
+  assert.equal(show('7 // -2'), '-4');
+  assert.equal(show('6 // 2'), '3');
+  assert.equal(show('7 div 2'), '3');
+  assert.equal(show('7.5 // 2'), '3');
+  assert.equal(show('10 // 4 * 2'), '4');
+  assert.equal(errKey(() => show('7 // 0')), 'div0');
 });
 
 test('conversioni di tipo (cast)', () => {
   assert.equal(show('(float) 7 / 2'), '3.5');
-  assert.equal(show('(float) (7 / 2)'), '3.0');
+  assert.equal(show('(float) (7 // 2)'), '3.0');
   assert.equal(show('(int) 3.9'), '3');
   assert.equal(show('(int) -3.9'), '-3');
   assert.equal(show('(float) s / n', { s: 7, n: 2 }), '3.5');
@@ -83,7 +90,7 @@ test('il singolo = non è un confronto', () => {
 
 test('testi', () => {
   assert.equal(show('"Ciao " + "mondo"'), 'Ciao mondo');
-  assert.equal(show('"x = " + str(7 / 2)'), 'x = 3');
+  assert.equal(show('"x = " + str(7 // 2)'), 'x = 3');
   assert.equal(errKey(() => show('"x = " + 7')), 'strmix');
   assert.equal(errKey(() => show('1 + a + " e "', { a: '2' })), 'strmix');
   assert.equal(show('"1" + str(a) + " e "', { a: '2' }), '12 e ');
@@ -162,8 +169,9 @@ test('pseudocodice', () => {
 
 test('tipi dichiarati (blocco VAR)', () => {
   const D = (k, v) => ({ t: 'decl', k, v });
-  assert.equal(errKey(() => run([D('int', 'n'), { t: 'assign', v: 'n', e: '3.5' }])), 'tdecl');
-  assert.equal(run([D('int', 'n'), { t: 'assign', v: 'n', e: '7 / 2' }]).out.length, 0);
+  assert.equal(errKey(() => run([D('int', 'n'), { t: 'assign', v: 'n', e: '3.5' }])), 'tdeclint');
+  assert.equal(run([D('int', 'n'), { t: 'assign', v: 'n', e: '7 // 2' }]).env.n, 3n);
+  assert.equal(errKey(() => run([D('int', 'n'), { t: 'assign', v: 'n', e: '6 / 2' }])), 'tdeclint');
   assert.equal(run([D('float', 'x'), { t: 'assign', v: 'x', e: '3' }, { t: 'output', e: 'x' }]).out[0], '3.0');
   assert.equal(run([D('float', 'x'), { t: 'assign', v: 'x', e: '7' }, { t: 'output', e: 'x / 2' }]).out[0], '3.5');
   assert.equal(errKey(() => run([D('int', 'n'), { t: 'input', v: 'n' }], ['3,5'])), 'tin');
@@ -171,7 +179,7 @@ test('tipi dichiarati (blocco VAR)', () => {
   assert.equal(run([D('bool', 'b'), { t: 'input', v: 'b' }], ['true']).env.b, true);
   assert.equal(errKey(() => run([D('int', 'v[]'), { t: 'assign', v: 'v[0]', e: '"a"' }])), 'tdecl');
   assert.equal(errKey(() => run([D('int', 'n'), D('float', 'n')])), 'redecl');
-  assert.equal(errKey(() => run([D('int', 'i'), { t: 'for', v: 'i', a: '0', b: '1', s: '0.5', body: [] }])), 'tdecl');
+  assert.equal(errKey(() => run([D('int', 'i'), { t: 'for', v: 'i', a: '0', b: '1', s: '0.5', body: [] }])), 'tdeclint');
   assert.equal(FL.staticErr(D('int', '1x')).key, 'declname');
 });
 
@@ -182,7 +190,7 @@ test('tipo scritto direttamente nel blocco', () => {
   assert.equal(errKey(() => run([{ t: 'input', v: 'string s' }, { t: 'output', e: 's + 1' }], ['12'])), 'strmix');
   assert.equal(run([{ t: 'assign', v: 'float m', e: '(float) 7 / 2' }]).env.m, 3.5);
   assert.equal(run([{ t: 'assign', v: 'double m', e: '1' }]).env.m, 1);
-  assert.equal(errKey(() => run([{ t: 'assign', v: 'int x', e: '7.0 / 2' }])), 'tdecl');
+  assert.equal(errKey(() => run([{ t: 'assign', v: 'int x', e: '7.0 / 2' }])), 'tdeclint');
   assert.deepEqual(run([{ t: 'for', v: 'int i', a: '1', b: '2', s: '', body: [{ t: 'output', e: 'i' }] }]).out, ['1', '2']);
 });
 
@@ -205,14 +213,16 @@ test('incremento e decremento', () => {
 
 test('Python generato: solo funzioni standard', () => {
   const py = FL.toPython([{ t: 'input', v: 'int a, int b' }, { t: 'output', e: 'a / b' }, { t: 'output', e: 'x / y' },
-    { t: 'output', e: 'a % b' }, { t: 'output', e: 'round(z)' }, { t: 'output', e: '7 / 2' }], IT.python);
+    { t: 'output', e: 'a % b' }, { t: 'output', e: 'round(z)' }, { t: 'output', e: '7 / 2' }, { t: 'output', e: 'a // b' }, { t: 'output', e: 'x // 2' }], IT.python);
   assert.doesNotMatch(py, /def /);
   assert.match(py, /a: int = int\(input\("a\? "\)\)/);
-  assert.match(py, /print\(int\(a \/ b\)\)/);
+  assert.match(py, /print\(a \/ b\)/);
+  assert.match(py, /print\(a \/\/ b\)/);
+  assert.match(py, /print\(int\(x \/\/ 2\)\)/);
   assert.match(py, /print\(x \/ y\)/);
   assert.match(py, /print\(a % b\)/);
   assert.match(py, /print\(math\.floor\(z \+ 0\.5\)\)/);
-  assert.match(py, /print\(int\(7 \/ 2\)\)/);
+  assert.match(py, /print\(7 \/ 2\)/);
   const py2 = FL.toPython([{ t: 'input', v: 'n, float m, string s' }], IT.python);
   assert.match(py2, /^n = input\("n\? "\)$/m);
   assert.match(py2, /m: float = float\(input\("m\? "\)\.replace\(",", "\."\)\)/);
@@ -223,7 +233,7 @@ test('numeri con la virgola sempre riconoscibili, × e ÷, numeri enormi', () =>
   assert.equal(show('0.1 * 3 * 10'), '3.0');
   assert.equal(show('99999999999.99'), '100000000000.0');
   assert.equal(show('3×4'), '12');
-  assert.equal(show('12÷4'), '3');
+  assert.equal(show('12÷4'), '3.0');
   assert.equal(show('1^5000'), '1');
   assert.equal(errKey(() => show('2^40000')), 'big');
   assert.equal(errKey(() => run([{ t: 'assign', v: 'x', e: '3' }, { t: 'while', c: 'true', body: [{ t: 'assign', v: 'x', e: 'x * x' }] }])), 'big');

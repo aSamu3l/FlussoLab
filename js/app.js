@@ -13,7 +13,7 @@ const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const store = {
   get(k) { try { return localStorage.getItem('flussolab.' + k); } catch (e) { return null; } },
-  set(k, v) { try { localStorage.setItem('flussolab.' + k, v); } catch (e) {} },
+  set(k, v) { try { localStorage.setItem('flussolab.' + k, v); return true; } catch (e) { return false; } },
 };
 
 const opts = Object.assign({ explain: false, sym: false, theme: 'auto', trace: true, py: false, link: true }, (() => { try { return JSON.parse(store.get('prefs') || '{}'); } catch (e) { return {}; } })());
@@ -212,7 +212,8 @@ $('#tabbar').addEventListener('click', e => {
   const tb = e.target.closest('.tab'); if (tb && +tb.dataset.i !== cur) activate(+tb.dataset.i);
 });
 $('#tabbar').addEventListener('auxclick', e => { const tb = e.target.closest('.tab'); if (tb && e.button === 1) { e.preventDefault(); closeTab(+tb.dataset.i); } });
-addEventListener('beforeunload', e => { if (tabs.some(T => T.dirty)) { e.preventDefault(); e.returnValue = ''; } });
+// the work is kept in this browser: ask before leaving only if it could not be stored (private mode, storage full)
+addEventListener('beforeunload', e => { if (!persistNow() && tabs.some(T => T.dirty)) { e.preventDefault(); e.returnValue = ''; } });
 
 const TYPES = ['decl', 'input', 'output', 'assign', 'if', 'while', 'do', 'for', 'comment'];
 const MENU = ['decl', 'input', 'output', 'outln', 'assign', 'if', 'while', 'do', 'for', 'comment'];
@@ -1514,9 +1515,10 @@ function toast(msg) { const el = $('#toast'); el.textContent = msg; el.hidden = 
 let persistT = 0;
 function persist() { clearTimeout(persistT); persistT = setTimeout(persistNow, 300); }
 function persistNow() {
-  if (!booted) return;
+  if (!booted) return false;
+  clearTimeout(persistT);
   tabSnapshot();
-  store.set('tabs', JSON.stringify({ cur, tabs: tabs.map(T => ({ data: T.data, dirty: T.dirty })) }));
+  return store.set('tabs', JSON.stringify({ cur, tabs: tabs.map(T => ({ data: T.data, dirty: T.dirty })) }));
 }
 addEventListener('pagehide', persistNow);
 

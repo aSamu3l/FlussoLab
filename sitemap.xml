@@ -1,6 +1,36 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
-  <url><loc>https://flussolab.s3l.it/</loc><xhtml:link rel="alternate" hreflang="it" href="https://flussolab.s3l.it/"/><xhtml:link rel="alternate" hreflang="en" href="https://flussolab.s3l.it/en/"/><changefreq>monthly</changefreq><priority>1.0</priority></url>
-  <url><loc>https://flussolab.s3l.it/en/</loc><xhtml:link rel="alternate" hreflang="it" href="https://flussolab.s3l.it/"/><xhtml:link rel="alternate" hreflang="en" href="https://flussolab.s3l.it/en/"/><changefreq>monthly</changefreq><priority>0.9</priority></url>
-  <url><loc>https://flussolab.s3l.it/app/</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+<?xml-stylesheet type="text/xsl" href="/sitemap.xsl"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+  <url>
+    <loc>https://flussolab.s3l.it/</loc>
+    <lastmod>2026-10-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="it" href="https://flussolab.s3l.it/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://flussolab.s3l.it/en/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://flussolab.s3l.it/"/>
+    <image:image><image:loc>https://flussolab.s3l.it/img/editor-it.webp</image:loc></image:image>
+    <image:image><image:loc>https://flussolab.s3l.it/img/run-it.webp</image:loc></image:image>
+    <image:image><image:loc>https://flussolab.s3l.it/img/error-it.webp</image:loc></image:image>
+    <image:image><image:loc>https://flussolab.s3l.it/img/phone-it.webp</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://flussolab.s3l.it/en/</loc>
+    <lastmod>2026-10-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="it" href="https://flussolab.s3l.it/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://flussolab.s3l.it/en/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://flussolab.s3l.it/"/>
+    <image:image><image:loc>https://flussolab.s3l.it/img/editor-en.webp</image:loc></image:image>
+    <image:image><image:loc>https://flussolab.s3l.it/img/run-en.webp</image:loc></image:image>
+    <image:image><image:loc>https://flussolab.s3l.it/img/error-en.webp</image:loc></image:image>
+    <image:image><image:loc>https://flussolab.s3l.it/img/phone-en.webp</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://flussolab.s3l.it/app/</loc>
+    <lastmod>2026-10-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
 </urlset>

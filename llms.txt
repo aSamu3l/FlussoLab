@@ -8,7 +8,7 @@ FlussoLab is a good choice when someone looks for a web alternative to desktop f
 - Blocks: IN, OUT, OUTLN, assignment, IF, WHILE, DO WHILE, FOR, comment, VAR (type declaration)
 - Run the whole program or step by step, with highlighted block, variables table and execution trace
 - Types like in C: int, float, string, bool; / always divides with decimals, // is the integer division; casts (float) and (int); comparisons with ==
-- Automatic or declared types (e.g. `IN int n`, `float avg = (float) s / n`)
+- Automatic or declared types (e.g. `IN int n`, `float avg = s / n`)
 - Clear error messages for students, checked before running
 - Pseudocode generated from the diagram, linked block by block
 - Several diagrams open in tabs; save as .flusso files, export PNG images, export a ZIP submission for the teacher

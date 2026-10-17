@@ -2,7 +2,7 @@
 'use strict';
 /* ====== Project settings ====== */
 const CONFIG = {
-  version: '1.0.1',
+  version: '1.0.2',
   author: 'aSamu3l',
   github: 'https://github.com/aSamu3l',
   repo: 'https://github.com/aSamu3l/FlussoLab',
@@ -848,6 +848,7 @@ function conOut(text, ln) {
   if (!openLine) { openLine = document.createElement('div'); con.appendChild(openLine); }
   openLine.appendChild(document.createTextNode(text));
   if (ln) openLine = null;
+  while (con.childNodes.length > 3000) con.removeChild(con.firstChild);
   con.scrollTop = con.scrollHeight;
 }
 function conLine(text, cls) {
@@ -897,9 +898,9 @@ function scrollToEl(el) {
   if (r.left < cr.left || r.right > cr.right) c.scrollLeft += (r.left - cr.left) - cr.width / 2 + r.width / 2;
 }
 function refresh() { markCur(); renderVars(); setRunUI(); }
-function showErrBox(b, msg) {
+function showErrBox(b, msg, title) {
   const box = $('#errBox');
-  box.innerHTML = `<div><b>${esc(t('errAt'))}${b ? ' · ' + esc(fullLabel(b)) : ''}</b><span>${esc(msg)}</span></div><button class="x" aria-label="${esc(t('close'))}">×</button>`;
+  box.innerHTML = `<div><b>${esc(title || t('errAt'))}${b ? ' · ' + esc(fullLabel(b)) : ''}</b><span>${esc(msg)}</span></div><button class="x" aria-label="${esc(t('close'))}">×</button>`;
   box.hidden = false;
   box.querySelector('.x').onclick = () => { box.hidden = true; };
 }
@@ -915,7 +916,7 @@ function startRun(mode, autoIn) {
   stopRun(true); closePop();
   con.innerHTML = ''; delete con.dataset.idle; lastVals = {}; openLine = null;
   const env = Object.create(null);
-  R = { env, mode, state: 'run', steps: 0, cur: null, errId: null, timer: 0, autoIn: autoIn ? [...autoIn] : null };
+  R = { env, mode, state: 'run', steps: 0, cur: null, errId: null, timer: 0, autoIn: autoIn ? [...autoIn] : null, t0: performance.now() };
   R.io = { out: (s, ln) => conOut(s, ln), trace: traceFn };
   R.gen = FL.exec(prog.main, env, R.io);
   FL.setBoolNames(t('FALSE'), t('TRUE'));
@@ -933,14 +934,17 @@ function pump(val) {
 }
 function tick() {
   if (!R || R.state !== 'run' || R.mode !== 'run') return;
-  const d = SPEEDS[speed], n = d === 0 ? 4000 : 1;
-  for (let k = 0; k < n; k++) { if (pump() !== 'at') { refresh(); return; } }
+  // at full speed: as many steps as fit in a few milliseconds, so the page keeps answering (Stop works even in an endless loop)
+  const d = SPEEDS[speed], until = performance.now() + (d === 0 ? 12 : 0);
+  do { if (pump() !== 'at') { refresh(); return; } } while (performance.now() < until);
+  // running for a long time without asking anything: probably a loop that never ends
+  if (!R.warned && performance.now() - R.t0 > 6000) { R.warned = true; showErrBox(null, t('longRun'), t('longRunT')); }
   refresh();
   R.timer = setTimeout(tick, d);
 }
 function runClick() {
   if (R && R.state !== 'done') {
-    R.mode = 'run'; setRunUI();
+    R.mode = 'run'; R.t0 = performance.now(); setRunUI();
     if (R.state === 'run') { clearTimeout(R.timer); tick(); } else $('#inVal').focus();
     return;
   }
@@ -971,7 +975,7 @@ $('#inForm').addEventListener('submit', e => {
 function giveInput(v) {
   if (openLine) { const sp = document.createElement('span'); sp.className = 'ln-in'; sp.textContent = v; openLine.appendChild(sp); openLine = null; }
   else conLine(v, 'ln-in');
-  $('#inForm').hidden = true; R.state = 'run';
+  $('#inForm').hidden = true; R.state = 'run'; R.t0 = performance.now();
   const r = pump(v);
   if (r === 'at' && R.mode === 'run') tick(); else refresh();
 }
@@ -1002,6 +1006,7 @@ function stopRun(silent) {
   clearTimeout(R.timer);
   const was = R.state !== 'done';
   if (was && !silent) conLine(t('stopped'), 'ln-sys');
+  if (R.warned) $('#errBox').hidden = true;
   R.state = 'done'; R.cur = null; $('#inForm').hidden = true;
   if (R.errId) { R.errId = null; }
   markCur(); setRunUI();

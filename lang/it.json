@@ -107,6 +107,8 @@
     "zipDone": "ZIP pronto: {0} file",
     "zipFail": "Non è stato possibile creare lo ZIP",
     "inEmpty": "Scrivi un valore prima di premere Invio",
+    "longRunT": "Il programma non finisce?",
+    "longRun": "Gira da diversi secondi: se un ciclo non termina mai, premi Stop e controlla che la condizione prima o poi diventi falsa.",
     "installAsk": "Vuoi installare FlussoLab come app? Funziona anche offline.",
     "installBtn": "Installa",
     "installHowBtn": "Come si fa",

@@ -4,6 +4,10 @@
 
 Every change to FlussoLab, newest first. Version numbers follow *major.features.fixes*.
 
+## 1.1.1 · October 19, 2026
+
+- The *Tests* tab no longer shows the device code and the device history: they stay only inside the `.flusso` file, for the teacher.
+
 ## 1.1.0 · October 19, 2026
 
 - **Drop files on the window**: one or more `.flusso` files dropped anywhere on FlussoLab open as new tabs. Works in every browser, Safari and Firefox included.

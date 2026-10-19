@@ -305,10 +305,6 @@ pre.code{margin:0;font:13px/1.55 var(--f-mono);background:var(--paper);border:1p
 .btn.sm{padding:4px 9px;font-size:12.5px}
 .blk.lock .shape{stroke-width:2.6}
 @media (max-width: 420px){ .mytest{grid-template-columns:1fr} .mytest .tdel{justify-self:end} }
-.devinfo{margin-top:22px;padding-top:12px;border-top:1px solid var(--rule)}
-.devinfo .dev{font:12px var(--f-mono);background:var(--surface-2);padding:1px 5px;border-radius:4px}
-.devinfo .dev.me{background:var(--pen-soft);color:var(--pen)}
-.altered{color:var(--red);font-weight:700;font-size:13px;margin:0 0 6px}
 .handin{border:1px solid var(--pen);background:var(--pen-soft);border-radius:9px;padding:10px 12px}
 .handin .sent{margin:8px 0 0;color:var(--green);font-weight:700;font-size:13.5px}
 /* exercise editor (teacher) */

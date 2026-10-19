@@ -4,6 +4,10 @@
 
 Tutte le modifiche di FlussoLab, dalla più recente. I numeri di versione seguono la regola *principale.funzioni.correzioni*.
 
+## 1.1.1 · 19 ottobre 2026
+
+- Nella scheda *Prove* non si vedono più il codice del dispositivo e la cronologia dei dispositivi: restano solo dentro il file `.flusso`, per il docente.
+
 ## 1.1.0 · 19 ottobre 2026
 
 - **Trascina i file sulla finestra**: uno o più file `.flusso` lasciati in qualsiasi punto di FlussoLab si aprono come nuove schede. Funziona in tutti i browser, anche con Safari e Firefox.

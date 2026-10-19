@@ -2,7 +2,7 @@
 'use strict';
 /* ====== Project settings ====== */
 const CONFIG = {
-  version: '1.1.0',
+  version: '1.1.1',
   author: 'aSamu3l',
   github: 'https://github.com/aSamu3l',
   repo: 'https://github.com/aSamu3l/FlussoLab',
@@ -1083,10 +1083,6 @@ function renderEx() {
     const all = [...exRes.ver, ...exRes.mine], ok = all.filter(r => r.ok).length;
     h += `<div class="exsum${ok === all.length ? ' ok' : ''}" role="status">${esc(ok === all.length ? t('exAll') : t('exSummary', ok, all.length))}</div>`;
   }
-  const devs = prog.dev || [];
-  if (devs.length || prog.altered) h += `<div class="sect devinfo">${prog.altered ? `<p class="altered">⚠ ${esc(t('fileAltered'))}</p>` : ''}
-    ${devs.length ? `<p class="note">${esc(t('devHist'))} ${devs.map(x => `<span class="dev${x.d === DEV ? ' me' : ''}" title="${esc(x.t.replace('T', ' '))}">${esc(x.d)}</span>`).join(' → ')}</p>` : ''}
-    <p class="note">${esc(t('devThis', DEV))}</p></div>`;
   box.innerHTML = h;
   $('#exCheck').onclick = () => {
     FL.setBoolNames(t('FALSE'), t('TRUE'));

@@ -17,6 +17,10 @@ Nothing to install: it works on PC, Mac, Chromebook and tablets.
 - Errors explained in plain words
 - Pseudocode and Python code generated automatically
 - Several diagrams open in tabs, `.flusso` files, PNG export and a single ZIP to hand in
+- **Tests** tab: inputs and expected outputs to check the program in one click
+- Shareable links with the diagram inside, no server needed
+- Graded assignments on the teacher's own server, installed separately (the [`server`](https://github.com/aSamu3l/FlussoLab/tree/server) branch)
+- Installable app that also works offline; `.flusso` files and ZIPs open by dropping them on the window
 - Italian and English (more languages welcome), light and dark theme
 
 ## How it looks

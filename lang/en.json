@@ -264,7 +264,6 @@
     "exMode": "How to check the output",
     "exModeExact": "The whole output, line by line",
     "exModeLast": "Only the last line",
-    "exTests": "Tests",
     "exIn": "Input (one per line)",
     "exOut": "Expected output",
     "exAdd": "+ Add test",
@@ -358,7 +357,7 @@
         },
         {
           "t": "input",
-          "v": "n"
+          "v": "int n"
         },
         {
           "t": "assign",
@@ -389,7 +388,7 @@
             },
             {
               "t": "input",
-              "v": "grade"
+              "v": "float grade"
             },
             {
               "t": "assign",
@@ -436,7 +435,7 @@
       "main": [
         {
           "t": "input",
-          "v": "n"
+          "v": "int n"
         },
         {
           "t": "for",
@@ -479,7 +478,7 @@
       "main": [
         {
           "t": "input",
-          "v": "n"
+          "v": "int n"
         },
         {
           "t": "assign",
@@ -557,7 +556,7 @@
           "body": [
             {
               "t": "input",
-              "v": "x"
+              "v": "int x"
             },
             {
               "t": "assign",
@@ -583,7 +582,7 @@
       "main": [
         {
           "t": "input",
-          "v": "n"
+          "v": "int n"
         },
         {
           "t": "for",
@@ -594,7 +593,7 @@
           "body": [
             {
               "t": "input",
-              "v": "v[i]"
+              "v": "int v[i]"
             }
           ]
         },

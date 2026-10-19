@@ -17,6 +17,10 @@ Niente da installare: va su PC, Mac, Chromebook e tablet.
 - Errori spiegati in modo semplice
 - Pseudocodice e codice Python generati in automatico
 - Più diagrammi aperti in schede, salvataggio in file `.flusso`, esportazione in PNG e consegna in un unico ZIP
+- Scheda **Prove**: input e output attesi per controllare il programma con un clic
+- Link condivisibili con il diagramma dentro, senza server
+- Verifiche con il server del docente, installabile a parte (branch [`server`](https://github.com/aSamu3l/FlussoLab/tree/server))
+- App installabile che funziona anche offline; i file `.flusso` e gli ZIP si aprono trascinandoli sulla finestra
 - Italiano e inglese (e altre lingue in arrivo), tema chiaro e scuro
 
 ## Come si presenta

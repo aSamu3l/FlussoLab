@@ -2,7 +2,7 @@
 'use strict';
 /* ====== Project settings ====== */
 const CONFIG = {
-  version: '1.1.1',
+  version: '1.1.2',
   author: 'aSamu3l',
   github: 'https://github.com/aSamu3l',
   repo: 'https://github.com/aSamu3l/FlussoLab',
@@ -1020,7 +1020,6 @@ $('#bStop').onclick = () => stopRun(false);
 const dlg = $('#dlg');
 function openDlg(html) {
   hideMenu(); hideCtx(); closePop();
-  dlg.classList.remove('wide');
   dlg.innerHTML = `<div class="dlg">${html}</div>`;
   if (!dlg.open) { dlg.showModal(); document.documentElement.classList.add('locked'); }
 }
@@ -1278,7 +1277,8 @@ function cmdPng() {
     openDlg(`<h2>${esc(t('pngTitle'))}</h2><div class="pngprev"><img src="${url}" width="${W}" alt="${esc(prog.name || t('untitled'))}"></div>
       <p>${esc(t('pngNote'))}</p>
       <div class="foot"><button class="btn" data-close>${esc(t('close'))}</button><button class="btn primary" id="pngDl">${esc(t('pngDl'))}</button></div>`);
-    $('#pngDl').onclick = () => triggerDownload(url, name, bl);
+    $('#pngDl').onclick = () => { triggerDownload(url, name, bl); dlg.close(); };
+    dlg.addEventListener('close', () => setTimeout(() => URL.revokeObjectURL(url), 30000), { once: true });
   }).catch(() => toast(t('pngErr')));
 }
 
@@ -1477,7 +1477,7 @@ function runCmd(c) {
   if (c === 'link') { opts.link = !opts.link; saveOpts(); hoverLink(null, false); return; }
   if (c === 'py') { opts.py = !opts.py; saveOpts(); renderCode(); return; }
   if (c === 'cut' && f) { clip = JSON.stringify(f.b, replacer); stopRun(); snap(); return deleteSel(f, true); }
-  if (c === 'up' || c === 'down') { const btn = document.createElement('button'); btn.dataset.act = c; return blockAct(c); }
+  if (c === 'up' || c === 'down') return blockAct(c);
   if ((c === 'inv' || c === 'swap' || c === 'off') && f) return blockAct(c);
   if (c.startsWith('ins:')) { const sl = ctxSlot; if (sl) { popSlot = sl; insertType(c.slice(4)); } return; }
   if (c === 'pasteSlot' && ctxSlot && clip) { popSlot = ctxSlot; insertType('__paste'); return; }

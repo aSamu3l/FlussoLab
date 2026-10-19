@@ -4,6 +4,13 @@
 
 Every change to FlussoLab, newest first. Version numbers follow *major.features.fixes*.
 
+## 1.1.2 · October 20, 2026
+
+- The **ready-made examples** declare the type of what they read (`IN int n`, `IN float grade`), so the generated Python code works too.
+- The **PNG image** window closes after the download, like *Save*.
+- Removed styles and texts left over from the old exercise editor.
+- Updated screenshots in the README and on the welcome page; the README lists the newer features (Tests, links, assignments, drag and drop).
+
 ## 1.1.1 · October 19, 2026
 
 - The *Tests* tab no longer shows the device code and the device history: they stay only inside the `.flusso` file, for the teacher.

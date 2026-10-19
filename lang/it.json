@@ -264,7 +264,6 @@
     "exMode": "Come controllare l'output",
     "exModeExact": "Tutto l'output, riga per riga",
     "exModeLast": "Solo l'ultima riga",
-    "exTests": "Prove",
     "exIn": "Input (uno per riga)",
     "exOut": "Output atteso",
     "exAdd": "+ Aggiungi prova",
@@ -358,7 +357,7 @@
         },
         {
           "t": "input",
-          "v": "n"
+          "v": "int n"
         },
         {
           "t": "assign",
@@ -389,7 +388,7 @@
             },
             {
               "t": "input",
-              "v": "voto"
+              "v": "float voto"
             },
             {
               "t": "assign",
@@ -436,7 +435,7 @@
       "main": [
         {
           "t": "input",
-          "v": "n"
+          "v": "int n"
         },
         {
           "t": "for",
@@ -479,7 +478,7 @@
       "main": [
         {
           "t": "input",
-          "v": "n"
+          "v": "int n"
         },
         {
           "t": "assign",
@@ -557,7 +556,7 @@
           "body": [
             {
               "t": "input",
-              "v": "x"
+              "v": "int x"
             },
             {
               "t": "assign",
@@ -583,7 +582,7 @@
       "main": [
         {
           "t": "input",
-          "v": "n"
+          "v": "int n"
         },
         {
           "t": "for",
@@ -594,7 +593,7 @@
           "body": [
             {
               "t": "input",
-              "v": "v[i]"
+              "v": "int v[i]"
             }
           ]
         },

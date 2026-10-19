@@ -4,6 +4,13 @@
 
 Tutte le modifiche di FlussoLab, dalla più recente. I numeri di versione seguono la regola *principale.funzioni.correzioni*.
 
+## 1.1.2 · 20 ottobre 2026
+
+- Gli **esempi pronti** dichiarano il tipo dei dati letti (`IN int n`, `IN float voto`): così anche il codice Python generato funziona.
+- La finestra dell’**immagine PNG** si chiude dopo il download, come quella di *Salva*.
+- Tolti stili e testi rimasti dal vecchio editor di esercizi.
+- Immagini aggiornate nel README e nella pagina di benvenuto; nel README le funzioni nuove (Prove, link, verifiche, trascinamento).
+
 ## 1.1.1 · 19 ottobre 2026
 
 - Nella scheda *Prove* non si vedono più il codice del dispositivo e la cronologia dei dispositivi: restano solo dentro il file `.flusso`, per il docente.

@@ -2,7 +2,7 @@
 'use strict';
 /* ====== Project settings ====== */
 const CONFIG = {
-  version: '1.0.2',
+  version: '1.0.3',
   author: 'aSamu3l',
   github: 'https://github.com/aSamu3l',
   repo: 'https://github.com/aSamu3l/FlussoLab',
@@ -1570,10 +1570,26 @@ async function cmdInstall() {
   if (installEvt) { installEvt.prompt(); try { await installEvt.userChoice; } catch (e) {} installEvt = null; return; }
   openDlg(`<h2>${esc(t('installT'))}</h2><div class="guide">${t('installHow')}</div><div class="foot"><button class="btn primary" data-close>${esc(t('close'))}</button></div>`);
 }
+// .flusso files opened from the computer (double click, "Open with"): each one becomes a tab.
+// With launch_handler "focus-existing" in the manifest they arrive in the window already open.
+async function openLaunched(files) {
+  for (const h of files) {
+    let text; try { text = await (await h.getFile()).text(); } catch (e) { toast(t('badFile')); continue; }
+    let o; try { o = JSON.parse(text); } catch (e) { toast(t('badFile')); continue; }
+    // the same diagram is already open: just show it
+    tabSnapshot();
+    let key = null;
+    try { const m = JSON.parse(JSON.stringify(o.main)); if (m.every(validBlock)) key = JSON.stringify(JSON.parse(JSON.stringify(docOf({ ...o, main: m }), replacer)).main); } catch (e) {}
+    const same = key ? tabs.findIndex(T => { try { const d = JSON.parse(T.data); return d.name === nameOf(o) && JSON.stringify(d.main) === key; } catch (e) { return false; } }) : -1;
+    if (same >= 0) { if (same !== cur) activate(same); continue; }
+    tryLoad(text);
+  }
+}
 if ('launchQueue' in window) {
-  window.launchQueue.setConsumer(async params => {
-    const h = params.files && params.files[0]; if (!h) return;
-    try { const f = await h.getFile(); tryLoad(await f.text()); } catch (e) { toast(t('badFile')); }
+  window.launchQueue.setConsumer(params => {
+    const files = params.files || []; if (!files.length) return;
+    if (!booted) { whenReady.push(() => openLaunched(files)); return; }
+    openLaunched(files);
   });
 }
 window.flussoUpdate = (apply) => {

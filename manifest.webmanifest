@@ -15,6 +15,7 @@
     { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
   "file_handlers": [
-    { "action": "./app/", "accept": { "application/x-flusso": [".flusso"] } }
-  ]
+    { "action": "./app/", "accept": { "application/x-flusso": [".flusso"] }, "launch_type": "single-client" }
+  ],
+  "launch_handler": { "client_mode": ["focus-existing", "auto"] }
 }

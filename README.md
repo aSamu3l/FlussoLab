@@ -39,6 +39,11 @@ FlussoLab can be installed and also works without internet:
 
 - **Chrome or Edge** (Windows, Chromebook, Android): browser menu → “Install FlussoLab”.
 - **iPhone and iPad**: Safari → Share → “Add to Home Screen”.
+- **Mac**: Chrome or Edge as above, or Safari → File → “Add to Dock”.
+
+## What's new
+
+Every version and its changes are in the [changelog](CHANGELOG.md).
 
 ## Contributing
 

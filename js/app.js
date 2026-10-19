@@ -2,7 +2,7 @@
 'use strict';
 /* ====== Project settings ====== */
 const CONFIG = {
-  version: '1.0.3',
+  version: '1.1.0',
   author: 'aSamu3l',
   github: 'https://github.com/aSamu3l',
   repo: 'https://github.com/aSamu3l/FlussoLab',
@@ -1224,16 +1224,15 @@ function cmdSave() {
 
 function cmdOpen() {
   openDlg(`<h2>${esc(t('openTitle'))}</h2>
-    <div class="drop" id="drop"><input type="file" id="fileIn" accept=".flusso" hidden>
+    <div class="drop" id="drop"><input type="file" id="fileIn" accept=".flusso,.zip" multiple hidden>
       <button class="btn primary" id="pick">${esc(t('pickFile'))}</button><span>${esc(t('dropHere'))}</span></div>
     <div class="foot"><button class="btn" data-close>${esc(t('close'))}</button></div>`);
   const fin = $('#fileIn'), drop = $('#drop');
   $('#pick').onclick = () => fin.click();
-  const readFile = file => { if (!file) return; const r = new FileReader(); r.onload = () => tryLoad(String(r.result)); r.readAsText(file); };
-  fin.onchange = () => readFile(fin.files[0]);
+  fin.onchange = () => { if (fin.files.length) openFiles(Array.from(fin.files)); };
   drop.ondragover = e => { e.preventDefault(); drop.classList.add('over'); };
   drop.ondragleave = () => drop.classList.remove('over');
-  drop.ondrop = e => { e.preventDefault(); drop.classList.remove('over'); readFile(e.dataTransfer.files[0]); };
+  drop.ondrop = e => { e.preventDefault(); e.stopPropagation(); drop.classList.remove('over'); $('#dropOver').hidden = true; if (e.dataTransfer.files.length) openFiles(Array.from(e.dataTransfer.files)); };
 };
 // Help → Examples: the ready-made diagrams of the current language; one click opens it in the editor
 function cmdExamples() {
@@ -1364,7 +1363,7 @@ function cmdAbout() {
   const a = CONFIG.author ? (CONFIG.github ? `<a href="${esc(CONFIG.github)}" target="_blank" rel="noopener">${esc(CONFIG.author)}</a>` : esc(CONFIG.author)) : '—';
   openDlg(`<div class="about">
       <svg width="44" height="44" viewBox="0 0 26 26" aria-hidden="true"><rect x="7" y="1.5" width="12" height="6" rx="3" style="fill:var(--tm-f);stroke:var(--tm-s)" stroke-width="1.3"/><path d="M13 7.5v3" style="stroke:var(--wire)" stroke-width="1.3"/><path d="M13 10.5l6 4.5-6 4.5-6-4.5z" style="fill:var(--if-f);stroke:var(--if-s)" stroke-width="1.3"/><path d="M13 19.5v3.5" style="stroke:var(--wire)" stroke-width="1.3"/></svg>
-      <div><h2>FlussoLab</h2><p>${esc(t('version'))} ${esc(CONFIG.version)}</p></div></div>
+      <div><h2>FlussoLab</h2><p>${esc(t('version'))} ${esc(CONFIG.version)}${CONFIG.repo ? ` · <a href="${esc(CONFIG.repo)}/blob/main/${lang === 'it' ? 'CHANGELOG.it.md' : 'CHANGELOG.md'}" target="_blank" rel="noopener">${esc(t('changelog'))}</a>` : ''}</p></div></div>
     <p>${esc(t('aboutText'))}</p>
     <dl class="kv"><dt>${esc(t('devBy'))}</dt><dd>${a}</dd><dt>${esc(t('license'))}</dt><dd><a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.it" target="_blank" rel="noopener">CC BY-NC-SA 4.0</a> · ${esc(t('freeOpen'))}</dd>
     ${CONFIG.repo ? `<dt>${esc(t('source'))}</dt><dd><a href="${esc(CONFIG.repo)}" target="_blank" rel="noopener">${esc(CONFIG.repo.replace(/^https?:\/\//, ''))}</a></dd>` : ''}</dl>
@@ -1570,26 +1569,86 @@ async function cmdInstall() {
   if (installEvt) { installEvt.prompt(); try { await installEvt.userChoice; } catch (e) {} installEvt = null; return; }
   openDlg(`<h2>${esc(t('installT'))}</h2><div class="guide">${t('installHow')}</div><div class="foot"><button class="btn primary" data-close>${esc(t('close'))}</button></div>`);
 }
-// .flusso files opened from the computer (double click, "Open with"): each one becomes a tab.
-// With launch_handler "focus-existing" in the manifest they arrive in the window already open.
-async function openLaunched(files) {
-  for (const h of files) {
-    let text; try { text = await (await h.getFile()).text(); } catch (e) { toast(t('badFile')); continue; }
-    let o; try { o = JSON.parse(text); } catch (e) { toast(t('badFile')); continue; }
-    // the same diagram is already open: just show it
-    tabSnapshot();
-    let key = null;
-    try { const m = JSON.parse(JSON.stringify(o.main)); if (m.every(validBlock)) key = JSON.stringify(JSON.parse(JSON.stringify(docOf({ ...o, main: m }), replacer)).main); } catch (e) {}
-    const same = key ? tabs.findIndex(T => { try { const d = JSON.parse(T.data); return d.name === nameOf(o) && JSON.stringify(d.main) === key; } catch (e) { return false; } }) : -1;
-    if (same >= 0) { if (same !== cur) activate(same); continue; }
-    tryLoad(text);
+/* ---------- opening files: from the computer, dragged on the window, or chosen in File → Open ---------- */
+// one diagram as text: a new tab, or the tab that already has the same diagram
+function openText(text) {
+  let o; try { o = JSON.parse(text); } catch (e) { toast(t('badFile')); return; }
+  tabSnapshot();
+  let key = null;
+  try { const m = JSON.parse(JSON.stringify(o.main)); if (m.every(validBlock)) key = JSON.stringify(JSON.parse(JSON.stringify(docOf({ ...o, main: m }), replacer)).main); } catch (e) {}
+  const same = key ? tabs.findIndex(T => { try { const d = JSON.parse(T.data); return d.name === nameOf(o) && JSON.stringify(d.main) === key; } catch (e) { return false; } }) : -1;
+  if (same >= 0) { if (same !== cur) activate(same); return; }
+  tryLoad(text);
+}
+// reads a .zip and returns its .flusso files [{ file, text }] (stored or deflated entries, like most zip tools make)
+async function zipFlussoFiles(buf) {
+  const u8 = new Uint8Array(buf), dv = new DataView(buf), out = [];
+  let e = -1;
+  for (let i = u8.length - 22; i >= Math.max(0, u8.length - 65557); i--) if (dv.getUint32(i, true) === 0x06054b50) { e = i; break; }
+  if (e < 0) throw new Error('zip');
+  const n = dv.getUint16(e + 10, true); let p = dv.getUint32(e + 16, true);
+  const dec = new TextDecoder();
+  for (let k = 0; k < n && p + 46 <= u8.length && dv.getUint32(p, true) === 0x02014b50; k++) {
+    const method = dv.getUint16(p + 10, true), csize = dv.getUint32(p + 20, true), usize = dv.getUint32(p + 24, true);
+    const nl = dv.getUint16(p + 28, true), xl = dv.getUint16(p + 30, true), cl = dv.getUint16(p + 32, true), lo = dv.getUint32(p + 42, true);
+    const name = dec.decode(u8.subarray(p + 46, p + 46 + nl));
+    p += 46 + nl + xl + cl;
+    const base = name.split('/').pop();
+    if (!/\.flusso$/i.test(base) || base.startsWith('._') || name.startsWith('__MACOSX/') || usize > 5e6) continue;
+    if (dv.getUint32(lo, true) !== 0x04034b50) continue;
+    const start = lo + 30 + dv.getUint16(lo + 26, true) + dv.getUint16(lo + 28, true), raw = u8.subarray(start, start + csize);
+    let data;
+    try {
+      if (method === 0) data = raw;
+      else if (method === 8 && typeof DecompressionStream === 'function') data = new Uint8Array(await new Response(new Blob([raw]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer());
+      else continue;
+    } catch (err) { continue; }
+    out.push({ file: base, text: dec.decode(data) });
   }
+  return out;
+}
+// the diagrams found in a zip: the student picks which ones to open
+function chooseFromZip(zipName, found) {
+  const items = found.map(f => { let o = null; try { o = JSON.parse(f.text); } catch (e) {} return { ...f, o }; })
+    .filter(f => f.o && Array.isArray(f.o.main) && f.o.main.every(b => validBlock(JSON.parse(JSON.stringify(b)))));
+  if (!items.length) { toast(t('zipNoFlusso')); return; }
+  openDlg(`<h2>${esc(t('zipImpT'))}</h2><p>${esc(t('zipImpNote', zipName))}</p>
+    <div class="ziplist">${items.map((f, i) => `<label class="check"><input type="checkbox" data-zi="${i}" checked> <span>${esc(nameOf(f.o) || t('untitled'))} <small style="color:var(--muted)">${esc(f.file)}</small></span></label>`).join('')}</div>
+    <div class="foot"><button class="btn" data-close>${esc(t('cancel'))}</button><button class="btn primary" id="zipImpGo">${esc(t('zipImpGo'))}</button></div>`);
+  const go = $('#zipImpGo'), boxes = $$('[data-zi]', dlg);
+  const upd = () => { const n = boxes.filter(b => b.checked).length; go.disabled = !n; go.textContent = t('zipImpGo') + (n ? ` (${n})` : ''); };
+  boxes.forEach(b => b.onchange = upd); upd();
+  go.onclick = () => { const pick = boxes.filter(b => b.checked).map(b => items[+b.dataset.zi]); dlg.close(); pick.forEach(f => openText(f.text)); };
+}
+// files from anywhere: File objects or handles (launchQueue)
+async function openFiles(list) {
+  const files = [];
+  for (const h of list) { try { files.push(h.getFile ? await h.getFile() : h); } catch (e) { toast(t('badFile')); } }
+  for (const f of files) {
+    if (/\.zip$/i.test(f.name) || /zip/.test(f.type)) {
+      let found; try { found = await zipFlussoFiles(await f.arrayBuffer()); } catch (e) { toast(t('badFile')); continue; }
+      chooseFromZip(f.name, found);
+    } else {
+      let text; try { text = await f.text(); } catch (e) { toast(t('badFile')); continue; }
+      if (dlg.open) dlg.close();
+      openText(text);
+    }
+  }
+}
+// drag files on the whole window (works in every browser, installed or not)
+{
+  const over = $('#dropOver'); let depth = 0;
+  const hasFiles = e => e.dataTransfer && Array.from(e.dataTransfer.types || []).includes('Files');
+  addEventListener('dragenter', e => { if (!hasFiles(e)) return; e.preventDefault(); depth++; over.hidden = false; });
+  addEventListener('dragover', e => { if (!hasFiles(e)) return; e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; });
+  addEventListener('dragleave', e => { if (!hasFiles(e)) return; if (--depth <= 0) { depth = 0; over.hidden = true; } });
+  addEventListener('drop', e => { if (!hasFiles(e)) return; e.preventDefault(); depth = 0; over.hidden = true; if (e.dataTransfer.files.length) openFiles(e.dataTransfer.files); });
 }
 if ('launchQueue' in window) {
   window.launchQueue.setConsumer(params => {
     const files = params.files || []; if (!files.length) return;
-    if (!booted) { whenReady.push(() => openLaunched(files)); return; }
-    openLaunched(files);
+    if (!booted) { whenReady.push(() => openFiles(files)); return; }
+    openFiles(files);
   });
 }
 window.flussoUpdate = (apply) => {

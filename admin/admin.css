@@ -50,6 +50,10 @@ tr.click{cursor:pointer} tr.click:hover td{background:var(--surface-2)}
 .dots span{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:2px;background:var(--red)} .dots span.ok{background:var(--green)} .dots span.h{border-radius:2px}
 .link{display:flex;gap:6px} .link input{flex:1;font-family:var(--mono);font-size:13px}
 .variant{border:1px solid var(--rule);border-radius:12px;padding:14px;margin-bottom:12px;background:var(--surface)}
+.exercise{border:2px solid var(--pen-soft);border-radius:14px;padding:14px;margin-bottom:16px;background:var(--surface-2)}
+.exercise>.row{margin-bottom:12px}
+h3{font-size:15px;margin:14px 0 6px}
+.exres+.exres{border-top:1px solid var(--rule);margin-top:10px}
 .blocks,.tests{display:grid;gap:6px;margin:6px 0 10px}
 .brow{display:grid;grid-template-columns:110px 1fr auto;gap:6px;align-items:center}
 .trow{display:grid;grid-template-columns:1fr 1fr auto auto;gap:6px;align-items:start;padding:8px;border:1px solid var(--rule);border-radius:9px}
@@ -66,8 +70,8 @@ dialog::backdrop{background:rgb(10 16 26 / .45)}
 .res li{display:flex;gap:8px;font-size:14px} .res .ok{color:var(--green)} .res .ko{color:var(--red)}
 .flags li{margin-bottom:4px}
 .codes{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px}
-.codes div{border:1px dashed var(--rule);border-radius:8px;padding:10px}
+.codes>div{border:1px dashed var(--rule);border-radius:8px;padding:10px}
 .codes .code{font-size:18px}
 @media (max-width: 560px){ #who{display:none} .brand small{display:none} .top{padding:8px 12px} .top nav .btn{padding:6px 8px} }
 @media (max-width: 720px){ .grid2,.grid3{grid-template-columns:1fr} .trow{grid-template-columns:1fr} .chk{padding-top:0} .hide-s{display:none} }
-@media print{ .top,.noprint{display:none!important} body{background:#fff;color:#000} main{padding:0} .codes div{break-inside:avoid;border-color:#999} }
+@media print{ .top,.noprint{display:none!important} body{background:#fff;color:#000} main{padding:0} .codes>div{break-inside:avoid;border-color:#999} }

@@ -4,7 +4,7 @@
 
 Questo è il **branch `server`** del progetto [FlussoLab](https://github.com/aSamu3l/FlussoLab): un piccolo server che il docente installa sul proprio computer o su quello della scuola, per fare verifiche con FlussoLab.
 
-- Il docente entra con email e password e crea le verifiche: consegna, **blocchi fissi** (IN e OUT su cui si basa il controllo), prove visibili e **prove nascoste**, una o più **varianti**, orario di apertura e chiusura.
+- Il docente entra con email e password e crea le verifiche: uno o più **esercizi**, ognuno con consegna, **blocchi fissi** (IN e OUT su cui si basa il controllo), prove visibili e **prove nascoste** e una o più **varianti**, più l'orario di apertura e chiusura.
 - Ottiene **un link per la classe** e dei **codici studente** da stampare.
 - Gli studenti usano il solito FlussoLab (`flussolab.s3l.it`): aprono il link, inseriscono il codice, risolvono e premono **Consegna**.
 - Il server **ricorregge ogni consegna** con lo stesso motore dell'app, anche con le prove nascoste che lo studente non vede mai, e mostra al docente una tabella con risultati e segnalazioni: stesso dispositivo usato da più codici, file modificato a mano, blocchi fissi cambiati.
@@ -94,12 +94,14 @@ docker run --rm -v flussolab-data:/data -v "$PWD":/backup alpine tar czf /backup
 
 ## Come funziona una verifica
 
-1. **Blocchi fissi.** Per ogni variante scegli gli IN (la variabile in cui finiscono i dati) e gli OUT (la variabile da stampare). Gli studenti li trovano nel diagramma con un lucchetto: possono spostarli, anche dentro un ciclo, e aggiungere blocchi in mezzo, ma non cancellarli né modificarli.
-2. **Prove.**
+1. **Esercizi.** Una verifica può avere fino a 10 esercizi. Lo studente li trova uno per scheda e **Consegna** li manda tutti insieme; fino alla chiusura può consegnare di nuovo.
+2. **Blocchi fissi.** Per ogni variante scegli gli IN (la variabile in cui finiscono i dati) e gli OUT (la variabile da stampare). Gli studenti li trovano nel diagramma con un lucchetto: possono spostarli, anche dentro un ciclo, e aggiungere blocchi in mezzo, ma non cancellarli né modificarli.
+3. **Prove.**
    - **Input**: un valore per riga, nell'ordine in cui il programma li legge. Ogni IN eseguito, fisso o aggiunto dallo studente, prende il valore successivo; così funziona anche un ciclo che richiede un dato sbagliato.
    - **Output atteso**: un valore per riga, uno per ogni volta che un OUT fisso scrive. I testi scritti dagli altri OUT non contano; i numeri si confrontano con una piccola tolleranza, quindi 7 e 7.0 sono uguali.
-3. **Varianti.** I codici si alternano tra le varianti, così i vicini di banco hanno esercizi diversi.
-4. **Orari.** Prima dell'apertura il link non mostra niente; dopo la chiusura non si consegna più. Fino alla chiusura lo studente può consegnare di nuovo: vale l'ultima consegna, e il docente vede anche le precedenti.
+4. **Varianti.** Ogni codice riceve una variante di ogni esercizio; i codici si alternano tra le varianti, così i vicini di banco hanno combinazioni diverse. Se modifichi la verifica dopo, i codici tengono le varianti che avevano già.
+5. **Risultati.** Una riga per codice, con il risultato di ogni esercizio e il totale; lo ZIP contiene un file `.flusso` per studente ed esercizio, più `risultati.csv`.
+6. **Orari.** Prima dell'apertura il link non mostra niente; dopo la chiusura non si consegna più. Fino alla chiusura lo studente può consegnare di nuovo: vale l'ultima consegna, e il docente vede anche le precedenti.
 
 ## Privacy
 
@@ -115,6 +117,10 @@ Non ci sono account per gli studenti, cookie per gli studenti o log degli access
 ## Versioni
 
 L'app parte dalla versione 1.x, il server dalla 0.x. App e server si scambiano un numero di *protocollo*: se non coincide, l'app mostra un messaggio chiaro invece di un errore.
+
+- Il **server 0.2** (protocollo 2) richiede **FlussoLab 1.2** o successivo. FlussoLab 1.2 funziona anche con il server 0.1.
+- L'aggiornamento dalla 0.1 è automatico: al primo avvio i dati vengono convertiti e le verifiche che hai diventano verifiche con un esercizio.
+- Le novità di ogni versione sono nel [changelog](CHANGELOG.it.md).
 
 ## Sviluppo
 

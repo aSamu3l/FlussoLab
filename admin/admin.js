@@ -12,7 +12,8 @@ const T = IT ? {
   list: 'Verifiche', newV: 'Nuova verifica', none: 'Ancora nessuna verifica. Creane una: gli studenti la apriranno dal solito FlussoLab con un link e il loro codice.',
   title: 'Titolo', opens: 'Apertura', closes: 'Chiusura', openNow: 'vuoto = subito', noClose: 'vuoto = finché non la chiudi',
   st: { open: 'Aperta', soon: 'Non ancora aperta', closed: 'Chiusa' }, submitted: 'Consegne', codes: 'Codici', variants: 'Varianti',
-  ncodes: 'Quanti codici studente', addCodes: 'Aggiungi codici', variant: 'Variante', addVariant: '+ Aggiungi variante', delVariant: 'Togli variante',
+  ncodes: 'Quanti codici studente', addCodes: 'Aggiungi codici', variant: 'Variante', addVariant: '+ Variante', delVariant: 'Togli variante',
+  exercise: 'Esercizio', exercises: 'esercizi', exN: n => `Esercizio ${n}`, exTitle: 'Titolo dell\'esercizio', exTitlePh: 'facoltativo, es. Area del rettangolo', addEx: '+ Aggiungi esercizio', delEx: 'Togli esercizio', delExQ: n => `Togliere l'esercizio ${n} con tutte le sue varianti?`, total: 'Totale', notSent: 'non consegnato', exHint: 'Ogni studente riceve una variante per ogni esercizio: i vicini di banco hanno combinazioni diverse.',
   text: 'Consegna', textPh: 'Cosa deve fare il programma', blocks: 'Blocchi fissi', blocksHint: 'Gli studenti li trovano già nel diagramma: possono spostarli e aggiungere blocchi in mezzo, ma non cancellarli. Gli IN ricevono gli input delle prove; si controlla solo quello che scrivono gli OUT.',
   addBlock: '+ Blocco fisso', varName: 'variabile', tests: 'Prove', testsHint: 'Input: un valore per riga, nell\'ordine in cui il programma li legge. Output atteso: un valore per riga, uno per ogni volta che un OUT fisso scrive.',
   addTest: '+ Prova', input: 'Input', output: 'Output atteso', hidden: 'Nascosta', del: 'Elimina', back: '← Verifiche',
@@ -22,8 +23,9 @@ const T = IT ? {
   flagT: { struttura: 'Blocchi fissi cambiati', alterato: 'File modificato fuori da FlussoLab', altriDispositivi: 'Modificato anche su altri dispositivi', stessoDispositivo: 'Stesso dispositivo di altri codici', stessoIp: 'Stessa rete di altri codici' },
   flagD: { struttura: 'Lo studente ha tolto o cambiato i blocchi fissi: le prove risultano tutte non superate.', alterato: 'Il diagramma arriva da un file modificato a mano.', altriDispositivi: 'Il diagramma è stato modificato anche su un dispositivo diverso da quello che ha consegnato (es. casa e scuola, oppure un file passato).', stessoDispositivo: 'Dallo stesso dispositivo sono arrivate consegne con codici diversi.', stessoIp: 'Stesso indirizzo di rete di altri codici: normale se il server è su internet (tutta la scuola esce con lo stesso indirizzo).' },
   detail: 'Consegna', history: 'Consegne di questo codice', openApp: 'Apri in FlussoLab', dlFile: 'Scarica .flusso', ok: 'superata', ko: 'non superata', hiddenT: 'nascosta',
-  testN: n => `Prova ${n}`, codesFor: v => `Codici · ${v}`, nameCol: 'Studente', printBtn: 'Stampa', needTitle: 'Scrivi un titolo', needTest: n => `La variante ${n} non ha prove`,
-  errs: { struttura: 'blocchi fissi cambiati', loop: 'non termina', moreinput: 'chiede troppi input', crash: 'errore' },
+  testN: n => `Prova ${n}`, codesFor: v => `Codici · ${v}`, nameCol: 'Studente', printBtn: 'Stampa', needTitle: 'Scrivi un titolo', needTest: (e, n) => `Esercizio ${e}, variante ${n}: mancano le prove`,
+  errs: { struttura: 'blocchi fissi cambiati', loop: 'non termina', moreinput: 'chiede troppi input', crash: 'errore', nodef: 'usa una variabile senza valore', empty: 'blocco vuoto', syntax: 'errore di scrittura', type: 'tipi non compatibili', strmix: 'testo unito a un numero', div0: 'divisione per zero', tdecl: 'valore del tipo sbagliato', tdeclint: 'valore con la virgola in un int', tin: 'input del tipo sbagliato', assigneq: '= al posto di ==', lockmissing: 'blocco fisso mancante', lockorder: 'blocchi fissi in ordine diverso' },
+  exShort: 'Es.',
 } : {
   setupT: 'Create the teacher account', setupP: 'First start: choose an email and a password to log in. This will be the only account.',
   loginT: 'Teacher login', email: 'Email', password: 'Password', password2: 'Repeat the password', enter: 'Log in', create: 'Create account',
@@ -32,7 +34,8 @@ const T = IT ? {
   list: 'Verifications', newV: 'New verification', none: 'No verification yet. Create one: students open it in the usual FlussoLab with a link and their code.',
   title: 'Title', opens: 'Opens', closes: 'Closes', openNow: 'empty = now', noClose: 'empty = until you close it',
   st: { open: 'Open', soon: 'Not open yet', closed: 'Closed' }, submitted: 'Submissions', codes: 'Codes', variants: 'Variants',
-  ncodes: 'How many student codes', addCodes: 'Add codes', variant: 'Variant', addVariant: '+ Add variant', delVariant: 'Remove variant',
+  ncodes: 'How many student codes', addCodes: 'Add codes', variant: 'Variant', addVariant: '+ Variant', delVariant: 'Remove variant',
+  exercise: 'Exercise', exercises: 'exercises', exN: n => `Exercise ${n}`, exTitle: 'Exercise title', exTitlePh: 'optional, e.g. Rectangle area', addEx: '+ Add exercise', delEx: 'Remove exercise', delExQ: n => `Remove exercise ${n} with all its variants?`, total: 'Total', notSent: 'not handed in', exHint: 'Every student gets one variant of each exercise: students sitting next to each other get different combinations.',
   text: 'Task', textPh: 'What the program must do', blocks: 'Locked blocks', blocksHint: 'Students find them in the diagram: they can move them and add blocks in between, not delete them. INs receive the test inputs; only what the OUTs write is checked.',
   addBlock: '+ Locked block', varName: 'variable', tests: 'Tests', testsHint: 'Input: one value per line, in the order the program reads them. Expected output: one value per line, one for each time a locked OUT writes.',
   addTest: '+ Test', input: 'Input', output: 'Expected output', hidden: 'Hidden', del: 'Delete', back: '← Verifications',
@@ -42,8 +45,9 @@ const T = IT ? {
   flagT: { struttura: 'Locked blocks changed', alterato: 'File edited outside FlussoLab', altriDispositivi: 'Also edited on other devices', stessoDispositivo: 'Same device as other codes', stessoIp: 'Same network as other codes' },
   flagD: { struttura: 'The student removed or changed the locked blocks: all tests count as failed.', alterato: 'The diagram comes from a hand-edited file.', altriDispositivi: 'The diagram was also edited on a device other than the one that handed it in (e.g. home and school, or a file passed on).', stessoDispositivo: 'Submissions with different codes came from the same device.', stessoIp: 'Same network address as other codes: normal if the server is on the internet (the whole school shares one address).' },
   detail: 'Submission', history: 'Submissions of this code', openApp: 'Open in FlussoLab', dlFile: 'Download .flusso', ok: 'passed', ko: 'failed', hiddenT: 'hidden',
-  testN: n => `Test ${n}`, codesFor: v => `Codes · ${v}`, nameCol: 'Student', printBtn: 'Print', needTitle: 'Write a title', needTest: n => `Variant ${n} has no tests`,
-  errs: { struttura: 'locked blocks changed', loop: 'does not end', moreinput: 'asks for too many inputs', crash: 'error' },
+  testN: n => `Test ${n}`, codesFor: v => `Codes · ${v}`, nameCol: 'Student', printBtn: 'Print', needTitle: 'Write a title', needTest: (e, n) => `Exercise ${e}, variant ${n}: tests are missing`,
+  errs: { struttura: 'locked blocks changed', loop: 'does not end', moreinput: 'asks for too many inputs', crash: 'error', nodef: 'uses a variable with no value', empty: 'empty block', syntax: 'writing error', type: 'types do not match', strmix: 'text joined to a number', div0: 'division by zero', tdecl: 'value of the wrong type', tdeclint: 'decimal value in an int', tin: 'input of the wrong type', assigneq: '= instead of ==', lockmissing: 'locked block missing', lockorder: 'locked blocks in a different order' },
+  exShort: 'Ex.',
 };
 document.documentElement.lang = IT ? 'it' : 'en';
 let ME = null, timer = 0;
@@ -83,7 +87,7 @@ async function viewList() {
   const r = await api('verifiche'), list = r._list || [];
   $('#view').innerHTML = `<div class="row"><h1>${esc(T.list)}</h1><span class="sp"></span><a class="btn primary" href="#/new">${esc(T.newV)}</a></div>
     ${list.length ? `<div class="card" style="padding:4px 8px;margin-top:14px"><table><thead><tr><th>${esc(T.title)}</th><th></th><th class="hide-s">${esc(T.opens)}</th><th class="hide-s">${esc(T.closes)}</th><th>${esc(T.submitted)}</th></tr></thead><tbody>
-      ${list.map(v => `<tr class="click" data-id="${esc(v.id)}"><td><b>${esc(v.title)}</b>${v.variants > 1 ? ` <span class="muted">· ${v.variants} ${esc(T.variants.toLowerCase())}</span>` : ''}</td>
+      ${list.map(v => `<tr class="click" data-id="${esc(v.id)}"><td><b>${esc(v.title)}</b>${v.exercises > 1 ? ` <span class="muted">· ${v.exercises} ${esc(T.exercises)}</span>` : ''}${v.variants > 1 ? ` <span class="muted">· ${v.variants} ${esc(T.variants.toLowerCase())}</span>` : ''}</td>
         <td><span class="badge ${v.status}">${esc(T.st[v.status])}</span></td><td class="hide-s">${esc(fmtDate(v.opens))}</td><td class="hide-s">${esc(fmtDate(v.closes))}</td><td>${v.submitted} / ${v.codes}</td></tr>`).join('')}
     </tbody></table></div>` : `<p class="muted card" style="margin-top:14px">${esc(T.none)}</p>`}`;
   $$('tr[data-id]').forEach(tr => tr.onclick = () => location.hash = '#/v/' + tr.dataset.id);
@@ -91,55 +95,74 @@ async function viewList() {
 
 /* ---------- create / edit ---------- */
 const emptyVariant = n => ({ name: String.fromCharCode(65 + n), text: '', blocks: [{ t: 'input', v: '' }, { t: 'output', v: '' }], tests: [{ in: [], out: '', hidden: false }] });
+const emptyExercise = () => ({ title: '', variants: [emptyVariant(0)] });
+const exLabel = (v, e) => v.exercises[e].title || T.exN(e + 1);
+function variantHTML(x, i, nvar) {
+  return `<section class="variant" data-v="${i}">
+    <div class="row"><h3 style="margin:0">${esc(T.variant)}</h3><input class="in" style="width:120px" data-k="name" value="${esc(x.name)}" maxlength="60"><span class="sp"></span>
+      ${nvar > 1 ? `<button class="btn danger" data-delv="${i}">${esc(T.delVariant)}</button>` : ''}</div>
+    <label class="f" style="margin-top:10px">${esc(T.text)}<textarea data-k="text" rows="3" placeholder="${esc(T.textPh)}">${esc(x.text)}</textarea></label>
+    <h3>${esc(T.blocks)}</h3><p class="hint">${esc(T.blocksHint)}</p>
+    <div class="blocks">${x.blocks.map((b, j) => `<div class="brow" data-b="${j}"><select class="in" data-k="t"><option value="input"${b.t === 'input' ? ' selected' : ''}>IN</option><option value="output"${b.t === 'output' ? ' selected' : ''}>OUT</option></select>
+      <input class="in mono" data-k="v" value="${esc(b.v)}" placeholder="${esc(T.varName)}" spellcheck="false"><button class="btn danger" data-delb="${j}" aria-label="${esc(T.del)}">×</button></div>`).join('')}</div>
+    <button class="btn" data-addb="${i}">${esc(T.addBlock)}</button>
+    <h3 style="margin-top:16px">${esc(T.tests)}</h3><p class="hint">${esc(T.testsHint)}</p>
+    <div class="tests">${x.tests.map((t, j) => `<div class="trow" data-t="${j}"><label><span class="lbl">${esc(T.input)}</span><textarea data-k="in" spellcheck="false">${esc(t.in.join('\n'))}</textarea></label>
+      <label><span class="lbl">${esc(T.output)}</span><textarea data-k="out" spellcheck="false">${esc(t.out)}</textarea></label>
+      <label class="chk"><input type="checkbox" data-k="hidden"${t.hidden ? ' checked' : ''}> ${esc(T.hidden)}</label>
+      <button class="btn danger" style="margin-top:18px" data-delt="${j}" aria-label="${esc(T.del)}">×</button></div>`).join('')}</div>
+    <button class="btn" data-addt="${i}">${esc(T.addTest)}</button></section>`;
+}
 async function viewEdit(id) {
-  let v = { title: '', opens: '', closes: '', variants: [emptyVariant(0)] }, nc = id ? 0 : 30;
+  let v = { title: '', opens: '', closes: '', exercises: [emptyExercise()] }, nc = id ? 0 : 30;
   if (id) { const r = await api('verifiche/' + id); if (r.error) return location.hash = '#/'; v = r; }
   const draw = () => {
+    const nex = v.exercises.length;
     $('#view').innerHTML = `<a href="${id ? '#/v/' + id : '#/'}">${esc(T.back)}</a><h1 style="margin-top:8px">${esc(id ? T.edit : T.newV)}</h1>
       <div class="card"><label class="f">${esc(T.title)}<input id="ti" value="${esc(v.title)}" maxlength="120"></label>
       <div class="grid3"><label class="f">${esc(T.opens)} <span class="muted" style="font-weight:400">(${esc(T.openNow)})</span><input type="datetime-local" id="op" value="${toLocal(v.opens)}"></label>
       <label class="f">${esc(T.closes)} <span class="muted" style="font-weight:400">(${esc(T.noClose)})</span><input type="datetime-local" id="cl" value="${toLocal(v.closes)}"></label>
-      <label class="f">${esc(id ? T.addCodes : T.ncodes)}<input type="number" id="nc" min="${id ? 0 : 1}" max="500" value="${nc}"></label></div></div>
-      ${v.variants.map((x, i) => `<section class="variant" data-v="${i}">
-        <div class="row"><h2 style="margin:0">${esc(T.variant)}</h2><input class="in" style="width:120px" data-k="name" value="${esc(x.name)}" maxlength="60"><span class="sp"></span>
-          ${v.variants.length > 1 ? `<button class="btn danger" data-delv="${i}">${esc(T.delVariant)}</button>` : ''}</div>
-        <label class="f" style="margin-top:10px">${esc(T.text)}<textarea data-k="text" rows="3" placeholder="${esc(T.textPh)}">${esc(x.text)}</textarea></label>
-        <h2>${esc(T.blocks)}</h2><p class="hint">${esc(T.blocksHint)}</p>
-        <div class="blocks">${x.blocks.map((b, j) => `<div class="brow" data-b="${j}"><select class="in" data-k="t"><option value="input"${b.t === 'input' ? ' selected' : ''}>IN</option><option value="output"${b.t === 'output' ? ' selected' : ''}>OUT</option></select>
-          <input class="in mono" data-k="v" value="${esc(b.v)}" placeholder="${esc(T.varName)}" spellcheck="false"><button class="btn danger" data-delb="${j}" aria-label="${esc(T.del)}">×</button></div>`).join('')}</div>
-        <button class="btn" data-addb="${i}">${esc(T.addBlock)}</button>
-        <h2 style="margin-top:16px">${esc(T.tests)}</h2><p class="hint">${esc(T.testsHint)}</p>
-        <div class="tests">${x.tests.map((t, j) => `<div class="trow" data-t="${j}"><label><span class="lbl">${esc(T.input)}</span><textarea data-k="in" spellcheck="false">${esc(t.in.join('\n'))}</textarea></label>
-          <label><span class="lbl">${esc(T.output)}</span><textarea data-k="out" spellcheck="false">${esc(t.out)}</textarea></label>
-          <label class="chk"><input type="checkbox" data-k="hidden"${t.hidden ? ' checked' : ''}> ${esc(T.hidden)}</label>
-          <button class="btn danger" style="margin-top:18px" data-delt="${j}" aria-label="${esc(T.del)}">×</button></div>`).join('')}</div>
-        <button class="btn" data-addt="${i}">${esc(T.addTest)}</button></section>`).join('')}
-      <div class="row noprint"><button class="btn" id="addV">${esc(T.addVariant)}</button><span class="sp"></span><p class="err" id="err" style="margin:0"></p>
+      <label class="f">${esc(id ? T.addCodes : T.ncodes)}<input type="number" id="nc" min="${id ? 0 : 1}" max="500" value="${nc}"></label></div>
+      <p class="hint" style="margin:0">${esc(T.exHint)}</p></div>
+      ${v.exercises.map((ex, e) => `<section class="exercise" data-e="${e}">
+        <div class="row"><h2 style="margin:0">${esc(T.exN(e + 1))}</h2><input class="in" style="flex:1;min-width:160px" data-k="extitle" value="${esc(ex.title)}" maxlength="120" placeholder="${esc(T.exTitlePh)}" aria-label="${esc(T.exTitle)}">
+          ${nex > 1 ? `<button class="btn danger" data-dele="${e}">${esc(T.delEx)}</button>` : ''}</div>
+        ${ex.variants.map((x, i) => variantHTML(x, i, ex.variants.length)).join('')}
+        <button class="btn" data-addv="${e}">${esc(T.addVariant)}</button></section>`).join('')}
+      <div class="row noprint"><button class="btn" id="addE">${esc(T.addEx)}</button><span class="sp"></span><p class="err" id="err" style="margin:0"></p>
         <a class="btn" href="${id ? '#/v/' + id : '#/'}">${esc(T.cancel)}</a><button class="btn primary" id="saveV">${esc(T.save)}</button></div>`;
-    $('#addV').onclick = () => { read(); v.variants.push(emptyVariant(v.variants.length)); draw(); };
-    $$('[data-delv]').forEach(b => b.onclick = () => { read(); v.variants.splice(+b.dataset.delv, 1); draw(); });
-    $$('[data-addb]').forEach(b => b.onclick = () => { read(); v.variants[+b.dataset.addb].blocks.push({ t: 'output', v: '' }); draw(); });
-    $$('[data-addt]').forEach(b => b.onclick = () => { read(); v.variants[+b.dataset.addt].tests.push({ in: [], out: '', hidden: false }); draw(); });
-    $$('[data-delb]').forEach(b => b.onclick = () => { read(); v.variants[+b.closest('[data-v]').dataset.v].blocks.splice(+b.dataset.delb, 1); draw(); });
-    $$('[data-delt]').forEach(b => b.onclick = () => { read(); v.variants[+b.closest('[data-v]').dataset.v].tests.splice(+b.dataset.delt, 1); draw(); });
+    const E = el => v.exercises[+el.closest('[data-e]').dataset.e], V = el => E(el).variants[+el.closest('[data-v]').dataset.v];
+    $('#addE').onclick = () => { read(); v.exercises.push(emptyExercise()); draw(); };
+    $$('[data-dele]').forEach(b => b.onclick = () => { if (!confirm(T.delExQ(+b.dataset.dele + 1))) return; read(); v.exercises.splice(+b.dataset.dele, 1); draw(); });
+    $$('[data-addv]').forEach(b => b.onclick = () => { read(); const x = E(b); x.variants.push(emptyVariant(x.variants.length)); draw(); });
+    $$('[data-delv]').forEach(b => b.onclick = () => { read(); E(b).variants.splice(+b.dataset.delv, 1); draw(); });
+    $$('[data-addb]').forEach(b => b.onclick = () => { read(); V(b).blocks.push({ t: 'output', v: '' }); draw(); });
+    $$('[data-addt]').forEach(b => b.onclick = () => { read(); V(b).tests.push({ in: [], out: '', hidden: false }); draw(); });
+    $$('[data-delb]').forEach(b => b.onclick = () => { read(); V(b).blocks.splice(+b.dataset.delb, 1); draw(); });
+    $$('[data-delt]').forEach(b => b.onclick = () => { read(); V(b).tests.splice(+b.dataset.delt, 1); draw(); });
     $('#saveV').onclick = save;
   };
   const read = () => {
     v.title = $('#ti').value; nc = +$('#nc').value || 0;
     v.opens = $('#op').value ? new Date($('#op').value).toISOString() : '';
     v.closes = $('#cl').value ? new Date($('#cl').value).toISOString() : '';
-    v.variants = $$('[data-v]').map(sec => ({
-      name: $('[data-k=name]', sec).value, text: $('[data-k=text]', sec).value,
-      blocks: $$('.brow', sec).map(r => ({ t: $('[data-k=t]', r).value, v: $('[data-k=v]', r).value.trim() })),
-      tests: $$('.trow', sec).map(r => ({ in: $('[data-k=in]', r).value.split('\n').map(s => s.trim()).filter(Boolean), out: $('[data-k=out]', r).value, hidden: $('[data-k=hidden]', r).checked })),
+    v.exercises = $$('[data-e]').map(es => ({
+      title: $('[data-k=extitle]', es).value,
+      variants: $$('[data-v]', es).map(sec => ({
+        name: $('[data-k=name]', sec).value, text: $('[data-k=text]', sec).value,
+        blocks: $$('.brow', sec).map(r => ({ t: $('[data-k=t]', r).value, v: $('[data-k=v]', r).value.trim() })),
+        tests: $$('.trow', sec).map(r => ({ in: $('[data-k=in]', r).value.split('\n').map(s => s.trim()).filter(Boolean), out: $('[data-k=out]', r).value, hidden: $('[data-k=hidden]', r).checked })),
+      })),
     }));
   };
   const save = async () => {
     read();
     if (!v.title.trim()) return $('#err').textContent = T.needTitle;
-    v.variants.forEach(x => { x.blocks = x.blocks.filter(b => b.v); x.tests = x.tests.filter(t => t.in.length || t.out.trim()); });
-    const bad = v.variants.find(x => !x.tests.length); if (bad) return $('#err').textContent = T.needTest(bad.name);
-    const body = { title: v.title, opens: v.opens, closes: v.closes, variants: v.variants, ncodes: nc };
+    for (const [e, ex] of v.exercises.entries()) {
+      ex.variants.forEach(x => { x.blocks = x.blocks.filter(b => b.v); x.tests = x.tests.filter(t => t.in.length || t.out.trim()); });
+      const bad = ex.variants.find(x => !x.tests.length); if (bad) return $('#err').textContent = T.needTest(e + 1, bad.name);
+    }
+    const body = { title: v.title, opens: v.opens, closes: v.closes, exercises: v.exercises, ncodes: nc };
     if (id && body.ncodes) { const cur = await api('verifiche/' + id); body.ncodes += cur.codes.length; }
     const r = await api(id ? 'verifiche/' + id : 'verifiche', { method: id ? 'PUT' : 'POST', body });
     if (r.status === 200) { toast(T.saved); location.hash = '#/v/' + (id || r.id); } else $('#err').textContent = r.error || 'error';
@@ -153,7 +176,7 @@ async function viewDetail(id) {
   const link = linkFor(id);
   $('#view').innerHTML = `<a href="#/">${esc(T.back)}</a>
     <div class="row" style="margin-top:8px"><h1 style="margin:0">${esc(v.title)}</h1><span class="badge ${v.status}">${esc(T.st[v.status])}</span></div>
-    <p class="muted">${esc(T.opens)}: ${esc(fmtDate(v.opens) === '—' ? fmtDate(v.created) : fmtDate(v.opens))} · ${esc(T.closes)}: ${esc(fmtDate(v.closes))}${v.variants.length > 1 ? ` · ${v.variants.length} ${esc(T.variants.toLowerCase())}` : ''}</p>
+    <p class="muted">${esc(T.opens)}: ${esc(fmtDate(v.opens) === '—' ? fmtDate(v.created) : fmtDate(v.opens))} · ${esc(T.closes)}: ${esc(fmtDate(v.closes))}${v.exercises.length > 1 ? ` · ${v.exercises.length} ${esc(T.exercises)}` : ''}</p>
     <div class="card"><h2>${esc(T.link)}</h2><div class="link"><input class="in" readonly value="${esc(link)}" id="lk"><button class="btn primary" id="cp">${esc(T.copy)}</button></div>
       <div class="row" style="margin-top:12px"><a class="btn" href="#/v/${id}/codes">${esc(T.printCodes)} (${v.codes.length})</a><a class="btn" href="/api/admin/verifiche/${id}/zip">${esc(T.zip)}</a>
       <span class="sp"></span><a class="btn" href="#/v/${id}/edit">${esc(T.edit)}</a>${v.status !== 'closed' ? `<button class="btn" id="cn">${esc(T.closeNow)}</button>` : ''}<button class="btn danger" id="dl">${esc(T.del)}</button></div></div>
@@ -164,39 +187,58 @@ async function viewDetail(id) {
   const load = async () => {
     if (!$('#subs')) return;
     const r = await api(`verifiche/${id}/submissions`), subs = r._list || [];
-    $('#subs').innerHTML = subs.length ? `<table><thead><tr><th>${esc(T.code)}</th>${v.variants.length > 1 ? `<th>${esc(T.variant)}</th>` : ''}<th>${esc(T.score)}</th><th class="hide-s">${esc(T.when)}</th><th class="hide-s">${esc(T.count)}</th><th class="hide-s">${esc(T.device)}</th><th>${esc(T.flags)}</th></tr></thead><tbody>
-      ${subs.map(s => `<tr class="click" data-s="${s.id}"><td class="code">${esc(s.code)}</td>${v.variants.length > 1 ? `<td>${esc(v.variants[s.variant] ? v.variants[s.variant].name : '')}</td>` : ''}
-        <td><span class="score${s.passed === s.total ? ' full' : ''}">${s.passed}/${s.total}</span> <span class="dots">${s.visible.map(o => `<span class="${o ? 'ok' : ''}"></span>`).join('')}${s.hidden.map(o => `<span class="h${o ? ' ok' : ''}"></span>`).join('')}</span></td>
+    const nex = v.exercises.length, multiVar = v.exercises.some(x => x.variants.length > 1);
+    const vname = (e, k) => v.exercises[e].variants[k] ? v.exercises[e].variants[k].name : '';
+    const dots = x => `<span class="dots">${x.visible.map(o => `<span class="${o ? 'ok' : ''}"></span>`).join('')}${x.hidden.map(o => `<span class="h${o ? ' ok' : ''}"></span>`).join('')}</span>`;
+    const cell = (x, e) => x.done ? `<span class="score${x.passed === x.total ? ' full' : ''}">${x.passed}/${x.total}</span>${multiVar && v.exercises[e].variants.length > 1 ? ` <span class="muted">${esc(vname(e, x.variant))}</span>` : ''} ${dots(x)}`
+      : `<span class="muted">— ${esc(T.notSent)}</span>`;
+    $('#subs').innerHTML = subs.length ? `<div style="overflow-x:auto"><table><thead><tr><th>${esc(T.code)}</th>
+      ${nex > 1 ? v.exercises.map((x, e) => `<th>${esc(exLabel(v, e))}</th>`).join('') + `<th>${esc(T.total)}</th>` : `${multiVar ? `<th>${esc(T.variant)}</th>` : ''}<th>${esc(T.score)}</th>`}
+      <th class="hide-s">${esc(T.when)}</th><th class="hide-s">${esc(T.count)}</th><th class="hide-s">${esc(T.device)}</th><th>${esc(T.flags)}</th></tr></thead><tbody>
+      ${subs.map(s => `<tr class="click" data-s="${esc(s.code)}"><td class="code">${esc(s.code)}</td>
+        ${nex > 1 ? s.ex.map((x, e) => `<td>${cell(x, e)}</td>`).join('') + `<td><span class="score${s.passed === s.total ? ' full' : ''}">${s.passed}/${s.total}</span></td>`
+          : `${multiVar ? `<td>${esc(vname(0, s.ex[0].variant))}</td>` : ''}<td><span class="score${s.passed === s.total ? ' full' : ''}">${s.passed}/${s.total}</span> ${dots(s.ex[0])}</td>`}
         <td class="hide-s">${esc(fmtDate(s.at))}</td><td class="hide-s">${s.count}</td><td class="hide-s mono">${esc(s.device || '—')}</td>
-        <td>${s.flags.map(f => `<span class="badge ${f === 'stessoIp' ? '' : 'warn'}" title="${esc(T.flagD[f] || '')}">${esc(T.flagT[f] || f)}</span>`).join(' ')}</td></tr>`).join('')}</tbody></table>` : `<p class="muted">${esc(T.noSubs)}</p>`;
-    $$('tr[data-s]').forEach(tr => tr.onclick = () => showSub(+tr.dataset.s, v, subs.find(s => s.id === +tr.dataset.s)));
+        <td>${s.flags.map(f => `<span class="badge ${f === 'stessoIp' ? '' : 'warn'}" title="${esc(T.flagD[f] || '')}">${esc(T.flagT[f] || f)}</span>`).join(' ')}</td></tr>`).join('')}</tbody></table></div>` : `<p class="muted">${esc(T.noSubs)}</p>`;
+    $$('tr[data-s]').forEach(tr => tr.onclick = () => showSub(v, subs.find(s => s.code === tr.dataset.s)));
   };
   await load();
   clearInterval(timer); timer = setInterval(() => { if (location.hash === '#/v/' + id && !$('#dlg').open) load(); }, 10000);
 }
-async function showSub(sid, v, row) {
-  const s = await api('submissions/' + sid);
-  const vr = v.variants[s.variant] || v.variants[0];
-  const file = { format: 'flussolab', version: 1, name: `${v.title} · ${s.code}`, main: s.doc.main, dev: s.doc.dev };
-  let appLink = '';
-  try { appLink = ME.appUrl + '#' + FL.shareEncode({ name: file.name, main: s.doc.main }); } catch (e) {}
+// one code: every exercise with its tests, the warnings, the files
+async function showSub(v, row) {
+  const nex = v.exercises.length, done = row.ex.map((x, e) => ({ ...x, e })).filter(x => x.done);
+  const subs = await Promise.all(done.map(x => api('submissions/' + x.id)));
   const d = $('#dlg');
-  d.innerHTML = `<div class="row"><h2 style="margin:0">${esc(T.detail)} · <span class="code">${esc(s.code)}</span></h2><span class="sp"></span><button class="btn ghost" id="x">${esc(T.close)}</button></div>
-    <p class="muted">${esc(fmtDate(s.at))}${v.variants.length > 1 ? ` · ${esc(T.variant)} ${esc(vr.name)}` : ''} · ${esc(T.device)} <span class="mono">${esc(s.device || '—')}</span>${s.ip ? ` · IP <span class="mono">${esc(s.ip)}</span>` : ''}</p>
-    <ul class="res">${s.results.results.map((r, i) => `<li><span class="${r.ok ? 'ok' : 'ko'}">${r.ok ? '✓' : '✗'}</span><span>${esc(T.testN(i + 1))}${r.hidden ? ` (${esc(T.hiddenT)})` : ''}: ${esc(r.ok ? T.ok : T.ko)}${!r.ok && r.err ? ` — ${esc(T.errs[r.err] || r.err)}` : ''}${!r.ok && r.got ? ` <span class="mono muted">→ ${esc(r.got)}</span>` : ''}</span></li>`).join('')}</ul>
-    ${s.flags.length || (row && row.flags.length) ? `<ul class="flags">${[...new Set([...(row ? row.flags : []), ...s.flags])].map(f => `<li><b>${esc(T.flagT[f] || f)}</b>: ${esc(T.flagD[f] || '')}</li>`).join('')}</ul>` : ''}
-    ${s.doc.dev && s.doc.dev.length ? `<p class="muted">${esc(T.device)}: ${s.doc.dev.map(x => `<span class="mono">${esc(x.d)}</span>`).join(' → ')}</p>` : ''}
-    ${row && row.history.length > 1 ? `<p class="muted">${esc(T.history)}: ${row.history.map(h => esc(fmtDate(h.at))).join(', ')}</p>` : ''}
-    <div class="row" style="margin-top:12px">${appLink ? `<a class="btn primary" href="${esc(appLink)}" target="_blank" rel="noopener">${esc(T.openApp)}</a>` : ''}<button class="btn" id="dlf">${esc(T.dlFile)}</button></div>`;
+  const part = (x, s) => {
+    const ex = v.exercises[x.e], vr = ex.variants[s.variant] || ex.variants[0];
+    let appLink = ''; try { appLink = ME.appUrl + '#' + FL.shareEncode({ name: `${v.title}${nex > 1 ? ' · ' + exLabel(v, x.e) : ''} · ${s.code}`, main: s.doc.main }); } catch (e) {}
+    return `<div class="exres">${nex > 1 ? `<h3 style="margin:14px 0 4px">${esc(exLabel(v, x.e))}${ex.variants.length > 1 ? ` · <span class="muted">${esc(T.variant)} ${esc(vr.name)}</span>` : ''}</h3>` : ''}
+      <ul class="res">${s.results.results.map((r, i) => `<li><span class="${r.ok ? 'ok' : 'ko'}">${r.ok ? '✓' : '✗'}</span><span>${esc(T.testN(i + 1))}${r.hidden ? ` (${esc(T.hiddenT)})` : ''}: ${esc(r.ok ? T.ok : T.ko)}${!r.ok && r.err ? ` — ${esc(T.errs[r.err] || T.errs.crash + ' (' + r.err + ')')}` : ''}${!r.ok && r.got ? ` <span class="mono muted">→ ${esc(r.got)}</span>` : ''}</span></li>`).join('')}</ul>
+      ${s.doc.dev && s.doc.dev.length ? `<p class="muted">${esc(T.device)}: ${s.doc.dev.map(x => `<span class="mono">${esc(x.d)}</span>`).join(' → ')}</p>` : ''}
+      <div class="row">${appLink ? `<a class="btn primary" href="${esc(appLink)}" target="_blank" rel="noopener">${esc(T.openApp)}</a>` : ''}<button class="btn" data-dl="${x.e}">${esc(T.dlFile)}</button></div></div>`;
+  };
+  const missing = row.ex.map((x, e) => ({ ...x, e })).filter(x => !x.done);
+  d.innerHTML = `<div class="row"><h2 style="margin:0">${esc(T.detail)} · <span class="code">${esc(row.code)}</span></h2><span class="sp"></span><button class="btn ghost" id="x">${esc(T.close)}</button></div>
+    <p class="muted">${esc(fmtDate(row.at))} · ${esc(T.device)} <span class="mono">${esc(row.device || '—')}</span>${row.ip ? ` · IP <span class="mono">${esc(row.ip)}</span>` : ''}${nex > 1 ? ` · ${esc(T.total)} <b>${row.passed}/${row.total}</b>` : ''}</p>
+    ${row.flags.length ? `<ul class="flags">${row.flags.map(f => `<li><b>${esc(T.flagT[f] || f)}</b>: ${esc(T.flagD[f] || '')}</li>`).join('')}</ul>` : ''}
+    ${done.map((x, k) => part(x, subs[k])).join('')}
+    ${missing.length ? `<p class="muted" style="margin-top:12px">${missing.map(x => `${esc(exLabel(v, x.e))}: ${esc(T.notSent)}`).join(' · ')}</p>` : ''}
+    ${row.history.length > 1 ? `<p class="muted">${esc(T.history)}: ${row.history.map(h => esc(fmtDate(h.at))).join(', ')}</p>` : ''}`;
   d.showModal();
   $('#x', d).onclick = () => d.close();
-  $('#dlf', d).onclick = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(file, null, 2)], { type: 'application/json' })); a.download = s.code + '.flusso'; a.click(); };
+  $$('[data-dl]', d).forEach(b => b.onclick = () => {
+    const e = +b.dataset.dl, s = subs[done.findIndex(x => x.e === e)];
+    const file = { format: 'flussolab', version: 1, name: `${v.title}${nex > 1 ? ' · ' + exLabel(v, e) : ''} · ${row.code}`, main: s.doc.main, dev: s.doc.dev };
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(file, null, 2)], { type: 'application/json' }));
+    a.download = row.code + (nex > 1 ? `_es${e + 1}` : '') + '.flusso'; a.click();
+  });
 }
 async function viewCodes(id) {
   const v = await api('verifiche/' + id); if (v.error) return location.hash = '#/';
   $('#view').innerHTML = `<div class="row noprint"><a href="#/v/${id}">← ${esc(v.title)}</a><span class="sp"></span><button class="btn primary" id="pr">${esc(T.printBtn)}</button></div>
     <h1 style="margin-top:10px">${esc(T.codesFor(v.title))}</h1>
-    <div class="codes">${v.codes.map(c => `<div><div class="code">${esc(c.code)}</div>${v.variants.length > 1 ? `<div class="muted">${esc(T.variant)} ${esc(v.variants[c.variant].name)}</div>` : ''}<div class="muted" style="margin-top:14px;border-top:1px solid var(--rule)">${esc(T.nameCol)}</div></div>`).join('')}</div>`;
+    <div class="codes">${v.codes.map(c => `<div><div class="code">${esc(c.code)}</div>${v.exercises.some(x => x.variants.length > 1) ? `<div class="muted">${v.exercises.map((x, e) => x.variants.length > 1 ? esc((v.exercises.length > 1 ? T.exShort + (e + 1) + ' ' : T.variant + ' ') + x.variants[c.vars[e]].name) : '').filter(Boolean).join(' · ')}</div>` : ''}<div class="muted" style="margin-top:14px;border-top:1px solid var(--rule)">${esc(T.nameCol)}</div></div>`).join('')}</div>`;
   $('#pr').onclick = () => print();
 }
 

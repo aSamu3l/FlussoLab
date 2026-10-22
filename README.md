@@ -4,7 +4,7 @@
 
 This is the **`server` branch** of [FlussoLab](https://github.com/aSamu3l/FlussoLab): a small server a teacher installs on their own computer or the school's, to run verifications (tests) with FlussoLab.
 
-- The teacher logs in with email and password and creates verifications: task, **locked blocks** (the IN and OUT blocks the check relies on), visible and **hidden tests**, one or more **variants**, opening and closing time.
+- The teacher logs in with email and password and creates verifications: one or more **exercises**, each with its task, **locked blocks** (the IN and OUT blocks the check relies on), visible and **hidden tests** and one or more **variants**, plus opening and closing time.
 - They get **one link for the class** and **student codes** to print.
 - Students use the usual FlussoLab (`flussolab.s3l.it`): they open the link, enter their code, solve it and press **Hand in**.
 - The server **re-checks every submission** with the same engine as the app, including the hidden tests students never see, and shows the teacher a table of results and warnings: same device used by several codes, hand-edited file, locked blocks changed.
@@ -94,12 +94,14 @@ docker run --rm -v flussolab-data:/data -v "$PWD":/backup alpine tar czf /backup
 
 ## How a verification works
 
-1. **Locked blocks.** For each variant choose the INs (the variable the data goes into) and the OUTs (the variable to print). Students find them in the diagram with a padlock: they can move them, even inside a loop, and add blocks in between, but not delete or edit them.
-2. **Tests.**
+1. **Exercises.** A verification can have up to 10 exercises. Students open each one in its own tab and **Hand in** sends all of them together; they can hand in again until it closes.
+2. **Locked blocks.** For each variant choose the INs (the variable the data goes into) and the OUTs (the variable to print). Students find them in the diagram with a padlock: they can move them, even inside a loop, and add blocks in between, but not delete or edit them.
+3. **Tests.**
    - **Input**: one value per line, in the order the program reads them. Every IN that runs, locked or added by the student, takes the next value, so a loop asking again for a wrong value works too.
    - **Expected output**: one value per line, one for each time a locked OUT writes. Text written by other OUTs does not count; numbers are compared with a small tolerance, so 7 and 7.0 are equal.
-3. **Variants.** Codes alternate between variants, so students sitting next to each other get different exercises.
-4. **Times.** Before it opens the link shows nothing; after it closes no one can hand in. Until then a student can hand in again: the last submission counts, and the teacher also sees the earlier ones.
+4. **Variants.** Every code gets one variant of each exercise; codes alternate between them, so students sitting next to each other get different combinations. Editing a verification later keeps the variants already given to the codes.
+5. **Results.** One row per code, with the result of every exercise and the total; the ZIP holds one `.flusso` file per student and exercise, and `risultati.csv`.
+6. **Times.** Before it opens the link shows nothing; after it closes no one can hand in. Until then a student can hand in again: the last submission counts, and the teacher also sees the earlier ones.
 
 ## Privacy
 
@@ -115,6 +117,10 @@ There are no student accounts, no student cookies and no access logs. Data stays
 ## Versions
 
 The app starts from 1.x, the server from 0.x. App and server exchange a *protocol* number: if it does not match, the app shows a clear message instead of an error.
+
+- **Server 0.2** (protocol 2) needs **FlussoLab 1.2** or newer. FlussoLab 1.2 also works with server 0.1.
+- Updating from 0.1 is automatic: the data is converted at the first start and the verifications you already have become verifications with one exercise.
+- The changes of every version are in the [changelog](CHANGELOG.md).
 
 ## Development
 

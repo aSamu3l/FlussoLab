@@ -5,7 +5,7 @@ const path = require('node:path');
 const fs = require('node:fs');
 const { DatabaseSync } = require('node:sqlite');
 
-const SCHEMA = 1;
+const SCHEMA = 2;
 
 function open(dir) {
   try {
@@ -25,14 +25,22 @@ function open(dir) {
     CREATE TABLE IF NOT EXISTS admin (id INTEGER PRIMARY KEY, email TEXT UNIQUE NOT NULL, hash TEXT NOT NULL, salt TEXT NOT NULL, created TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS sessions (token TEXT PRIMARY KEY, admin_id INTEGER NOT NULL, expires INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS verifiche (id TEXT PRIMARY KEY, data TEXT NOT NULL, created TEXT NOT NULL, updated TEXT NOT NULL);
-    CREATE TABLE IF NOT EXISTS codes (vid TEXT NOT NULL REFERENCES verifiche(id) ON DELETE CASCADE, code TEXT NOT NULL, variant INTEGER NOT NULL, PRIMARY KEY (vid, code));
+    CREATE TABLE IF NOT EXISTS codes (vid TEXT NOT NULL REFERENCES verifiche(id) ON DELETE CASCADE, code TEXT NOT NULL, variant INTEGER NOT NULL, vars TEXT, PRIMARY KEY (vid, code));
     CREATE TABLE IF NOT EXISTS submissions (id INTEGER PRIMARY KEY AUTOINCREMENT, vid TEXT NOT NULL REFERENCES verifiche(id) ON DELETE CASCADE,
-      code TEXT NOT NULL, variant INTEGER NOT NULL, at TEXT NOT NULL, ip TEXT, device TEXT, doc TEXT NOT NULL, results TEXT NOT NULL, flags TEXT NOT NULL);
+      code TEXT NOT NULL, ex INTEGER NOT NULL DEFAULT 0, variant INTEGER NOT NULL, at TEXT NOT NULL, ip TEXT, device TEXT, doc TEXT NOT NULL, results TEXT NOT NULL, flags TEXT NOT NULL);
     CREATE INDEX IF NOT EXISTS sub_vid ON submissions(vid, code);
   `);
   const cur = db.prepare('SELECT v FROM meta WHERE k = ?').get('schema');
-  if (!cur) db.prepare('INSERT INTO meta (k, v) VALUES (?, ?)').run('schema', String(SCHEMA));
-  // future schema changes go here, one step per version: if (Number(cur.v) < 2) { ... }
+  const have = cur ? Number(cur.v) : 0;
+  // schema changes, one step per version
+  if (have < 2) {
+    // 2: verifiche with several exercises. Each code keeps its variant for every exercise (vars, a JSON array),
+    // each submission says which exercise it is (ex)
+    const cols = t => db.prepare(`PRAGMA table_info(${t})`).all().map(c => c.name);
+    if (!cols('codes').includes('vars')) { db.exec('ALTER TABLE codes ADD COLUMN vars TEXT'); db.exec("UPDATE codes SET vars = '[' || variant || ']'"); }
+    if (!cols('submissions').includes('ex')) db.exec('ALTER TABLE submissions ADD COLUMN ex INTEGER NOT NULL DEFAULT 0');
+  }
+  db.prepare('INSERT OR REPLACE INTO meta (k, v) VALUES (?, ?)').run('schema', String(SCHEMA));
   return db;
 }
 module.exports = { open, SCHEMA };

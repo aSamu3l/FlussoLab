@@ -10,8 +10,8 @@ const { open } = require('./db.js');
 const { cleanMain, startMain, grade } = require('./check.js');
 const { makeZip } = require('./zip.js');
 
-const VERSION = '0.1.0';
-const PROTOCOL = 1; // bump when the app and the server stop understanding each other
+const VERSION = '0.2.0';
+const PROTOCOL = 2; // bump when the app and the server stop understanding each other
 const CFG = {
   port: Number(process.env.PORT || 8080),
   dataDir: process.env.DATA_DIR || path.join(__dirname, '..', 'data'),
@@ -79,57 +79,100 @@ function session(req) {
 const secure = req => req.headers['x-forwarded-proto'] === 'https' || !!req.socket.encrypted;
 const cookie = (req, token, maxAge) => `fl_s=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${maxAge}${secure(req) ? '; Secure' : ''}`;
 
-/* ---------- verifiche ---------- */
+/* ---------- verifiche ----------
+   A verifica has one or more exercises, each with one or more variants (task, locked blocks, tests).
+   Every student code gets one variant for each exercise. Verifiche saved by server 0.1 had only
+   "variants": they are read as one exercise. */
+function cleanVariant(v, i) {
+  const str = (x, n) => String(x ?? '').slice(0, n);
+  return {
+    name: str(v && v.name, 60) || String.fromCharCode(65 + i),
+    text: str(v && v.text, 5000),
+    blocks: (v && Array.isArray(v.blocks) ? v.blocks : []).slice(0, 30)
+      .filter(b => b && (b.t === 'input' || b.t === 'output') && /^[A-Za-z_][A-Za-z0-9_]*$/.test(String(b.v || '').trim()))
+      .map(b => ({ t: b.t, v: String(b.v).trim() })),
+    tests: (v && Array.isArray(v.tests) ? v.tests : []).slice(0, 50).map(t => ({
+      in: (Array.isArray(t.in) ? t.in : String(t.in ?? '').split('\n')).map(x => String(x).trim()).filter(Boolean).slice(0, 200),
+      out: str(t.out, 5000), hidden: !!t.hidden })),
+  };
+}
 function cleanVer(o) {
   const str = (v, n) => String(v ?? '').slice(0, n);
   const date = v => { const d = v ? new Date(v) : null; return d && !isNaN(d) ? d.toISOString() : ''; };
-  const variants = (Array.isArray(o.variants) ? o.variants : []).slice(0, 20).map((v, i) => ({
-    name: str(v.name, 60) || String.fromCharCode(65 + i),
-    text: str(v.text, 5000),
-    blocks: (Array.isArray(v.blocks) ? v.blocks : []).slice(0, 30)
-      .filter(b => b && (b.t === 'input' || b.t === 'output') && /^[A-Za-z_][A-Za-z0-9_]*$/.test(String(b.v || '').trim()))
-      .map(b => ({ t: b.t, v: String(b.v).trim() })),
-    tests: (Array.isArray(v.tests) ? v.tests : []).slice(0, 50).map(t => ({
-      in: (Array.isArray(t.in) ? t.in : String(t.in ?? '').split('\n')).map(x => String(x).trim()).filter(Boolean).slice(0, 200),
-      out: str(t.out, 5000), hidden: !!t.hidden })),
-  }));
-  if (!variants.length) variants.push({ name: 'A', text: '', blocks: [], tests: [] });
-  return { title: str(o.title, 120) || 'Verifica', opens: date(o.opens), closes: date(o.closes), variants };
+  const raw = Array.isArray(o.exercises) ? o.exercises : [{ title: '', variants: o.variants }];
+  const exercises = raw.slice(0, 10).map(e => {
+    const variants = (e && Array.isArray(e.variants) ? e.variants : []).slice(0, 20).map(cleanVariant);
+    if (!variants.length) variants.push(cleanVariant({}, 0));
+    return { title: str(e && e.title, 120), variants };
+  });
+  if (!exercises.length) exercises.push({ title: '', variants: [cleanVariant({}, 0)] });
+  return { title: str(o.title, 120) || 'Verifica', opens: date(o.opens), closes: date(o.closes), exercises };
 }
-const getVer = id => { const r = db.prepare('SELECT * FROM verifiche WHERE id = ?').get(String(id)); return r ? { id: r.id, ...JSON.parse(r.data), created: r.created } : null; };
+const getVer = id => {
+  const r = db.prepare('SELECT * FROM verifiche WHERE id = ?').get(String(id)); if (!r) return null;
+  const d = JSON.parse(r.data);
+  if (!Array.isArray(d.exercises)) { d.exercises = [{ title: '', variants: d.variants || [] }]; delete d.variants; }
+  return { id: r.id, ...d, created: r.created };
+};
 function status(v) {
   const t = Date.now();
   if (v.opens && t < Date.parse(v.opens)) return 'soon';
   if (v.closes && t > Date.parse(v.closes)) return 'closed';
   return 'open';
 }
-function addCodes(vid, n, nvar) {
-  const have = new Set(db.prepare('SELECT code FROM codes WHERE vid = ?').all(vid).map(r => r.code));
-  let k = have.size;
-  const ins = db.prepare('INSERT INTO codes (vid, code, variant) VALUES (?, ?, ?)');
+// the variant of every exercise for the code number ord (0, 1, 2... in creation order): neighbours get different
+// variants and, with several exercises, different combinations. A saved choice stays as long as that variant exists.
+function varsFor(v, ord, stored) {
+  let s = []; try { s = JSON.parse(stored || '[]'); } catch (e) {}
+  return v.exercises.map((x, e) => Number.isInteger(s[e]) && s[e] >= 0 && s[e] < x.variants.length ? s[e] : (ord + e) % x.variants.length);
+}
+const codeRows = vid => db.prepare('SELECT code, variant, vars FROM codes WHERE vid = ? ORDER BY rowid').all(vid);
+function codeInfo(v, code) {
+  const rows = codeRows(v.id), ord = rows.findIndex(r => r.code === code);
+  return ord < 0 ? null : { code, vars: varsFor(v, ord, rows[ord].vars) };
+}
+function addCodes(v, n) {
+  const rows = codeRows(v.id), have = new Set(rows.map(r => r.code));
+  let ord = rows.length;
+  const ins = db.prepare('INSERT INTO codes (vid, code, variant, vars) VALUES (?, ?, ?, ?)');
   while (have.size < n && have.size < 500) {
     const c = rnd(6); if (have.has(c)) continue;
-    have.add(c); ins.run(vid, c, k % nvar); k++; // variants alternate: neighbours get different ones
+    have.add(c); const vars = varsFor(v, ord, null); ins.run(v.id, c, vars[0], JSON.stringify(vars)); ord++;
   }
 }
-const publicHead = v => ({ protocol: PROTOCOL, title: v.title, status: status(v), opens: v.opens, closes: v.closes });
+// after an edit: every code keeps its variants, and gets one for the exercises it did not have yet
+function fixCodes(v) {
+  const up = db.prepare('UPDATE codes SET variant = ?, vars = ? WHERE vid = ? AND code = ?');
+  codeRows(v.id).forEach((r, ord) => { const vars = varsFor(v, ord, r.vars); up.run(vars[0], JSON.stringify(vars), v.id, r.code); });
+}
+const publicHead = v => ({ protocol: PROTOCOL, title: v.title, status: status(v), opens: v.opens, closes: v.closes, exercises: v.exercises.length });
+const testsOf = vr => vr.tests.length;
 
 /* ---------- submissions ---------- */
-function listSubs(vid) {
-  const rows = db.prepare('SELECT id, code, variant, at, ip, device, results, flags FROM submissions WHERE vid = ? ORDER BY id').all(vid);
+// one line per code: the last submission of every exercise, with the warnings
+function listSubs(v) {
+  const rows = db.prepare('SELECT id, code, ex, variant, at, ip, device, results, flags FROM submissions WHERE vid = ? ORDER BY id').all(v.id);
   const byCode = new Map(), devCodes = new Map(), ipCodes = new Map();
   for (const r of rows) {
-    const e = byCode.get(r.code) || { code: r.code, count: 0, history: [] };
-    e.count++; e.history.push({ id: r.id, at: r.at }); e.last = r; byCode.set(r.code, e);
+    const e = byCode.get(r.code) || { code: r.code, times: new Set(), last: null, ex: new Map() };
+    e.times.add(r.at); e.last = r; e.ex.set(r.ex, r); byCode.set(r.code, e);
     if (r.device) (devCodes.get(r.device) || devCodes.set(r.device, new Set()).get(r.device)).add(r.code);
     if (r.ip) (ipCodes.get(r.ip) || ipCodes.set(r.ip, new Set()).get(r.ip)).add(r.code);
   }
+  const info = new Map(codeRows(v.id).map((r, ord) => [r.code, varsFor(v, ord, r.vars)]));
   return [...byCode.values()].map(e => {
-    const r = e.last, res = JSON.parse(r.results), flags = JSON.parse(r.flags);
-    if (r.device && devCodes.get(r.device).size > 1) flags.push('stessoDispositivo');
-    if (r.ip && ipCodes.get(r.ip).size > 1) flags.push('stessoIp');
-    return { code: fmtCode(e.code), variant: r.variant, at: r.at, id: r.id, count: e.count, history: e.history, ip: r.ip, device: r.device,
-      passed: res.passed, total: res.total, visible: res.results.filter(x => !x.hidden).map(x => x.ok), hidden: res.results.filter(x => x.hidden).map(x => x.ok), flags };
+    const r = e.last, flags = new Set(), vars = info.get(e.code) || v.exercises.map(() => 0);
+    const ex = v.exercises.map((x, k) => {
+      const s = e.ex.get(k);
+      if (!s) return { variant: vars[k], done: false, passed: 0, total: testsOf(x.variants[vars[k]] || x.variants[0]), visible: [], hidden: [] };
+      const res = JSON.parse(s.results); JSON.parse(s.flags).forEach(f => flags.add(f));
+      return { variant: s.variant, done: true, id: s.id, at: s.at, passed: res.passed, total: res.total,
+        visible: res.results.filter(x => !x.hidden).map(x => x.ok), hidden: res.results.filter(x => x.hidden).map(x => x.ok) };
+    });
+    if (r.device && devCodes.get(r.device).size > 1) flags.add('stessoDispositivo');
+    if (r.ip && ipCodes.get(r.ip).size > 1) flags.add('stessoIp');
+    return { code: fmtCode(e.code), at: r.at, count: e.times.size, history: [...e.times].map(at => ({ at })), ip: r.ip, device: r.device, ex,
+      passed: ex.reduce((a, x) => a + x.passed, 0), total: ex.reduce((a, x) => a + x.total, 0), flags: [...flags] };
   });
 }
 
@@ -167,35 +210,50 @@ async function route(req, res) {
       const code = normCode(url.searchParams.get('code'));
       if (!code || head.status !== 'open') return send(res, 200, head);
       if (limited('code:' + ip, 120, 60000)) return send(res, 429, { error: 'slow' });
-      const c = db.prepare('SELECT * FROM codes WHERE vid = ? AND code = ?').get(v.id, code);
+      const c = codeInfo(v, code);
       if (!c) return send(res, 403, { error: 'code' });
-      const vr = v.variants[c.variant] || v.variants[0];
-      return send(res, 200, { ...head, code: fmtCode(code), variant: v.variants.length > 1 ? vr.name : '', text: vr.text,
-        tests: vr.tests.filter(t => !t.hidden).map(t => ({ in: t.in, out: t.out })), hidden: vr.tests.filter(t => t.hidden).length,
-        nlocks: vr.blocks.length, main: startMain(vr) });
+      return send(res, 200, { ...head, code: fmtCode(code), exercises: v.exercises.map((x, e) => {
+        const vr = x.variants[c.vars[e]] || x.variants[0];
+        return { title: x.title, variant: x.variants.length > 1 ? vr.name : '', text: vr.text,
+          tests: vr.tests.filter(t => !t.hidden).map(t => ({ in: t.in, out: t.out })), hidden: vr.tests.filter(t => t.hidden).length,
+          nlocks: vr.blocks.length, main: startMain(vr) };
+      }) });
     }
     if (m[2] && M === 'POST') {
       if (head.status !== 'open') return send(res, 403, { error: head.status });
       let body; try { body = await readJson(req); } catch (e) { return send(res, 400, { error: 'body' }); }
       const code = normCode(body.code);
-      const c = db.prepare('SELECT * FROM codes WHERE vid = ? AND code = ?').get(v.id, code);
+      const c = codeInfo(v, code);
       if (!c) return send(res, 403, { error: 'code' });
       if (limited('sub:' + v.id + code, 10, 60000)) return send(res, 429, { error: 'slow' });
-      const doc = body.doc || {};
-      let main; try { main = cleanMain(doc.main); } catch (e) { return send(res, 400, { error: 'doc' }); }
-      const vr = v.variants[c.variant] || v.variants[0];
-      const g = grade(main, vr);
+      // one or more exercises in one submission; the app of protocol 1 sent a single "doc" (exercise 1)
+      const items = Array.isArray(body.docs) ? body.docs : [{ ex: 0, doc: body.doc }];
+      const seen = new Set(), work = [];
+      for (const it of items.slice(0, v.exercises.length)) {
+        const ex = it && Number.isInteger(it.ex) ? it.ex : -1;
+        if (ex < 0 || ex >= v.exercises.length || seen.has(ex)) return send(res, 400, { error: 'doc' });
+        seen.add(ex);
+        const doc = (it && it.doc) || {};
+        let main; try { main = cleanMain(doc.main); } catch (e) { return send(res, 400, { error: 'doc' }); }
+        work.push({ ex, doc, main });
+      }
+      if (!work.length) return send(res, 400, { error: 'doc' });
       const device = /^[A-Z0-9]{4,8}$/.test(body.device || '') ? body.device : '';
-      const devs = (Array.isArray(doc.dev) ? doc.dev : []).filter(x => x && /^[A-Z0-9]{4,8}$/.test(x.d)).slice(-30).map(x => ({ d: x.d, t: String(x.t || '').slice(0, 16) }));
-      const flags = [];
-      if (!g.structure) flags.push('struttura');
-      if (doc.altered === true) flags.push('alterato');
-      if (device && devs.some(x => x.d !== device)) flags.push('altriDispositivi');
-      const stored = { name: String(doc.name || '').slice(0, 120), main, dev: devs };
-      db.prepare('INSERT INTO submissions (vid, code, variant, at, ip, device, doc, results, flags) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
-        .run(v.id, code, c.variant, now(), ip, device, JSON.stringify(stored), JSON.stringify(g), JSON.stringify(flags));
-      const n = db.prepare('SELECT COUNT(*) AS n FROM submissions WHERE vid = ? AND code = ?').get(v.id, code).n;
-      return send(res, 200, { ok: true, at: now(), n });
+      const at = now();
+      const ins = db.prepare('INSERT INTO submissions (vid, code, ex, variant, at, ip, device, doc, results, flags) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+      for (const { ex, doc, main } of work) {
+        const variant = c.vars[ex], vr = v.exercises[ex].variants[variant];
+        const g = grade(main, vr);
+        const devs = (Array.isArray(doc.dev) ? doc.dev : []).filter(x => x && /^[A-Z0-9]{4,8}$/.test(x.d)).slice(-30).map(x => ({ d: x.d, t: String(x.t || '').slice(0, 16) }));
+        const flags = [];
+        if (!g.structure) flags.push('struttura');
+        if (doc.altered === true) flags.push('alterato');
+        if (device && devs.some(x => x.d !== device)) flags.push('altriDispositivi');
+        const stored = { name: String(doc.name || '').slice(0, 120), main, dev: devs };
+        ins.run(v.id, code, ex, variant, at, ip, device, JSON.stringify(stored), JSON.stringify(g), JSON.stringify(flags));
+      }
+      const n = db.prepare('SELECT COUNT(DISTINCT at) AS n FROM submissions WHERE vid = ? AND code = ?').get(v.id, code).n;
+      return send(res, 200, { ok: true, at, n, exercises: work.map(w => w.ex) });
     }
     return send(res, 405, { error: 'method' });
   }
@@ -246,7 +304,8 @@ async function route(req, res) {
         const v = { id: row.id, ...JSON.parse(row.data) };
         const n = db.prepare('SELECT COUNT(DISTINCT code) AS n FROM submissions WHERE vid = ?').get(v.id).n;
         const k = db.prepare('SELECT COUNT(*) AS n FROM codes WHERE vid = ?').get(v.id).n;
-        return { id: v.id, title: v.title, opens: v.opens, closes: v.closes, status: status(v), variants: v.variants.length, submitted: n, codes: k };
+        const ex = Array.isArray(v.exercises) ? v.exercises : [{ variants: v.variants || [] }];
+        return { id: v.id, title: v.title, opens: v.opens, closes: v.closes, status: status(v), exercises: ex.length, variants: Math.max(...ex.map(x => x.variants.length)), submitted: n, codes: k };
       });
       return send(res, 200, list);
     }
@@ -254,20 +313,21 @@ async function route(req, res) {
       let b; try { b = await readJson(req); } catch (e) { return send(res, 400, { error: 'body' }); }
       const v = cleanVer(b), id = rnd(8), t = now();
       db.prepare('INSERT INTO verifiche (id, data, created, updated) VALUES (?, ?, ?, ?)').run(id, JSON.stringify(v), t, t);
-      addCodes(id, Math.min(500, Math.max(1, b.ncodes | 0 || 30)), v.variants.length);
+      addCodes({ ...v, id }, Math.min(500, Math.max(1, b.ncodes | 0 || 30)));
       return send(res, 200, { id });
     }
     const vm = /^verifiche\/([A-Z0-9]{8})(\/(close|submissions|zip|codes))?$/.exec(r);
     const sm = /^submissions\/(\d+)$/.exec(r);
     if (vm) {
       const v = getVer(vm[1]); if (!v) return send(res, 404, { error: 'notfound' });
-      const codes = () => db.prepare('SELECT code, variant FROM codes WHERE vid = ? ORDER BY rowid').all(v.id).map(c => ({ code: fmtCode(c.code), variant: c.variant }));
+      const codes = () => codeRows(v.id).map((c, ord) => ({ code: fmtCode(c.code), vars: varsFor(v, ord, c.vars) }));
       if (!vm[2] && M === 'GET') return send(res, 200, { ...v, status: status(v), codes: codes() });
       if (!vm[2] && M === 'PUT') {
         let b; try { b = await readJson(req); } catch (e) { return send(res, 400, { error: 'body' }); }
         const nv = cleanVer(b);
         db.prepare('UPDATE verifiche SET data = ?, updated = ? WHERE id = ?').run(JSON.stringify(nv), now(), v.id);
-        if (b.ncodes) addCodes(v.id, Math.min(500, b.ncodes | 0), nv.variants.length);
+        fixCodes({ ...nv, id: v.id });
+        if (b.ncodes) addCodes({ ...nv, id: v.id }, Math.min(500, b.ncodes | 0));
         return send(res, 200, { ok: true });
       }
       if (!vm[2] && M === 'DELETE') { db.prepare('DELETE FROM verifiche WHERE id = ?').run(v.id); return send(res, 200, { ok: true }); }
@@ -276,13 +336,27 @@ async function route(req, res) {
         db.prepare('UPDATE verifiche SET data = ?, updated = ? WHERE id = ?').run(JSON.stringify(nv), now(), v.id);
         return send(res, 200, { ok: true });
       }
-      if (vm[3] === 'submissions' && M === 'GET') return send(res, 200, listSubs(v.id));
+      if (vm[3] === 'submissions' && M === 'GET') return send(res, 200, listSubs(v));
       if (vm[3] === 'zip' && M === 'GET') {
-        const subs = listSubs(v.id), files = [], rows = [['codice', 'variante', 'consegnato', 'prove superate', 'prove totali', 'consegne', 'dispositivo', 'ip', 'segnalazioni']];
-        for (const sb of subs) {
-          const row = db.prepare('SELECT doc FROM submissions WHERE id = ?').get(sb.id), doc = JSON.parse(row.doc);
-          files.push({ name: `${sb.code}.flusso`, data: Buffer.from(JSON.stringify({ format: 'flussolab', version: 1, name: `${v.title} · ${sb.code}`, main: doc.main, dev: doc.dev }, null, 2)) });
-          rows.push([sb.code, v.variants[sb.variant] ? v.variants[sb.variant].name : '', sb.at, sb.passed, sb.total, sb.count, sb.device, sb.ip, sb.flags.join(' ')]);
+        const nex = v.exercises.length, exName = e => v.exercises[e].title || `Esercizio ${e + 1}`;
+        const head = ['codice'];
+        v.exercises.forEach((x, e) => head.push(...(nex > 1 ? [`${exName(e)} variante`, `${exName(e)} prove`] : ['variante', 'prove superate', 'prove totali'])));
+        if (nex > 1) head.push('totale');
+        head.push('ultima consegna', 'consegne', 'dispositivo', 'ip', 'segnalazioni');
+        const files = [], rows = [head];
+        for (const sb of listSubs(v)) {
+          const row = [sb.code];
+          sb.ex.forEach((x, e) => {
+            const vname = v.exercises[e].variants[x.variant] ? v.exercises[e].variants[x.variant].name : '';
+            if (nex > 1) row.push(vname, x.done ? `${x.passed}/${x.total}` : '—'); else row.push(vname, x.passed, x.total);
+            if (!x.done) return;
+            const doc = JSON.parse(db.prepare('SELECT doc FROM submissions WHERE id = ?').get(x.id).doc);
+            const label = nex > 1 ? ` · ${exName(e)}` : '';
+            files.push({ name: `${sb.code}${nex > 1 ? `_es${e + 1}` : ''}.flusso`, data: Buffer.from(JSON.stringify({ format: 'flussolab', version: 1, name: `${v.title}${label} · ${sb.code}`, main: doc.main, dev: doc.dev }, null, 2)) });
+          });
+          if (nex > 1) row.push(`${sb.passed}/${sb.total}`);
+          row.push(sb.at, sb.count, sb.device, sb.ip, sb.flags.join(' '));
+          rows.push(row);
         }
         const csv = '﻿' + rows.map(r => r.map(x => `"${String(x ?? '').replace(/"/g, '""')}"`).join(';')).join('\r\n');
         files.push({ name: 'risultati.csv', data: Buffer.from(csv, 'utf8') });
@@ -291,7 +365,7 @@ async function route(req, res) {
       }
       if (vm[3] === 'codes' && M === 'POST') {
         let b; try { b = await readJson(req, 1000); } catch (e) { return send(res, 400, { error: 'body' }); }
-        addCodes(v.id, Math.min(500, (db.prepare('SELECT COUNT(*) AS n FROM codes WHERE vid = ?').get(v.id).n) + Math.max(1, b.add | 0)), v.variants.length);
+        addCodes(v, Math.min(500, codeRows(v.id).length + Math.max(1, b.add | 0)));
         return send(res, 200, { codes: codes() });
       }
     }

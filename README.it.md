@@ -99,7 +99,7 @@ docker run --rm -v flussolab-data:/data -v "$PWD":/backup alpine tar czf /backup
 3. **Prove.**
    - **Input**: un valore per riga, nell'ordine in cui il programma li legge. Ogni IN eseguito, fisso o aggiunto dallo studente, prende il valore successivo; così funziona anche un ciclo che richiede un dato sbagliato.
    - **Output atteso**: un valore per riga, uno per ogni volta che un OUT fisso scrive. I testi scritti dagli altri OUT non contano; i numeri si confrontano con una piccola tolleranza, quindi 7 e 7.0 sono uguali.
-4. **Varianti.** Ogni codice riceve una variante di ogni esercizio; i codici si alternano tra le varianti, così i vicini di banco hanno combinazioni diverse. Se modifichi la verifica dopo, i codici tengono le varianti che avevano già.
+4. **Varianti.** Ogni codice riceve una variante di ogni esercizio; i codici si alternano tra le varianti, così i vicini di banco hanno combinazioni diverse. Se modifichi la verifica dopo, i codici tengono le varianti che avevano già. Lo studente non vede mai quale variante ha (né nell'app né sul foglio con il codice): solo tu la vedi nei risultati.
 5. **Risultati.** Una riga per codice, con il risultato di ogni esercizio e il totale; lo ZIP contiene un file `.flusso` per studente ed esercizio, più `risultati.csv`.
 6. **Orari.** Prima dell'apertura il link non mostra niente; dopo la chiusura non si consegna più. Fino alla chiusura lo studente può consegnare di nuovo: vale l'ultima consegna, e il docente vede anche le precedenti.
 

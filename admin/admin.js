@@ -25,7 +25,6 @@ const T = IT ? {
   detail: 'Consegna', history: 'Consegne di questo codice', openApp: 'Apri in FlussoLab', dlFile: 'Scarica .flusso', ok: 'superata', ko: 'non superata', hiddenT: 'nascosta',
   testN: n => `Prova ${n}`, codesFor: v => `Codici · ${v}`, nameCol: 'Studente', printBtn: 'Stampa', needTitle: 'Scrivi un titolo', needTest: (e, n) => `Esercizio ${e}, variante ${n}: mancano le prove`,
   errs: { struttura: 'blocchi fissi cambiati', loop: 'non termina', moreinput: 'chiede troppi input', crash: 'errore', nodef: 'usa una variabile senza valore', empty: 'blocco vuoto', syntax: 'errore di scrittura', type: 'tipi non compatibili', strmix: 'testo unito a un numero', div0: 'divisione per zero', tdecl: 'valore del tipo sbagliato', tdeclint: 'valore con la virgola in un int', tin: 'input del tipo sbagliato', assigneq: '= al posto di ==', lockmissing: 'blocco fisso mancante', lockorder: 'blocchi fissi in ordine diverso' },
-  exShort: 'Es.',
 } : {
   setupT: 'Create the teacher account', setupP: 'First start: choose an email and a password to log in. This will be the only account.',
   loginT: 'Teacher login', email: 'Email', password: 'Password', password2: 'Repeat the password', enter: 'Log in', create: 'Create account',
@@ -47,7 +46,6 @@ const T = IT ? {
   detail: 'Submission', history: 'Submissions of this code', openApp: 'Open in FlussoLab', dlFile: 'Download .flusso', ok: 'passed', ko: 'failed', hiddenT: 'hidden',
   testN: n => `Test ${n}`, codesFor: v => `Codes · ${v}`, nameCol: 'Student', printBtn: 'Print', needTitle: 'Write a title', needTest: (e, n) => `Exercise ${e}, variant ${n}: tests are missing`,
   errs: { struttura: 'locked blocks changed', loop: 'does not end', moreinput: 'asks for too many inputs', crash: 'error', nodef: 'uses a variable with no value', empty: 'empty block', syntax: 'writing error', type: 'types do not match', strmix: 'text joined to a number', div0: 'division by zero', tdecl: 'value of the wrong type', tdeclint: 'decimal value in an int', tin: 'input of the wrong type', assigneq: '= instead of ==', lockmissing: 'locked block missing', lockorder: 'locked blocks in a different order' },
-  exShort: 'Ex.',
 };
 document.documentElement.lang = IT ? 'it' : 'en';
 let ME = null, timer = 0;
@@ -238,7 +236,7 @@ async function viewCodes(id) {
   const v = await api('verifiche/' + id); if (v.error) return location.hash = '#/';
   $('#view').innerHTML = `<div class="row noprint"><a href="#/v/${id}">← ${esc(v.title)}</a><span class="sp"></span><button class="btn primary" id="pr">${esc(T.printBtn)}</button></div>
     <h1 style="margin-top:10px">${esc(T.codesFor(v.title))}</h1>
-    <div class="codes">${v.codes.map(c => `<div><div class="code">${esc(c.code)}</div>${v.exercises.some(x => x.variants.length > 1) ? `<div class="muted">${v.exercises.map((x, e) => x.variants.length > 1 ? esc((v.exercises.length > 1 ? T.exShort + (e + 1) + ' ' : T.variant + ' ') + x.variants[c.vars[e]].name) : '').filter(Boolean).join(' · ')}</div>` : ''}<div class="muted" style="margin-top:14px;border-top:1px solid var(--rule)">${esc(T.nameCol)}</div></div>`).join('')}</div>`;
+    <div class="codes">${v.codes.map(c => `<div><div class="code">${esc(c.code)}</div><div class="muted" style="margin-top:14px;border-top:1px solid var(--rule)">${esc(T.nameCol)}</div></div>`).join('')}</div>`;
   $('#pr').onclick = () => print();
 }
 

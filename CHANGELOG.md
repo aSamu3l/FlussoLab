@@ -8,6 +8,7 @@
 - Students find one exercise per tab and hand them all in together (FlussoLab 1.2).
 - Results with one column per exercise and the total; the ZIP holds one file per student and exercise and a `risultati.csv` with all the columns.
 - Editing a verification keeps the variants already given to the codes.
+- **The variant stays secret**: the server no longer sends the variant's name to the student, and the codes to print do not show it. So a student copying from a neighbour with another variant shows up in the tests.
 - Test errors explained in words; fixed the page of codes to print.
 - Protocol 2. Data from 0.1 is converted by itself at the first start.
 

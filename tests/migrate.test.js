@@ -36,7 +36,7 @@ test('i dati della versione 0.1 restano leggibili', async () => {
   assert.equal(v.exercises.length, 1); assert.equal(v.exercises[0].variants.length, 2);
   assert.deepEqual(v.codes.map(c => c.vars), [[0], [1]], 'ogni codice tiene la sua variante');
   const open = await (await fetch(base + '/api/v/OLDVER01?code=BBB333')).json();
-  assert.equal(open.exercises[0].variant, 'B');
+  assert.equal(open.exercises[0].text, 'Doppio'); assert.equal(open.exercises[0].variant, undefined);
   const subs = await (await fetch(base + '/api/admin/verifiche/OLDVER01/submissions', { headers: H })).json();
   assert.equal(subs.length, 1); assert.equal(subs[0].ex[0].done, true); assert.equal(subs[0].passed, 1);
   srv.close();

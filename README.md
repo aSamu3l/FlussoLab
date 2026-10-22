@@ -99,7 +99,7 @@ docker run --rm -v flussolab-data:/data -v "$PWD":/backup alpine tar czf /backup
 3. **Tests.**
    - **Input**: one value per line, in the order the program reads them. Every IN that runs, locked or added by the student, takes the next value, so a loop asking again for a wrong value works too.
    - **Expected output**: one value per line, one for each time a locked OUT writes. Text written by other OUTs does not count; numbers are compared with a small tolerance, so 7 and 7.0 are equal.
-4. **Variants.** Every code gets one variant of each exercise; codes alternate between them, so students sitting next to each other get different combinations. Editing a verification later keeps the variants already given to the codes.
+4. **Variants.** Every code gets one variant of each exercise; codes alternate between them, so students sitting next to each other get different combinations. Editing a verification later keeps the variants already given to the codes. Students never see which variant they have (neither in the app nor on the slip with the code): only you see it in the results.
 5. **Results.** One row per code, with the result of every exercise and the total; the ZIP holds one `.flusso` file per student and exercise, and `risultati.csv`.
 6. **Times.** Before it opens the link shows nothing; after it closes no one can hand in. Until then a student can hand in again: the last submission counts, and the teacher also sees the earlier ones.
 

@@ -104,7 +104,8 @@ test('verifica con più esercizi: una variante per esercizio, consegna insieme o
   assert.equal(v.exercises.length, 3);
   assert.deepEqual(v.codes.map(c => c.vars), [[0, 1, 0], [1, 0, 0], [0, 1, 0], [1, 0, 0]], 'combinazioni diverse per i vicini');
   const code = v.codes[1].code, open = (await call(`/api/v/${id}?code=${code}`)).body;
-  assert.equal(open.exercises.length, 3); assert.equal(open.exercises[1].text, 'Doppio'); assert.equal(open.exercises[0].variant, 'B');
+  assert.equal(open.exercises.length, 3); assert.equal(open.exercises[1].text, 'Doppio');
+  assert.ok(!JSON.stringify(open).includes('"variant"'), 'lo studente non sa quale variante ha');
   const dbl = [{ t: 'input', v: 'n', lock: true, lk: 1 }, { t: 'assign', v: 'd', e: 'n * 2' }, { t: 'output', e: 'd', lock: true, lk: 2 }];
   // first only exercise 2, then exercises 1 and 3 together
   const s1 = await call(`/api/v/${id}/submit`, { method: 'POST', body: { code, docs: [{ ex: 1, doc: { main: dbl } }] } });

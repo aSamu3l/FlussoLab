@@ -214,7 +214,8 @@ async function route(req, res) {
       if (!c) return send(res, 403, { error: 'code' });
       return send(res, 200, { ...head, code: fmtCode(code), exercises: v.exercises.map((x, e) => {
         const vr = x.variants[c.vars[e]] || x.variants[0];
-        return { title: x.title, variant: x.variants.length > 1 ? vr.name : '', text: vr.text,
+        // the variant's name is never sent: students must not know which variant they have
+        return { title: x.title, text: vr.text,
           tests: vr.tests.filter(t => !t.hidden).map(t => ({ in: t.in, out: t.out })), hidden: vr.tests.filter(t => t.hidden).length,
           nlocks: vr.blocks.length, main: startMain(vr) };
       }) });

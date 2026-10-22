@@ -4,6 +4,11 @@
 
 Tutte le modifiche di FlussoLab, dalla più recente. I numeri di versione seguono la regola *principale.funzioni.correzioni*.
 
+## 1.2.0 · 22 ottobre 2026
+
+- **Verifiche con più esercizi** (server 0.2): con il codice si aprono tutti gli esercizi, uno per scheda, ognuno con la sua consegna e le sue prove. **Consegna** li manda tutti insieme e avvisa se ne manca uno; riaprendo il link tornano solo quelli chiusi.
+- Funziona sempre anche con il server 0.1.
+
 ## 1.1.2 · 20 ottobre 2026
 
 - Gli **esempi pronti** dichiarano il tipo dei dati letti (`IN int n`, `IN float voto`): così anche il codice Python generato funziona.

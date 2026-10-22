@@ -2,7 +2,7 @@
 'use strict';
 /* ====== Project settings ====== */
 const CONFIG = {
-  version: '1.1.2',
+  version: '1.2.0',
   author: 'aSamu3l',
   github: 'https://github.com/aSamu3l',
   repo: 'https://github.com/aSamu3l/FlussoLab',
@@ -117,7 +117,9 @@ function validVer(x) {
   if (!x || typeof x !== 'object') return null;
   return { title: String(x.title ?? ''), text: String(x.text ?? ''), tests: validTests(x.tests), hidden: Math.max(0, x.hidden | 0),
     nlocks: Math.max(0, x.nlocks | 0), server: String(x.server ?? ''), vid: String(x.vid ?? ''), variant: String(x.variant ?? ''), closes: String(x.closes ?? ''),
-    code: String(x.code ?? ''), sent: x.sent && typeof x.sent === 'object' ? { at: String(x.sent.at || ''), n: x.sent.n | 0 } : null };
+    code: String(x.code ?? ''), sent: x.sent && typeof x.sent === 'object' ? { at: String(x.sent.at || ''), n: x.sent.n | 0 } : null,
+    // a verifica can have several exercises: one tab each (ex counts from 0); proto is the server's protocol
+    ex: Math.max(0, x.ex | 0), nex: Math.max(1, x.nex | 0), extitle: String(x.extitle ?? ''), proto: x.proto === 2 ? 2 : 1 };
 }
 const docOf = o => {
   const d = { name: nameOf(o), main: o.main };
@@ -1058,14 +1060,14 @@ function renderEx() {
   const box = $('#tab-ex'), ver = prog.ver, mine = prog.tests || [];
   let h = '';
   if (ver) {
-    h += `<div class="sect"><h3>${esc(ver.title || t('verT'))}</h3><p class="extask">${esc(ver.text || '—')}</p></div>
+    h += `<div class="sect"><h3>${esc(ver.title || t('verT'))}${ver.nex > 1 ? ` · ${esc(t('verExOf', (ver.ex | 0) + 1, ver.nex))}${ver.extitle ? ': ' + esc(ver.extitle) : ''}` : ''}</h3><p class="extask">${esc(ver.text || '—')}</p></div>
       <div class="sect"><h3>${esc(t('verTests'))}</h3><ul class="exres">` +
       ver.tests.map((x, i) => `<li class="${exRes ? (exRes.ver[i].ok ? 'ok' : 'ko') : ''}"><div class="h"><span>${esc(t('exTest', i + 1))}</span>${exRes ? `<span class="mark">${exRes.ver[i].ok ? '✓' : '✗'}</span>` : ''}</div>
         <dl><dt>${esc(t('exInLbl'))}</dt><dd>${esc(x.in.join(', ') || '—')}</dd><dt>${esc(t('exWant'))}</dt><dd>${esc(x.out || t('exNothing'))}</dd></dl>
         ${exRes && !exRes.ver[i].ok ? testResult(exRes.ver[i], x.in, x.out, true) : ''}</li>`).join('') + '</ul>' +
       (ver.hidden ? `<p class="note">${esc(t('verHidden', ver.hidden))}</p>` : '') + '</div>';
     if (ver.server) h += `<div class="sect handin"><div class="exbar" style="margin:0"><button class="btn primary" id="verSubmit">${esc(t('verSubmit'))}</button>
-      <span class="note" style="margin:0">${esc(t('verSubmitTo', verHost(ver)))} · <b>${esc(ver.code)}</b>${ver.closes ? ' · ' + esc(t('verClosesAt', fmtWhen(ver.closes))) : ''}</span></div>
+      <span class="note" style="margin:0">${esc(t('verSubmitTo', verHost(ver)))} · <b>${esc(ver.code)}</b>${ver.closes ? ' · ' + esc(t('verClosesAt', fmtWhen(ver.closes))) : ''}${ver.nex > 1 ? ' · ' + esc(t('verAllTogether', ver.nex)) : ''}</span></div>
       ${ver.sent ? `<p class="sent">✓ ${esc(t('verSentN', fmtWhen(ver.sent.at), ver.sent.n))}</p>` : ''}</div>`;
   }
   h += `<div class="sect"><h3>${esc(t('myTests'))}</h3>` + (mine.length ? '' : `<p class="note">${esc(t('myTestsNone'))}</p>`) +
@@ -1109,7 +1111,7 @@ function renderEx() {
 /* ---------- verifiche on a teacher's server ----------
    Link: flussolab.s3l.it/#v=server-host/ID. The app asks the server for the verifica with the student's code and,
    at the end, sends the diagram with the same code. No login and nothing else ever goes to the server. */
-const PROTOCOL = 1;
+const PROTOCOLS = [1, 2]; // 1: server 0.1 (one exercise), 2: server 0.2 (several exercises)
 function serverBase(hostPath) {
   const local = /^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?(\/|$)|\.(localhost|test)(:\d+)?(\/|$)/.test(hostPath);
   return (local ? 'http://' : 'https://') + hostPath.replace(/\/+$/, '');
@@ -1128,7 +1130,7 @@ async function openVerifica(ref) {
   let head;
   try { head = await verFetch(`${base}/api/v/${vid}`); } catch (e) { toast(t('verNoServer', host)); return; }
   if (head.http !== 200 || !head.title) { toast(t('badLink')); return; }
-  if (head.protocol !== PROTOCOL) { toast(t('verProto')); return; }
+  if (!PROTOCOLS.includes(head.protocol)) { toast(t('verProto')); return; }
   const vstat = head.status;
   const msg = vstat === 'soon' ? t('verSoon', head.title, fmtWhen(head.opens)) : vstat === 'closed' ? t('verClosed', head.title) : '';
   openDlg(`<h2>${esc(head.title)}</h2>${msg ? `<p>${esc(msg)}</p><div class="foot"><button class="btn primary" data-close>${esc(t('close'))}</button></div>` :
@@ -1142,30 +1144,68 @@ async function openVerifica(ref) {
     const code = $('#vcode').value.trim(); if (!code) return;
     let r; try { r = await verFetch(`${base}/api/v/${vid}?code=${encodeURIComponent(code)}`); } catch (err) { $('#vmsg').textContent = t('verNoServer', host); return; }
     if (r.http === 403) { $('#vmsg').textContent = t('verCodeBad'); return; }
-    if (!r.main) { $('#vmsg').textContent = r.status === 'closed' ? t('verErrClosed') : t('verErrSoon'); return; }
+    if (!r.main && !Array.isArray(r.exercises)) { $('#vmsg').textContent = r.status === 'closed' ? t('verErrClosed') : t('verErrSoon'); return; }
+    // one tab per exercise; a server of protocol 1 has a single exercise, with its fields at the top
+    const exs = Array.isArray(r.exercises) ? r.exercises : [{ title: '', variant: r.variant, text: r.text, tests: r.tests, hidden: r.hidden, nlocks: r.nlocks, main: r.main }];
+    const proto = Array.isArray(r.exercises) ? 2 : 1, nex = exs.length;
+    // exercises of this verifica and code already open: their work is there, they are not opened again
+    tabSnapshot();
+    const openEx = new Map();
+    tabs.forEach((T, k) => { try { const o = JSON.parse(T.data); if (o.ver && o.ver.vid === vid && o.ver.code === r.code && o.ver.server === base) openEx.set(o.ver.ex | 0, k); } catch (e2) {} });
+    const todo = exs.map((x, e) => e).filter(e => !openEx.has(e));
+    const room = MAXTABS - tabs.length + (isBlank() && !tabs[cur].dirty ? 1 : 0);
+    if (todo.length > room) { $('#vmsg').textContent = t('verTooMany', todo.length, room); return; }
     dlg.close();
-    // the same verifica and code already open in a tab: go back to it, the work is there
-    const i = tabs.findIndex((T, k) => { try { const o = k === cur ? prog : JSON.parse(T.data); return o.ver && o.ver.vid === vid && o.ver.code === r.code && o.ver.server === base; } catch (e2) { return false; } });
-    if (i >= 0) { if (i !== cur) activate(i); switchTab('ex'); return; }
-    const doc = { name: r.title + (r.variant ? ' · ' + r.variant : ''), main: r.main,
-      ver: { title: r.title, text: r.text, tests: r.tests, hidden: r.hidden, nlocks: r.nlocks, server: base, vid, variant: r.variant, closes: r.closes, code: r.code } };
-    if (openDoc(doc)) { toast(t('verOpened')); switchTab('ex'); }
+    for (const e of todo) {
+      const x = exs[e], label = nex > 1 ? (x.title || t('verExN', e + 1)) : '';
+      const doc = { name: r.title + (label ? ' · ' + label : '') + (x.variant ? ' · ' + x.variant : ''), main: x.main,
+        ver: { title: r.title, text: x.text, tests: x.tests, hidden: x.hidden, nlocks: x.nlocks, server: base, vid, variant: x.variant, closes: r.closes, code: r.code,
+          ex: e, nex, extitle: x.title || '', proto } };
+      openDoc(doc);
+    }
+    // back to the first exercise
+    tabSnapshot();
+    const first = tabs.findIndex(T => { try { const o = JSON.parse(T.data); return o.ver && o.ver.vid === vid && o.ver.code === r.code && o.ver.server === base && (o.ver.ex | 0) === 0; } catch (e2) { return false; } });
+    if (first >= 0 && first !== cur) activate(first);
+    toast(todo.length ? t(nex > 1 ? 'verOpenedN' : 'verOpened', nex) : t('verAlready'));
+    switchTab('ex');
   };
   $('#vcf').onsubmit = go; $('#vgo').onclick = go; $('#vcode').focus();
 }
+// the tabs of the same verifica and code: all its exercises are handed in together
+function verTabs(ver) {
+  tabSnapshot();
+  const out = [];
+  tabs.forEach((T, k) => { try { const o = JSON.parse(T.data); if (o.ver && o.ver.vid === ver.vid && o.ver.code === ver.code && o.ver.server === ver.server) out.push({ k, o }); } catch (e) {} });
+  return out.sort((x, y) => (x.o.ver.ex | 0) - (y.o.ver.ex | 0));
+}
+const verExLabel = v => v.extitle || t('verExN', (v.ex | 0) + 1);
 function cmdSubmit() {
   const ver = prog.ver; if (!ver || !ver.server) return;
-  openDlg(`<h2>${esc(t('verSubmit'))}</h2><p>${esc(t('verSubmitQ', verHost(ver), ver.code))}</p><p class="msg" id="smsg" style="color:var(--red)"></p>
+  const list = verTabs(ver), have = new Set(list.map(x => x.o.ver.ex | 0));
+  const missing = []; for (let e = 0; e < ver.nex; e++) if (!have.has(e)) missing.push(e);
+  const many = ver.nex > 1;
+  openDlg(`<h2>${esc(t('verSubmit'))}</h2><p>${esc(t('verSubmitQ', verHost(ver), ver.code))}</p>
+    ${many ? `<p>${esc(t('verSubmitAll', list.map(x => verExLabel(x.o.ver)).join(', ')))}</p>` : ''}
+    ${missing.length ? `<p style="color:var(--red)">${esc(t('verMissing', missing.map(e => t('verExN', e + 1)).join(', ')))}</p>` : ''}
+    <p class="msg" id="smsg" style="color:var(--red)"></p>
     <div class="foot"><button class="btn" data-close>${esc(t('cancel'))}</button><button class="btn primary" id="sgo">${esc(t('verSubmit'))}</button></div>`);
   $('#sgo').onclick = async () => {
     $('#sgo').disabled = true;
-    const d = JSON.parse(ser()), doc = { name: d.name, main: d.main, dev: d.dev || [], altered: !!d.altered };
+    const docs = verTabs(ver).map(({ o }) => ({ ex: o.ver.ex | 0, doc: { name: o.name, main: o.main, dev: o.dev || [], altered: !!o.altered } }));
+    const body = ver.proto === 1 ? { code: ver.code, doc: docs[0].doc, device: DEV } : { code: ver.code, docs, device: DEV };
     let r;
-    try { r = await verFetch(`${ver.server}/api/v/${ver.vid}/submit`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: ver.code, doc, device: DEV }) }); }
+    try { r = await verFetch(`${ver.server}/api/v/${ver.vid}/submit`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); }
     catch (e) { $('#smsg').textContent = t('verNoServer', verHost(ver)); $('#sgo').disabled = false; return; }
     if (!r.ok) { $('#smsg').textContent = r.error === 'closed' ? t('verErrClosed') : r.error === 'soon' ? t('verErrSoon') : r.error === 'code' ? t('verCodeBad') : t('verNoServer', verHost(ver)); $('#sgo').disabled = false; return; }
     dlg.close();
-    prog.ver.sent = { at: r.at, n: r.n }; persist(); renderEx();
+    // every exercise that went in shows when it was handed in
+    const sent = { at: r.at, n: r.n };
+    for (const { k } of verTabs(ver)) {
+      if (k === cur) { prog.ver.sent = sent; continue; }
+      try { const o = JSON.parse(tabs[k].data); o.ver.sent = sent; tabs[k].data = JSON.stringify(o); } catch (e) {}
+    }
+    persist(); renderEx();
     toast(t('verSent', fmtWhen(r.at)));
   };
 }

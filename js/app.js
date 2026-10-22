@@ -1157,9 +1157,10 @@ async function openVerifica(ref) {
     if (todo.length > room) { $('#vmsg').textContent = t('verTooMany', todo.length, room); return; }
     dlg.close();
     for (const e of todo) {
-      const x = exs[e], label = nex > 1 ? (x.title || t('verExN', e + 1)) : '';
-      const doc = { name: r.title + (label ? ' · ' + label : '') + (x.variant ? ' · ' + x.variant : ''), main: x.main,
-        ver: { title: r.title, text: x.text, tests: x.tests, hidden: x.hidden, nlocks: x.nlocks, server: base, vid, variant: x.variant, closes: r.closes, code: r.code,
+      // the tab shows only the exercise (or the verifica, if it has one exercise): never the variant
+      const x = exs[e];
+      const doc = { name: nex > 1 ? (x.title || t('verExN', e + 1)) : r.title, main: x.main,
+        ver: { title: r.title, text: x.text, tests: x.tests, hidden: x.hidden, nlocks: x.nlocks, server: base, vid, variant: '', closes: r.closes, code: r.code,
           ex: e, nex, extitle: x.title || '', proto } };
       openDoc(doc);
     }

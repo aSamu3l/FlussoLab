@@ -7,6 +7,7 @@ Every change to FlussoLab, newest first. Version numbers follow *major.features.
 ## 1.2.0 · October 22, 2026
 
 - **Verifications with several exercises** (server 0.2): the code opens every exercise, one per tab, each with its own task and tests. **Hand in** sends all of them together and warns if one is missing; opening the link again brings back only the closed ones.
+- Tabs show only the exercise's name (or the verification's, with one exercise): **the variant is no longer shown**.
 - Server 0.1 keeps working too.
 
 ## 1.1.2 · October 20, 2026

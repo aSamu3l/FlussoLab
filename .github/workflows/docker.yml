@@ -9,6 +9,8 @@ on:
 permissions:
   contents: read
   packages: write
+  id-token: write      # to sign the provenance attestation with Sigstore
+  attestations: write  # to store it on the repository
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -28,6 +30,7 @@ jobs:
         id: v
         run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
       - uses: docker/build-push-action@v6
+        id: push
         with:
           context: .
           platforms: linux/amd64,linux/arm64
@@ -35,3 +38,11 @@ jobs:
           tags: |
             ghcr.io/asamu3l/flussolab-server:latest
             ghcr.io/asamu3l/flussolab-server:${{ steps.v.outputs.version }}
+      # who built this image, from which commit: verifiable with
+      #   gh attestation verify oci://ghcr.io/asamu3l/flussolab-server:latest --owner aSamu3l
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-name: ghcr.io/asamu3l/flussolab-server
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true

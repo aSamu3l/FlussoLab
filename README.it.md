@@ -108,6 +108,14 @@ docker run --rm -v flussolab-data:/data -v "$PWD":/backup alpine tar czf /backup
 7. **Salvataggio automatico.** Durante la verifica l'app manda al server il lavoro degli studenti ogni minuto (solo quello che è cambiato). Una bozza non è una consegna: se uno studente non preme mai Consegna, nei risultati vedi l'ora dell'ultima bozza e puoi **usarla come consegna**, per quel codice o per tutti insieme; viene corretta come le altre e segnata *Da bozza*.
 8. **Orari.** Prima dell'apertura il link non mostra niente. L'app mostra allo studente l'ora di chiusura e il tempo che manca, e lo avvisa 5 minuti prima. All'ora di chiusura non può più modificare, ma ha ancora i **minuti extra** che hai scelto (5, di base) solo per premere Consegna; poi la consegna è chiusa. Fino ad allora può consegnare di nuovo: vale l'ultima consegna, e il docente vede anche le precedenti. Dalla pagina della verifica puoi **prolungare** di 5 o 15 minuti o chiudere subito: l'app degli studenti si aggiorna da sola entro mezzo minuto.
 
+## Provenienza dell'immagine
+
+Ogni immagine è costruita dalla [GitHub Action](.github/workflows/docker.yml) del branch `server` e firmata con un'attestazione di provenienza (Sigstore): puoi controllare che quello che scarichi da `ghcr.io` venga davvero da questo repository, e da quale commit, con la [GitHub CLI](https://cli.github.com/):
+
+```sh
+gh attestation verify oci://ghcr.io/asamu3l/flussolab-server:latest --owner aSamu3l
+```
+
 ## Privacy
 
 Il server salva solo:

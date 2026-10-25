@@ -108,6 +108,14 @@ docker run --rm -v flussolab-data:/data -v "$PWD":/backup alpine tar czf /backup
 7. **Autosave.** During the verification the app sends the students' work to the server every minute (only what changed). A draft is not a submission: if a student never presses Hand in, you see the time of the last draft in the results and can **use it as the submission** for that code or for everyone at once; it is graded like the others and marked *From draft*.
 8. **Times.** Before it opens the link shows nothing. The app shows students the closing time and the time left, and warns them 5 minutes before. At the closing time they can no longer edit, but still have the **extra minutes** you chose (5 by default) just to press Hand in; then the hand-in is closed. Until then a student can hand in again: the last submission counts, and the teacher also sees the earlier ones. From the verification's page you can **extend** by 5 or 15 minutes or close at once: the students' app updates by itself within half a minute.
 
+## Image provenance
+
+Every image is built by the [GitHub Action](.github/workflows/docker.yml) of the `server` branch and signed with a provenance attestation (Sigstore): you can check that what you pull from `ghcr.io` really comes from this repository and from which commit, with the [GitHub CLI](https://cli.github.com/):
+
+```sh
+gh attestation verify oci://ghcr.io/asamu3l/flussolab-server:latest --owner aSamu3l
+```
+
 ## Privacy
 
 The server only stores:

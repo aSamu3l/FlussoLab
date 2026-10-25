@@ -8,7 +8,7 @@ const http = require('node:http');
 
 process.env.DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'flsrv-'));
 process.env.ALLOWED_ORIGINS = 'https://flussolab.s3l.it';
-const { route } = require('../src/server.js');
+const { route, SETUP_CODE } = require('../src/server.js');
 
 let base, cookie = '';
 const srv = http.createServer((q, s) => route(q, s));
@@ -35,9 +35,10 @@ test('account del docente: primo avvio, accesso, protezioni', async () => {
   assert.equal((await call('/api/info')).body.protocol, 2);
   const me = await call('/api/admin/me');
   assert.equal(me.status, 401); assert.equal(me.body.setup, true);
-  assert.equal((await call('/api/admin/setup', { method: 'POST', body: { email: 'prof@scuola.it', password: 'corta' }, admin: true })).status, 400);
-  assert.equal((await call('/api/admin/setup', { method: 'POST', body: { email: 'prof@scuola.it', password: 'password123' } })).status, 403, 'senza X-FL è rifiutato');
-  assert.equal((await call('/api/admin/setup', { method: 'POST', body: { email: 'prof@scuola.it', password: 'password123' }, admin: true })).status, 200);
+  assert.equal((await call('/api/admin/setup', { method: 'POST', body: { email: 'prof@scuola.it', password: 'corta', setupCode: SETUP_CODE }, admin: true })).status, 400);
+  assert.equal((await call('/api/admin/setup', { method: 'POST', body: { email: 'prof@scuola.it', password: 'password123', setupCode: SETUP_CODE } })).status, 403, 'senza X-FL è rifiutato');
+  assert.equal((await call('/api/admin/setup', { method: 'POST', body: { email: 'prof@scuola.it', password: 'password123' }, admin: true })).body.error, 'setupcode', 'senza il codice dei log');
+  assert.equal((await call('/api/admin/setup', { method: 'POST', body: { email: 'prof@scuola.it', password: 'password123', setupCode: SETUP_CODE.toLowerCase() }, admin: true })).status, 200);
   assert.equal((await call('/api/admin/setup', { method: 'POST', body: { email: 'x@y.it', password: 'password123' }, admin: true })).status, 403, 'un solo account');
   assert.equal((await call('/api/admin/me', { admin: true })).body.email, 'prof@scuola.it');
   const saved = cookie; cookie = '';
@@ -90,7 +91,14 @@ test('orari: prima dell\'apertura e dopo la chiusura non si consegna', async () 
   const v = (await call('/api/admin/verifiche/' + r.body.id, { admin: true })).body;
   assert.equal((await call(`/api/v/${r.body.id}?code=${v.codes[0].code}`)).body.status, 'soon');
   assert.equal((await call(`/api/v/${r.body.id}/submit`, { method: 'POST', body: { code: v.codes[0].code, doc: { main: solution } } })).status, 403);
+  // close now: for 5 minutes (grace) the hand-in is still accepted, editing is over; hard close stops at once
   await call(`/api/admin/verifiche/${vid}/close`, { method: 'POST', admin: true });
+  const grace = await call('/api/v/' + vid);
+  assert.equal(grace.body.status, 'grace'); assert.ok(grace.body.now && grace.body.deadline > grace.body.closes);
+  assert.equal((await call(`/api/v/${vid}/submit`, { method: 'POST', body: { code: codes[0].code, doc: { main: solution } } })).status, 200, 'si consegna ancora');
+  const ext = await call(`/api/admin/verifiche/${vid}/extend`, { method: 'POST', admin: true, body: { minutes: 10 } });
+  assert.ok(Date.parse(ext.body.closes) > Date.now() + 9 * 60000); assert.equal((await call('/api/v/' + vid)).body.status, 'open');
+  await call(`/api/admin/verifiche/${vid}/close`, { method: 'POST', admin: true, body: { hard: true } });
   const closed = await call(`/api/v/${vid}/submit`, { method: 'POST', body: { code: codes[0].code, doc: { main: solution } } });
   assert.equal(closed.status, 403); assert.equal(closed.body.error, 'closed');
 });

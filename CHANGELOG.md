@@ -2,6 +2,14 @@
 
 [Italiano](CHANGELOG.it.md) · **English**
 
+## 0.3.0 · October 25, 2026
+
+- **Verification time**: at the closing time students can no longer edit, but still have the **extra minutes** chosen by the teacher (5 by default) to hand in. The app shows them the closing time, the time left and the warnings; the server also sends its own clock, so the count is right even when the computer's clock is wrong.
+- **Extend** by 5 or 15 minutes and **Close at once** from the verification's page; the students' app updates by itself.
+- **Setup code** at the first start, printed in the log: without it nobody can create the teacher's account in your place.
+- Limits on texts and output of the programs graded on the server (a program that writes forever no longer slows it down); the results CSV cannot contain formulas.
+- The login cookie is marked secure only when `TRUST_PROXY` is on, as documented.
+
 ## 0.2.0 · October 22, 2026
 
 - **Verifications with several exercises**: up to 10 exercises, each with its own variants. Every code gets one variant per exercise, with different combinations for students sitting next to each other.

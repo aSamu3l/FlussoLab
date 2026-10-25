@@ -6,12 +6,14 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': 
 const IT = !/^en/i.test(navigator.language || '') || /^it/i.test(navigator.language || '');
 const T = IT ? {
   setupT: 'Crea l\'account del docente', setupP: 'È il primo avvio: scegli email e password per entrare. Ci sarà solo questo account.',
+  setupCode: 'Codice di configurazione', setupCodeP: 'Lo trovi nei log del container (Portainer → Containers → Logs): serve perché nessun altro possa creare l\'account al posto tuo.', badSetupCode: 'Codice di configurazione sbagliato: guarda i log del container',
   loginT: 'Accesso del docente', email: 'Email', password: 'Password', password2: 'Ripeti la password', enter: 'Entra', create: 'Crea account',
   weak: 'La password deve avere almeno 8 caratteri', mismatch: 'Le due password non coincidono', badLogin: 'Email o password sbagliate', slow: 'Troppi tentativi: riprova tra qualche minuto',
   logout: 'Esci', changePw: 'Cambia password', oldPw: 'Password attuale', newPw: 'Nuova password', save: 'Salva', cancel: 'Annulla', close: 'Chiudi', saved: 'Salvato',
   list: 'Verifiche', newV: 'Nuova verifica', none: 'Ancora nessuna verifica. Creane una: gli studenti la apriranno dal solito FlussoLab con un link e il loro codice.',
   title: 'Titolo', opens: 'Apertura', closes: 'Chiusura', openNow: 'vuoto = subito', noClose: 'vuoto = finché non la chiudi',
-  st: { open: 'Aperta', soon: 'Non ancora aperta', closed: 'Chiusa' }, submitted: 'Consegne', codes: 'Codici', variants: 'Varianti',
+  st: { open: 'Aperta', soon: 'Non ancora aperta', grace: 'In consegna', closed: 'Chiusa' }, submitted: 'Consegne', codes: 'Codici', variants: 'Varianti',
+  grace: 'Minuti extra per consegnare', graceHint: 'Alla chiusura gli studenti non possono più modificare, ma hanno ancora questi minuti per premere Consegna.', deadline: 'consegne fino alle', extend: 'Prolunga', min: 'min', closeHardQ: 'Chiudere subito, senza minuti extra? Chi non ha ancora consegnato non potrà più farlo.', closeGraceQ: n => `Chiudere ora? Gli studenti non potranno più modificare, ma avranno ancora ${n} minuti per consegnare.`, closeHard: 'Chiudi subito',
   ncodes: 'Quanti codici studente', addCodes: 'Aggiungi codici', variant: 'Variante', addVariant: '+ Variante', delVariant: 'Togli variante',
   exercise: 'Esercizio', exercises: 'esercizi', exN: n => `Esercizio ${n}`, exTitle: 'Titolo dell\'esercizio', exTitlePh: 'facoltativo, es. Area del rettangolo', addEx: '+ Aggiungi esercizio', delEx: 'Togli esercizio', delExQ: n => `Togliere l'esercizio ${n} con tutte le sue varianti?`, total: 'Totale', notSent: 'non consegnato', exHint: 'Ogni studente riceve una variante per ogni esercizio: i vicini di banco hanno combinazioni diverse.',
   text: 'Consegna', textPh: 'Cosa deve fare il programma', blocks: 'Blocchi fissi', blocksHint: 'Gli studenti li trovano già nel diagramma: possono spostarli e aggiungere blocchi in mezzo, ma non cancellarli. Gli IN ricevono gli input delle prove; si controlla solo quello che scrivono gli OUT.',
@@ -24,15 +26,17 @@ const T = IT ? {
   flagD: { struttura: 'Lo studente ha tolto o cambiato i blocchi fissi: le prove risultano tutte non superate.', alterato: 'Il diagramma arriva da un file modificato a mano.', altriDispositivi: 'Il diagramma è stato modificato anche su un dispositivo diverso da quello che ha consegnato (es. casa e scuola, oppure un file passato).', stessoDispositivo: 'Dallo stesso dispositivo sono arrivate consegne con codici diversi.', stessoIp: 'Stesso indirizzo di rete di altri codici: normale se il server è su internet (tutta la scuola esce con lo stesso indirizzo).' },
   detail: 'Consegna', history: 'Consegne di questo codice', openApp: 'Apri in FlussoLab', dlFile: 'Scarica .flusso', ok: 'superata', ko: 'non superata', hiddenT: 'nascosta',
   testN: n => `Prova ${n}`, codesFor: v => `Codici · ${v}`, nameCol: 'Studente', printBtn: 'Stampa', needTitle: 'Scrivi un titolo', needTest: (e, n) => `Esercizio ${e}, variante ${n}: mancano le prove`,
-  errs: { struttura: 'blocchi fissi cambiati', loop: 'non termina', moreinput: 'chiede troppi input', crash: 'errore', nodef: 'usa una variabile senza valore', empty: 'blocco vuoto', syntax: 'errore di scrittura', type: 'tipi non compatibili', strmix: 'testo unito a un numero', div0: 'divisione per zero', tdecl: 'valore del tipo sbagliato', tdeclint: 'valore con la virgola in un int', tin: 'input del tipo sbagliato', assigneq: '= al posto di ==', lockmissing: 'blocco fisso mancante', lockorder: 'blocchi fissi in ordine diverso' },
+  errs: { struttura: 'blocchi fissi cambiati', loop: 'non termina', moreinput: 'chiede troppi input', crash: 'errore', nodef: 'usa una variabile senza valore', empty: 'blocco vuoto', syntax: 'errore di scrittura', type: 'tipi non compatibili', strmix: 'testo unito a un numero', div0: 'divisione per zero', tdecl: 'valore del tipo sbagliato', tdeclint: 'valore con la virgola in un int', tin: 'input del tipo sbagliato', assigneq: '= al posto di ==', lockmissing: 'blocco fisso mancante', lockorder: 'blocchi fissi in ordine diverso', bigstr: 'testo troppo lungo', bigout: 'scrive troppo (ciclo infinito?)' },
 } : {
   setupT: 'Create the teacher account', setupP: 'First start: choose an email and a password to log in. This will be the only account.',
+  setupCode: 'Setup code', setupCodeP: 'You find it in the container\'s log (Portainer → Containers → Logs): it makes sure nobody else creates the account in your place.', badSetupCode: 'Wrong setup code: look at the container\'s log',
   loginT: 'Teacher login', email: 'Email', password: 'Password', password2: 'Repeat the password', enter: 'Log in', create: 'Create account',
   weak: 'The password needs at least 8 characters', mismatch: 'The two passwords differ', badLogin: 'Wrong email or password', slow: 'Too many attempts: try again in a few minutes',
   logout: 'Log out', changePw: 'Change password', oldPw: 'Current password', newPw: 'New password', save: 'Save', cancel: 'Cancel', close: 'Close', saved: 'Saved',
   list: 'Verifications', newV: 'New verification', none: 'No verification yet. Create one: students open it in the usual FlussoLab with a link and their code.',
   title: 'Title', opens: 'Opens', closes: 'Closes', openNow: 'empty = now', noClose: 'empty = until you close it',
-  st: { open: 'Open', soon: 'Not open yet', closed: 'Closed' }, submitted: 'Submissions', codes: 'Codes', variants: 'Variants',
+  st: { open: 'Open', soon: 'Not open yet', grace: 'Handing in', closed: 'Closed' }, submitted: 'Submissions', codes: 'Codes', variants: 'Variants',
+  grace: 'Extra minutes to hand in', graceHint: 'At the closing time students can no longer edit, but still have these minutes to press Hand in.', deadline: 'hand-in until', extend: 'Extend', min: 'min', closeHardQ: 'Close at once, with no extra minutes? Whoever has not handed in yet will not be able to.', closeGraceQ: n => `Close now? Students will no longer be able to edit, but will still have ${n} minutes to hand in.`, closeHard: 'Close at once',
   ncodes: 'How many student codes', addCodes: 'Add codes', variant: 'Variant', addVariant: '+ Variant', delVariant: 'Remove variant',
   exercise: 'Exercise', exercises: 'exercises', exN: n => `Exercise ${n}`, exTitle: 'Exercise title', exTitlePh: 'optional, e.g. Rectangle area', addEx: '+ Add exercise', delEx: 'Remove exercise', delExQ: n => `Remove exercise ${n} with all its variants?`, total: 'Total', notSent: 'not handed in', exHint: 'Every student gets one variant of each exercise: students sitting next to each other get different combinations.',
   text: 'Task', textPh: 'What the program must do', blocks: 'Locked blocks', blocksHint: 'Students find them in the diagram: they can move them and add blocks in between, not delete them. INs receive the test inputs; only what the OUTs write is checked.',
@@ -45,7 +49,7 @@ const T = IT ? {
   flagD: { struttura: 'The student removed or changed the locked blocks: all tests count as failed.', alterato: 'The diagram comes from a hand-edited file.', altriDispositivi: 'The diagram was also edited on a device other than the one that handed it in (e.g. home and school, or a file passed on).', stessoDispositivo: 'Submissions with different codes came from the same device.', stessoIp: 'Same network address as other codes: normal if the server is on the internet (the whole school shares one address).' },
   detail: 'Submission', history: 'Submissions of this code', openApp: 'Open in FlussoLab', dlFile: 'Download .flusso', ok: 'passed', ko: 'failed', hiddenT: 'hidden',
   testN: n => `Test ${n}`, codesFor: v => `Codes · ${v}`, nameCol: 'Student', printBtn: 'Print', needTitle: 'Write a title', needTest: (e, n) => `Exercise ${e}, variant ${n}: tests are missing`,
-  errs: { struttura: 'locked blocks changed', loop: 'does not end', moreinput: 'asks for too many inputs', crash: 'error', nodef: 'uses a variable with no value', empty: 'empty block', syntax: 'writing error', type: 'types do not match', strmix: 'text joined to a number', div0: 'division by zero', tdecl: 'value of the wrong type', tdeclint: 'decimal value in an int', tin: 'input of the wrong type', assigneq: '= instead of ==', lockmissing: 'locked block missing', lockorder: 'locked blocks in a different order' },
+  errs: { struttura: 'locked blocks changed', loop: 'does not end', moreinput: 'asks for too many inputs', crash: 'error', nodef: 'uses a variable with no value', empty: 'empty block', syntax: 'writing error', type: 'types do not match', strmix: 'text joined to a number', div0: 'division by zero', tdecl: 'value of the wrong type', tdeclint: 'decimal value in an int', tin: 'input of the wrong type', assigneq: '= instead of ==', lockmissing: 'locked block missing', lockorder: 'locked blocks in a different order', bigstr: 'text too long', bigout: 'writes too much (endless loop?)' },
 };
 document.documentElement.lang = IT ? 'it' : 'en';
 let ME = null, timer = 0;
@@ -68,15 +72,16 @@ function viewAuth(setup) {
   $('#view').innerHTML = `<div class="card narrow"><h1>${esc(setup ? T.setupT : T.loginT)}</h1>${setup ? `<p class="muted">${esc(T.setupP)}</p>` : ''}
     <form id="f"><label class="f">${esc(T.email)}<input type="email" id="em" required autocomplete="username"></label>
     <label class="f">${esc(T.password)}<input type="password" id="pw" required autocomplete="${setup ? 'new-password' : 'current-password'}"></label>
-    ${setup ? `<label class="f">${esc(T.password2)}<input type="password" id="pw2" required autocomplete="new-password"></label>` : ''}
+    ${setup ? `<label class="f">${esc(T.password2)}<input type="password" id="pw2" required autocomplete="new-password"></label>
+    <label class="f">${esc(T.setupCode)}<input type="text" id="sc" required autocomplete="off" autocapitalize="characters" spellcheck="false" class="mono"></label><p class="hint">${esc(T.setupCodeP)}</p>` : ''}
     <p class="err" id="err"></p><button class="btn primary" type="submit">${esc(setup ? T.create : T.enter)}</button></form></div>`;
   $('#f').onsubmit = async e => {
     e.preventDefault();
     const em = $('#em').value, pw = $('#pw').value;
     if (setup && pw.length < 8) return $('#err').textContent = T.weak;
     if (setup && pw !== $('#pw2').value) return $('#err').textContent = T.mismatch;
-    const r = await api(setup ? 'setup' : 'login', { method: 'POST', body: { email: em, password: pw }, allow401: true });
-    if (r.ok) { location.hash = '#/'; boot(); } else $('#err').textContent = r.status === 429 ? T.slow : r.error === 'weak' ? T.weak : T.badLogin;
+    const r = await api(setup ? 'setup' : 'login', { method: 'POST', body: { email: em, password: pw, setupCode: setup ? $('#sc').value : undefined }, allow401: true });
+    if (r.ok) { location.hash = '#/'; boot(); } else $('#err').textContent = r.status === 429 ? T.slow : r.error === 'weak' ? T.weak : r.error === 'setupcode' ? T.badSetupCode : T.badLogin;
   };
 }
 
@@ -112,7 +117,7 @@ function variantHTML(x, i, nvar) {
     <button class="btn" data-addt="${i}">${esc(T.addTest)}</button></section>`;
 }
 async function viewEdit(id) {
-  let v = { title: '', opens: '', closes: '', exercises: [emptyExercise()] }, nc = id ? 0 : 30;
+  let v = { title: '', opens: '', closes: '', grace: 5, exercises: [emptyExercise()] }, nc = id ? 0 : 30;
   if (id) { const r = await api('verifiche/' + id); if (r.error) return location.hash = '#/'; v = r; }
   const draw = () => {
     const nex = v.exercises.length;
@@ -121,6 +126,7 @@ async function viewEdit(id) {
       <div class="grid3"><label class="f">${esc(T.opens)} <span class="muted" style="font-weight:400">(${esc(T.openNow)})</span><input type="datetime-local" id="op" value="${toLocal(v.opens)}"></label>
       <label class="f">${esc(T.closes)} <span class="muted" style="font-weight:400">(${esc(T.noClose)})</span><input type="datetime-local" id="cl" value="${toLocal(v.closes)}"></label>
       <label class="f">${esc(id ? T.addCodes : T.ncodes)}<input type="number" id="nc" min="${id ? 0 : 1}" max="500" value="${nc}"></label></div>
+      <label class="f" style="max-width:260px">${esc(T.grace)}<input type="number" id="gr" min="0" max="60" value="${v.grace ?? 5}"></label><p class="hint">${esc(T.graceHint)}</p>
       <p class="hint" style="margin:0">${esc(T.exHint)}</p></div>
       ${v.exercises.map((ex, e) => `<section class="exercise" data-e="${e}">
         <div class="row"><h2 style="margin:0">${esc(T.exN(e + 1))}</h2><input class="in" style="flex:1;min-width:160px" data-k="extitle" value="${esc(ex.title)}" maxlength="120" placeholder="${esc(T.exTitlePh)}" aria-label="${esc(T.exTitle)}">
@@ -141,7 +147,7 @@ async function viewEdit(id) {
     $('#saveV').onclick = save;
   };
   const read = () => {
-    v.title = $('#ti').value; nc = +$('#nc').value || 0;
+    v.title = $('#ti').value; nc = +$('#nc').value || 0; v.grace = Math.min(60, Math.max(0, +$('#gr').value || 0));
     v.opens = $('#op').value ? new Date($('#op').value).toISOString() : '';
     v.closes = $('#cl').value ? new Date($('#cl').value).toISOString() : '';
     v.exercises = $$('[data-e]').map(es => ({
@@ -160,7 +166,7 @@ async function viewEdit(id) {
       ex.variants.forEach(x => { x.blocks = x.blocks.filter(b => b.v); x.tests = x.tests.filter(t => t.in.length || t.out.trim()); });
       const bad = ex.variants.find(x => !x.tests.length); if (bad) return $('#err').textContent = T.needTest(e + 1, bad.name);
     }
-    const body = { title: v.title, opens: v.opens, closes: v.closes, exercises: v.exercises, ncodes: nc };
+    const body = { title: v.title, opens: v.opens, closes: v.closes, grace: v.grace, exercises: v.exercises, ncodes: nc };
     if (id && body.ncodes) { const cur = await api('verifiche/' + id); body.ncodes += cur.codes.length; }
     const r = await api(id ? 'verifiche/' + id : 'verifiche', { method: id ? 'PUT' : 'POST', body });
     if (r.status === 200) { toast(T.saved); location.hash = '#/v/' + (id || r.id); } else $('#err').textContent = r.error || 'error';
@@ -174,13 +180,15 @@ async function viewDetail(id) {
   const link = linkFor(id);
   $('#view').innerHTML = `<a href="#/">${esc(T.back)}</a>
     <div class="row" style="margin-top:8px"><h1 style="margin:0">${esc(v.title)}</h1><span class="badge ${v.status}">${esc(T.st[v.status])}</span></div>
-    <p class="muted">${esc(T.opens)}: ${esc(fmtDate(v.opens) === '—' ? fmtDate(v.created) : fmtDate(v.opens))} · ${esc(T.closes)}: ${esc(fmtDate(v.closes))}${v.exercises.length > 1 ? ` · ${v.exercises.length} ${esc(T.exercises)}` : ''}</p>
+    <p class="muted">${esc(T.opens)}: ${esc(fmtDate(v.opens) === '—' ? fmtDate(v.created) : fmtDate(v.opens))} · ${esc(T.closes)}: ${esc(fmtDate(v.closes))}${v.closes && v.grace ? ` (${esc(T.deadline)} ${esc(fmtDate(v.deadline))})` : ''}${v.exercises.length > 1 ? ` · ${v.exercises.length} ${esc(T.exercises)}` : ''}</p>
     <div class="card"><h2>${esc(T.link)}</h2><div class="link"><input class="in" readonly value="${esc(link)}" id="lk"><button class="btn primary" id="cp">${esc(T.copy)}</button></div>
       <div class="row" style="margin-top:12px"><a class="btn" href="#/v/${id}/codes">${esc(T.printCodes)} (${v.codes.length})</a><a class="btn" href="/api/admin/verifiche/${id}/zip">${esc(T.zip)}</a>
-      <span class="sp"></span><a class="btn" href="#/v/${id}/edit">${esc(T.edit)}</a>${v.status !== 'closed' ? `<button class="btn" id="cn">${esc(T.closeNow)}</button>` : ''}<button class="btn danger" id="dl">${esc(T.del)}</button></div></div>
+      <span class="sp"></span>${v.closes ? `<span class="muted">${esc(T.extend)}</span><button class="btn" data-ext="5">+5 ${esc(T.min)}</button><button class="btn" data-ext="15">+15 ${esc(T.min)}</button>` : ''}<a class="btn" href="#/v/${id}/edit">${esc(T.edit)}</a>${v.status === 'open' || v.status === 'soon' ? `<button class="btn" id="cn">${esc(T.closeNow)}</button>` : ''}${v.status === 'grace' ? `<button class="btn" id="ch">${esc(T.closeHard)}</button>` : ''}<button class="btn danger" id="dl">${esc(T.del)}</button></div></div>
     <div class="card"><h2>${esc(T.results)}</h2><div id="subs"></div></div>`;
   $('#cp').onclick = () => copy(link); $('#lk').onfocus = e => e.target.select();
-  if ($('#cn')) $('#cn').onclick = async () => { if (confirm(T.closeQ)) { await api(`verifiche/${id}/close`, { method: 'POST' }); viewDetail(id); } };
+  if ($('#cn')) $('#cn').onclick = async () => { if (confirm(v.grace ? T.closeGraceQ(v.grace) : T.closeQ)) { await api(`verifiche/${id}/close`, { method: 'POST' }); viewDetail(id); } };
+  if ($('#ch')) $('#ch').onclick = async () => { if (confirm(T.closeHardQ)) { await api(`verifiche/${id}/close`, { method: 'POST', body: { hard: true } }); viewDetail(id); } };
+  $$('[data-ext]').forEach(b => b.onclick = async () => { await api(`verifiche/${id}/extend`, { method: 'POST', body: { minutes: +b.dataset.ext } }); toast(T.saved); viewDetail(id); });
   $('#dl').onclick = async () => { if (confirm(T.delQ)) { await api('verifiche/' + id, { method: 'DELETE' }); location.hash = '#/'; } };
   const load = async () => {
     if (!$('#subs')) return;

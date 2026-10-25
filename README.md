@@ -24,7 +24,7 @@ No student names on the server, only codes. The teacher keeps the code → stude
    - **Domain**: `tests.yourdomain.org`
    - **Forward Hostname / IP**: the IP of the Docker machine (or `flussolab-server` if NPM is on the same Docker network), **Port** `8080`
    - **SSL** tab: *Request a new SSL Certificate*, *Force SSL*.
-4. Open `https://tests.yourdomain.org/admin` and create the teacher's account: there is only one.
+4. Open `https://tests.yourdomain.org/admin` and create the teacher's account: there is only one. It asks for a **setup code**: you find it in the container's log (Portainer → *Containers* → *Logs*). It makes sure nobody else creates the account before you. Alternatively set `ADMIN_EMAIL` and `ADMIN_PASSWORD` in the stack and the account is created by itself.
 
 ## Install from the command line
 
@@ -53,7 +53,7 @@ Then set up the reverse proxy as above and open `/admin`.
 |---|---|---|
 | `ALLOWED_ORIGINS` | `https://flussolab.s3l.it` | Sites students can open and hand in verifications from (comma separated). |
 | `APP_URL` | `https://flussolab.s3l.it/` | App address used in the class links. |
-| `TRUST_PROXY` | empty | Set to `1` behind a reverse proxy, so the real IP of students is read. |
+| `TRUST_PROXY` | empty | Set to `1` behind a reverse proxy, so the real IP of students is read. Without it the whole class shares one address and the anti-abuse limits may hit everyone at once. |
 | `ADMIN_EMAIL`, `ADMIN_PASSWORD` | empty | Optional: create the teacher's account at the first start. |
 | `PUID`, `PGID` | `1000` | User and group running the server and owning the data. |
 | `PORT` | `8080` | Port inside the container. |
@@ -101,7 +101,7 @@ docker run --rm -v flussolab-data:/data -v "$PWD":/backup alpine tar czf /backup
    - **Expected output**: one value per line, one for each time a locked OUT writes. Text written by other OUTs does not count; numbers are compared with a small tolerance, so 7 and 7.0 are equal.
 4. **Variants.** Every code gets one variant of each exercise; codes alternate between them, so students sitting next to each other get different combinations. Editing a verification later keeps the variants already given to the codes. Students never see which variant they have (neither in the app nor on the slip with the code): only you see it in the results.
 5. **Results.** One row per code, with the result of every exercise and the total; the ZIP holds one `.flusso` file per student and exercise, and `risultati.csv`.
-6. **Times.** Before it opens the link shows nothing; after it closes no one can hand in. Until then a student can hand in again: the last submission counts, and the teacher also sees the earlier ones.
+6. **Times.** Before it opens the link shows nothing. The app shows students the closing time and the time left, and warns them 5 minutes before. At the closing time they can no longer edit, but still have the **extra minutes** you chose (5 by default) just to press Hand in; then the hand-in is closed. Until then a student can hand in again: the last submission counts, and the teacher also sees the earlier ones. From the verification's page you can **extend** by 5 or 15 minutes or close at once: the students' app updates by itself within half a minute.
 
 ## Privacy
 
@@ -118,7 +118,7 @@ There are no student accounts, no student cookies and no access logs. Data stays
 
 The app starts from 1.x, the server from 0.x. App and server exchange a *protocol* number: if it does not match, the app shows a clear message instead of an error.
 
-- **Server 0.2** (protocol 2) needs **FlussoLab 1.2** or newer. FlussoLab 1.2 also works with server 0.1.
+- **Server 0.2** or newer (protocol 2) needs **FlussoLab 1.2** or newer. FlussoLab 1.2 also works with server 0.1. The time warnings and the editing lock at the closing time need FlussoLab 1.3 and server 0.3.
 - Updating from 0.1 is automatic: the data is converted at the first start and the verifications you already have become verifications with one exercise.
 - The changes of every version are in the [changelog](CHANGELOG.md).
 

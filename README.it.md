@@ -24,7 +24,7 @@ Niente nomi degli studenti sul server: solo codici. La corrispondenza codice →
    - **Domain**: `consegne.tuodominio.it`
    - **Forward Hostname / IP**: l'IP del computer con Docker (o `flussolab-server` se NPM è nella stessa rete Docker), **Port** `8080`
    - scheda **SSL**: *Request a new SSL Certificate*, *Force SSL*.
-4. Apri `https://consegne.tuodominio.it/admin` e crea l'account del docente: c'è un solo account.
+4. Apri `https://consegne.tuodominio.it/admin` e crea l'account del docente: c'è un solo account. Ti chiede un **codice di configurazione**: lo trovi nei log del container (Portainer → *Containers* → *Logs*). Serve perché nessun altro possa creare l'account prima di te. In alternativa imposta `ADMIN_EMAIL` e `ADMIN_PASSWORD` nello stack e l'account viene creato da solo.
 
 ## Installazione da terminale
 
@@ -53,7 +53,7 @@ Poi configura il reverse proxy come sopra e apri `/admin`.
 |---|---|---|
 | `ALLOWED_ORIGINS` | `https://flussolab.s3l.it` | Siti da cui gli studenti possono aprire e consegnare le verifiche (separati da virgole). |
 | `APP_URL` | `https://flussolab.s3l.it/` | Indirizzo dell'app usato nei link per la classe. |
-| `TRUST_PROXY` | vuoto | Metti `1` se il server è dietro un reverse proxy: così legge l'IP vero degli studenti. |
+| `TRUST_PROXY` | vuoto | Metti `1` se il server è dietro un reverse proxy: così legge l'IP vero degli studenti. Senza, tutta la classe risulta con lo stesso indirizzo e i limiti anti-abuso potrebbero scattare per tutti insieme. |
 | `ADMIN_EMAIL`, `ADMIN_PASSWORD` | vuoti | Facoltativi: creano l'account del docente al primo avvio. |
 | `PUID`, `PGID` | `1000` | Utente e gruppo con cui gira il server e a cui appartengono i dati. |
 | `PORT` | `8080` | Porta interna del container. |
@@ -101,7 +101,7 @@ docker run --rm -v flussolab-data:/data -v "$PWD":/backup alpine tar czf /backup
    - **Output atteso**: un valore per riga, uno per ogni volta che un OUT fisso scrive. I testi scritti dagli altri OUT non contano; i numeri si confrontano con una piccola tolleranza, quindi 7 e 7.0 sono uguali.
 4. **Varianti.** Ogni codice riceve una variante di ogni esercizio; i codici si alternano tra le varianti, così i vicini di banco hanno combinazioni diverse. Se modifichi la verifica dopo, i codici tengono le varianti che avevano già. Lo studente non vede mai quale variante ha (né nell'app né sul foglio con il codice): solo tu la vedi nei risultati.
 5. **Risultati.** Una riga per codice, con il risultato di ogni esercizio e il totale; lo ZIP contiene un file `.flusso` per studente ed esercizio, più `risultati.csv`.
-6. **Orari.** Prima dell'apertura il link non mostra niente; dopo la chiusura non si consegna più. Fino alla chiusura lo studente può consegnare di nuovo: vale l'ultima consegna, e il docente vede anche le precedenti.
+6. **Orari.** Prima dell'apertura il link non mostra niente. L'app mostra allo studente l'ora di chiusura e il tempo che manca, e lo avvisa 5 minuti prima. All'ora di chiusura non può più modificare, ma ha ancora i **minuti extra** che hai scelto (5, di base) solo per premere Consegna; poi la consegna è chiusa. Fino ad allora può consegnare di nuovo: vale l'ultima consegna, e il docente vede anche le precedenti. Dalla pagina della verifica puoi **prolungare** di 5 o 15 minuti o chiudere subito: l'app degli studenti si aggiorna da sola entro mezzo minuto.
 
 ## Privacy
 
@@ -118,7 +118,7 @@ Non ci sono account per gli studenti, cookie per gli studenti o log degli access
 
 L'app parte dalla versione 1.x, il server dalla 0.x. App e server si scambiano un numero di *protocollo*: se non coincide, l'app mostra un messaggio chiaro invece di un errore.
 
-- Il **server 0.2** (protocollo 2) richiede **FlussoLab 1.2** o successivo. FlussoLab 1.2 funziona anche con il server 0.1.
+- Il **server 0.2** o successivo (protocollo 2) richiede **FlussoLab 1.2** o successivo. FlussoLab 1.2 funziona anche con il server 0.1. Gli avvisi sul tempo e il blocco delle modifiche alla chiusura richiedono FlussoLab 1.3 e server 0.3.
 - L'aggiornamento dalla 0.1 è automatico: al primo avvio i dati vengono convertiti e le verifiche che hai diventano verifiche con un esercizio.
 - Le novità di ogni versione sono nel [changelog](CHANGELOG.it.md).
 

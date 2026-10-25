@@ -177,6 +177,8 @@ function toInt(x, op) {
   return BigInt(Math.trunc(x));
 }
 const MAXBITS = 20000; // about 6000 digits: more would freeze the page
+const MAXSTR = 1000000; // characters in one text value
+const MAXOUT = 2000000; // characters written by a test run
 const bits = x => (x < 0n ? -x : x).toString(16).length * 4;
 function arith(op, a, b) {
   num(a, op); num(b, op);
@@ -267,7 +269,7 @@ function ev(n, env) {
       const a = ev(n.a, env), b = ev(n.b, env);
       switch (n.op) {
         case '+':
-          if (typeof a === 'string' && typeof b === 'string') return a + b;
+          if (typeof a === 'string' && typeof b === 'string') { if (a.length + b.length > MAXSTR) throw new FErr('bigstr'); return a + b; }
           // like Python: text joins only text, a number needs str()
           if (typeof a === 'string' || typeof b === 'string') throw new FErr('strmix', typeOf(typeof a === 'string' ? b : a));
           return arith('+', a, b);
@@ -746,7 +748,7 @@ function invertCond(src) { return srcE(negate(parse(src))).s; }
 // locked: values written by the locked OUT blocks of a verifica, the only ones that are checked
 function runTest(main, inputs, maxSteps = 200000) {
   const env = Object.create(null); let out = ''; const locked = [];
-  const g = exec(main, env, { out: (s, ln, b) => { out += s + (ln ? '\n' : ''); if (b && b.lock) locked.push(s); } });
+  const g = exec(main, env, { out: (s, ln, b) => { out += s + (ln ? '\n' : ''); if (out.length > MAXOUT) throw new FErr('bigout'); if (b && b.lock) locked.push(s); } });
   let k = 0, steps = 0, v;
   try {
     for (;;) {

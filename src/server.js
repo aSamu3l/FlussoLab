@@ -10,7 +10,7 @@ const { open } = require('./db.js');
 const { cleanMain, startMain, grade } = require('./check.js');
 const { makeZip } = require('./zip.js');
 
-const VERSION = '0.2.0';
+const VERSION = '0.3.0';
 const PROTOCOL = 2; // bump when the app and the server stop understanding each other
 const CFG = {
   port: Number(process.env.PORT || 8080),
@@ -65,6 +65,13 @@ function setAdmin(email, pw) {
   db.prepare('INSERT INTO admin (id, email, hash, salt, created) VALUES (1, ?, ?, ?, ?)').run(String(email).trim().toLowerCase(), hashPw(pw, salt), salt, now());
 }
 const hasAdmin = () => !!db.prepare('SELECT id FROM admin').get();
+// Without an account anyone who reaches /admin could create it. The first start prints a code in the
+// container's log: creating the account needs it. ADMIN_EMAIL/ADMIN_PASSWORD skip this step.
+const SETUP_CODE = rnd(6);
+if (!hasAdmin() && !(process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD)) {
+  console.log(`\nFlussoLab: nessun account del docente. Apri /admin e usa questo codice di configurazione: ${SETUP_CODE}\n` +
+    `FlussoLab: no teacher account yet. Open /admin and use this setup code: ${SETUP_CODE}\n`);
+}
 function checkPw(email, pw) {
   const a = db.prepare('SELECT * FROM admin WHERE email = ?').get(String(email || '').trim().toLowerCase());
   const h = Buffer.from(hashPw(pw || '', a ? a.salt : 'x'.repeat(32)), 'hex');
@@ -76,7 +83,7 @@ function session(req) {
   if (!s || s.expires < Date.now()) return null;
   return s;
 }
-const secure = req => req.headers['x-forwarded-proto'] === 'https' || !!req.socket.encrypted;
+const secure = req => !!req.socket.encrypted || (CFG.trustProxy && req.headers['x-forwarded-proto'] === 'https');
 const cookie = (req, token, maxAge) => `fl_s=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${maxAge}${secure(req) ? '; Secure' : ''}`;
 
 /* ---------- verifiche ----------
@@ -106,20 +113,27 @@ function cleanVer(o) {
     return { title: str(e && e.title, 120), variants };
   });
   if (!exercises.length) exercises.push({ title: '', variants: [cleanVariant({}, 0)] });
-  return { title: str(o.title, 120) || 'Verifica', opens: date(o.opens), closes: date(o.closes), exercises };
+  // grace: minutes after the closing time in which students can still hand in (but no longer edit)
+  const grace = o.grace === undefined || o.grace === null || o.grace === '' ? 5 : Math.min(60, Math.max(0, o.grace | 0));
+  return { title: str(o.title, 120) || 'Verifica', opens: date(o.opens), closes: date(o.closes), grace, exercises };
 }
 const getVer = id => {
   const r = db.prepare('SELECT * FROM verifiche WHERE id = ?').get(String(id)); if (!r) return null;
   const d = JSON.parse(r.data);
   if (!Array.isArray(d.exercises)) { d.exercises = [{ title: '', variants: d.variants || [] }]; delete d.variants; }
+  if (typeof d.grace !== 'number') d.grace = 5;
   return { id: r.id, ...d, created: r.created };
 };
+// soon → open → grace (closing time passed, hand-in still accepted) → closed
+const deadline = v => v.closes ? new Date(Date.parse(v.closes) + (v.grace || 0) * 60000).toISOString() : '';
 function status(v) {
   const t = Date.now();
   if (v.opens && t < Date.parse(v.opens)) return 'soon';
-  if (v.closes && t > Date.parse(v.closes)) return 'closed';
+  if (v.closes && t > Date.parse(deadline(v))) return 'closed';
+  if (v.closes && t > Date.parse(v.closes)) return 'grace';
   return 'open';
 }
+const canSubmit = v => ['open', 'grace'].includes(status(v));
 // the variant of every exercise for the code number ord (0, 1, 2... in creation order): neighbours get different
 // variants and, with several exercises, different combinations. A saved choice stays as long as that variant exists.
 function varsFor(v, ord, stored) {
@@ -145,7 +159,8 @@ function fixCodes(v) {
   const up = db.prepare('UPDATE codes SET variant = ?, vars = ? WHERE vid = ? AND code = ?');
   codeRows(v.id).forEach((r, ord) => { const vars = varsFor(v, ord, r.vars); up.run(vars[0], JSON.stringify(vars), v.id, r.code); });
 }
-const publicHead = v => ({ protocol: PROTOCOL, title: v.title, status: status(v), opens: v.opens, closes: v.closes, exercises: v.exercises.length });
+// now: the server's clock, so the app can show the time left even when the student's clock is wrong
+const publicHead = v => ({ protocol: PROTOCOL, title: v.title, status: status(v), opens: v.opens, closes: v.closes, grace: v.grace, deadline: deadline(v), now: now(), exercises: v.exercises.length });
 const testsOf = vr => vr.tests.length;
 
 /* ---------- submissions ---------- */
@@ -208,7 +223,7 @@ async function route(req, res) {
     const head = publicHead(v);
     if (!m[2] && M === 'GET') {
       const code = normCode(url.searchParams.get('code'));
-      if (!code || head.status !== 'open') return send(res, 200, head);
+      if (!code || !canSubmit(v)) return send(res, 200, head);
       if (limited('code:' + ip, 120, 60000)) return send(res, 429, { error: 'slow' });
       const c = codeInfo(v, code);
       if (!c) return send(res, 403, { error: 'code' });
@@ -221,7 +236,7 @@ async function route(req, res) {
       }) });
     }
     if (m[2] && M === 'POST') {
-      if (head.status !== 'open') return send(res, 403, { error: head.status });
+      if (!canSubmit(v)) return send(res, 403, { error: head.status });
       let body; try { body = await readJson(req); } catch (e) { return send(res, 400, { error: 'body' }); }
       const code = normCode(body.code);
       const c = codeInfo(v, code);
@@ -254,7 +269,7 @@ async function route(req, res) {
         ins.run(v.id, code, ex, variant, at, ip, device, JSON.stringify(stored), JSON.stringify(g), JSON.stringify(flags));
       }
       const n = db.prepare('SELECT COUNT(DISTINCT at) AS n FROM submissions WHERE vid = ? AND code = ?').get(v.id, code).n;
-      return send(res, 200, { ok: true, at, n, exercises: work.map(w => w.ex) });
+      return send(res, 200, { ok: true, at, n, exercises: work.map(w => w.ex), status: status(v) });
     }
     return send(res, 405, { error: 'method' });
   }
@@ -280,6 +295,7 @@ async function route(req, res) {
       let b; try { b = await readJson(req, 10000); } catch (e) { return send(res, 400, { error: 'body' }); }
       if (r === 'setup') {
         if (hasAdmin()) return send(res, 403, { error: 'exists' });
+        if (normCode(b.setupCode) !== SETUP_CODE) return send(res, 403, { error: 'setupcode' });
         if (!/^[^@\s]+@[^@\s]+$/.test(b.email || '') || String(b.password || '').length < 8) return send(res, 400, { error: 'weak' });
         setAdmin(b.email, b.password);
       }
@@ -306,7 +322,7 @@ async function route(req, res) {
         const n = db.prepare('SELECT COUNT(DISTINCT code) AS n FROM submissions WHERE vid = ?').get(v.id).n;
         const k = db.prepare('SELECT COUNT(*) AS n FROM codes WHERE vid = ?').get(v.id).n;
         const ex = Array.isArray(v.exercises) ? v.exercises : [{ variants: v.variants || [] }];
-        return { id: v.id, title: v.title, opens: v.opens, closes: v.closes, status: status(v), exercises: ex.length, variants: Math.max(...ex.map(x => x.variants.length)), submitted: n, codes: k };
+        return { id: v.id, title: v.title, opens: v.opens, closes: v.closes, grace: typeof v.grace === 'number' ? v.grace : 5, status: status(v), exercises: ex.length, variants: Math.max(...ex.map(x => x.variants.length)), submitted: n, codes: k };
       });
       return send(res, 200, list);
     }
@@ -317,12 +333,12 @@ async function route(req, res) {
       addCodes({ ...v, id }, Math.min(500, Math.max(1, b.ncodes | 0 || 30)));
       return send(res, 200, { id });
     }
-    const vm = /^verifiche\/([A-Z0-9]{8})(\/(close|submissions|zip|codes))?$/.exec(r);
+    const vm = /^verifiche\/([A-Z0-9]{8})(\/(close|extend|submissions|zip|codes))?$/.exec(r);
     const sm = /^submissions\/(\d+)$/.exec(r);
     if (vm) {
       const v = getVer(vm[1]); if (!v) return send(res, 404, { error: 'notfound' });
       const codes = () => codeRows(v.id).map((c, ord) => ({ code: fmtCode(c.code), vars: varsFor(v, ord, c.vars) }));
-      if (!vm[2] && M === 'GET') return send(res, 200, { ...v, status: status(v), codes: codes() });
+      if (!vm[2] && M === 'GET') return send(res, 200, { ...v, status: status(v), deadline: deadline(v), codes: codes() });
       if (!vm[2] && M === 'PUT') {
         let b; try { b = await readJson(req); } catch (e) { return send(res, 400, { error: 'body' }); }
         const nv = cleanVer(b);
@@ -332,10 +348,21 @@ async function route(req, res) {
         return send(res, 200, { ok: true });
       }
       if (!vm[2] && M === 'DELETE') { db.prepare('DELETE FROM verifiche WHERE id = ?').run(v.id); return send(res, 200, { ok: true }); }
+      // close now: the closing time becomes now; with hard=true the hand-in stops at once (no extra minutes)
       if (vm[3] === 'close' && M === 'POST') {
-        const nv = { ...v }; delete nv.id; delete nv.created; nv.closes = now();
+        let b = {}; try { b = await readJson(req, 1000); } catch (e) {}
+        const nv = { ...v }; delete nv.id; delete nv.created; nv.closes = now(); if (b.hard) nv.grace = 0;
         db.prepare('UPDATE verifiche SET data = ?, updated = ? WHERE id = ?').run(JSON.stringify(nv), now(), v.id);
-        return send(res, 200, { ok: true });
+        return send(res, 200, { ok: true, closes: nv.closes, grace: nv.grace });
+      }
+      // extend: more minutes from the closing time (or from now, if it has already passed)
+      if (vm[3] === 'extend' && M === 'POST') {
+        let b; try { b = await readJson(req, 1000); } catch (e) { return send(res, 400, { error: 'body' }); }
+        const min = Math.min(24 * 60, Math.max(1, b.minutes | 0));
+        const from = Math.max(Date.now(), v.closes ? Date.parse(v.closes) : 0);
+        const nv = { ...v }; delete nv.id; delete nv.created; nv.closes = new Date(from + min * 60000).toISOString();
+        db.prepare('UPDATE verifiche SET data = ?, updated = ? WHERE id = ?').run(JSON.stringify(nv), now(), v.id);
+        return send(res, 200, { ok: true, closes: nv.closes });
       }
       if (vm[3] === 'submissions' && M === 'GET') return send(res, 200, listSubs(v));
       if (vm[3] === 'zip' && M === 'GET') {
@@ -359,7 +386,8 @@ async function route(req, res) {
           row.push(sb.at, sb.count, sb.device, sb.ip, sb.flags.join(' '));
           rows.push(row);
         }
-        const csv = '﻿' + rows.map(r => r.map(x => `"${String(x ?? '').replace(/"/g, '""')}"`).join(';')).join('\r\n');
+        const cell = x => { let v = String(x ?? ''); if (/^[=+\-@\t\r]/.test(v)) v = "'" + v; return `"${v.replace(/"/g, '""')}"`; }; // no formulas in spreadsheets
+        const csv = '\ufeff' + rows.map(r => r.map(cell).join(';')).join('\r\n');
         files.push({ name: 'risultati.csv', data: Buffer.from(csv, 'utf8') });
         const safe = v.title.replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '_') || 'verifica';
         return send(res, 200, makeZip(files), { 'Content-Type': 'application/zip', 'Content-Disposition': `attachment; filename="${safe}.zip"` });
@@ -391,4 +419,4 @@ if (require.main === module) {
   http.createServer((req, res) => route(req, res).catch(e => { console.error(e); if (!res.headersSent) send(res, 500, { error: 'server' }); }))
     .listen(CFG.port, () => console.log(`FlussoLab server ${VERSION} su http://0.0.0.0:${CFG.port} · dati in ${CFG.dataDir}${hasAdmin() ? '' : ' · apri /admin per creare l\'account del docente'}`));
 }
-module.exports = { route, setAdmin, db, CFG, VERSION, PROTOCOL };
+module.exports = { route, setAdmin, db, CFG, VERSION, PROTOCOL, SETUP_CODE };

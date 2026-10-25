@@ -2,6 +2,14 @@
 
 **Italiano** · [English](CHANGELOG.md)
 
+## 0.3.0 · 25 ottobre 2026
+
+- **Tempo della verifica**: alla chiusura gli studenti non possono più modificare, ma hanno ancora i **minuti extra** scelti dal docente (5 di base) per consegnare. L'app mostra loro l'ora di chiusura, il tempo che manca e gli avvisi; il server manda anche la propria ora, così il conto è giusto anche con l'orologio del computer sbagliato.
+- **Prolunga** di 5 o 15 minuti e **Chiudi subito** dalla pagina della verifica; l'app degli studenti si aggiorna da sola.
+- **Codice di configurazione** al primo avvio, stampato nei log: senza, nessuno può creare l'account del docente al posto tuo.
+- Limiti a testi e output dei programmi corretti sul server (un programma che scrive all'infinito non lo rallenta più); il CSV dei risultati non può contenere formule.
+- Il cookie di accesso è marcato sicuro solo quando `TRUST_PROXY` è attivo, come documentato.
+
 ## 0.2.0 · 22 ottobre 2026
 
 - **Verifiche con più esercizi**: fino a 10 esercizi, ognuno con le sue varianti. Ogni codice riceve una variante per esercizio, con combinazioni diverse per i vicini di banco.

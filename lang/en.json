@@ -234,6 +234,8 @@
     "e_undef": "Variable {0} has no value yet",
     "e_div0": "Division by zero",
     "e_big": "Number too large",
+    "e_bigstr": "Text too long: more than a million characters",
+    "e_bigout": "The program wrote too much text (more than 2 MB): probably a loop that never ends",
     "e_type": "Wrong data types for {0}",
     "e_strmix": "Text cannot be joined with {0:mix}: use str(), for example \"Total: \" + str(n)",
     "mix": {
@@ -316,7 +318,22 @@
     "verSubmitTo": "Submissions go to {0}",
     "verClosesAt": "closes on {0}",
     "verErrClosed": "The verification is closed: you cannot hand in any more",
-    "verErrSoon": "The verification is not open yet"
+    "verErrSoon": "The verification is not open yet",
+    "verLockedMsg": "Time is up for this verification: you can no longer edit, only hand in.",
+    "verBarNoClose": "Verification “{0}” · code {1}",
+    "verBarOpen": "Verification “{0}” · hand in by {1} · {2} left",
+    "verBarWarn": "{0} left before it closes: remember to hand in!",
+    "verBarGrace": "Time is up: no more edits. You can hand in until {0} ({1})",
+    "verBarClosed": "Hand-in closed at {0}",
+    "verWarn5": "Verification “{0}”: 5 minutes left, remember to hand in!",
+    "verTimeUp": "Time is up: you can only hand in, until {0}",
+    "verClosedNow": "Verification “{0}”: hand-in is closed",
+    "verMoreTime": "The teacher gave more time: the verification closes at {0}",
+    "verGraceOpen": "Time is up: you can only hand in, until {0}.",
+    "verGraceNote": "(then {0} more minutes just to hand in)",
+    "tHours": "{0} h {1} min",
+    "tMin": "{0} min",
+    "tSec": "{0} s"
   },
   "pseudo": {
     "start": "BEGIN",

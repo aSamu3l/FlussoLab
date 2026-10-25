@@ -4,6 +4,12 @@
 
 Every change to FlussoLab, newest first. Version numbers follow *major.features.fixes*.
 
+## 1.3.0 · October 25, 2026
+
+- **Verification time** (server 0.3): a bar under the header shows the closing time, the time left and the Hand in button. A warning comes five minutes before; at the closing time **editing stops** and the extra minutes chosen by the teacher remain just to hand in. If the teacher extends or closes early, the app notices by itself.
+- Programs can no longer build huge texts or write without limit: a clear error appears instead of a frozen page.
+- Security headers for the site (Content Security Policy, no framing in other pages).
+
 ## 1.2.0 · October 22, 2026
 
 - **Verifications with several exercises** (server 0.2): the code opens every exercise, one per tab, each with its own task and tests. **Hand in** sends all of them together and warns if one is missing; opening the link again brings back only the closed ones.

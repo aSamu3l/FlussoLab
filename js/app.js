@@ -2,7 +2,7 @@
 'use strict';
 /* ====== Project settings ====== */
 const CONFIG = {
-  version: '1.2.0',
+  version: '1.3.0',
   author: 'aSamu3l',
   github: 'https://github.com/aSamu3l',
   repo: 'https://github.com/aSamu3l/FlussoLab',
@@ -119,7 +119,8 @@ function validVer(x) {
     nlocks: Math.max(0, x.nlocks | 0), server: String(x.server ?? ''), vid: String(x.vid ?? ''), variant: String(x.variant ?? ''), closes: String(x.closes ?? ''),
     code: String(x.code ?? ''), sent: x.sent && typeof x.sent === 'object' ? { at: String(x.sent.at || ''), n: x.sent.n | 0 } : null,
     // a verifica can have several exercises: one tab each (ex counts from 0); proto is the server's protocol
-    ex: Math.max(0, x.ex | 0), nex: Math.max(1, x.nex | 0), extitle: String(x.extitle ?? ''), proto: x.proto === 2 ? 2 : 1 };
+    ex: Math.max(0, x.ex | 0), nex: Math.max(1, x.nex | 0), extitle: String(x.extitle ?? ''), proto: x.proto === 2 ? 2 : 1,
+    grace: Math.max(0, x.grace | 0), deadline: String(x.deadline ?? '') };
 }
 const docOf = o => {
   const d = { name: nameOf(o), main: o.main };
@@ -149,8 +150,8 @@ function touchDev() {
 const ser = () => JSON.stringify(docOf(prog), replacer);
 function snap() { hist.push(ser()); if (hist.length > 150) hist.shift(); fut.length = 0; touchDev(); markDirty(); }
 function restore(s) { closePop(); hideCtx(); ctxSlot = null; const o = JSON.parse(s); prog = docOf(o); assignIds(prog.main); sel = null; $('#pname').value = prog.name; }
-function undo() { if (!hist.length) return; stopRun(); fut.push(ser()); restore(hist.pop()); markDirty(); afterChange(true); }
-function redo() { if (!fut.length) return; stopRun(); hist.push(ser()); restore(fut.pop()); markDirty(); afterChange(true); }
+function undo() { if (!hist.length || !canEdit()) return; stopRun(); fut.push(ser()); restore(hist.pop()); markDirty(); afterChange(true); }
+function redo() { if (!fut.length || !canEdit()) return; stopRun(); hist.push(ser()); restore(fut.pop()); markDirty(); afterChange(true); }
 
 /* ================= tabs ================= */
 const MAXTABS = 10;
@@ -514,6 +515,7 @@ function openPop(slotId, cx, cy) {
 function closePop() { $('#pop').hidden = true; popSlot = null; $$('.slot.on').forEach(e => e.classList.remove('on')); }
 function insertType(ty) {
   if (!popSlot) return;
+  if (!canEdit()) { closePop(); return; }
   stopRun(); snap();
   let nb;
   if (ty === '__paste') nb = fromClip();
@@ -697,28 +699,28 @@ function renderPanel() {
   const box = $('#tab-block');
   const f = sel && find(sel);
   if (!f) { sel = null; box.innerHTML = `<div class="empty"><p style="margin:0">${t('noSel')}</p>${legendHTML()}</div>`; return; }
-  const b = f.b, defs = FIELDS[b.t];
+  const b = f.b, defs = FIELDS[b.t], ro = verLocked(prog.ver);
   const fieldHTML = ([key, lab, ph, kind]) => {
     const val = fieldVal(b, key);
     const showErr = String(val).trim() ? fieldErr(kind, val) : '';
     if (kind === 'kind') return `<div class="field"><label for="f-${key}">${esc(t(lab))}</label>
       <select id="f-${key}" data-k="${key}" data-kind="kind">${FL.KINDS.map(k => `<option value="${k}" ${b.k === k ? 'selected' : ''}>${esc(t('tyk')[k])}</option>`).join('')}</select></div>`;
     return `<div class="field"><label for="f-${key}">${esc(t(lab))}</label>
-      <input id="f-${key}" data-k="${key}" data-kind="${kind}" value="${esc(val)}" placeholder="${esc(ph || '')}" spellcheck="false" autocapitalize="off" autocomplete="off" class="${showErr ? 'bad' : ''}"${b.lock ? ' readonly' : ''}>
+      <input id="f-${key}" data-k="${key}" data-kind="${kind}" value="${esc(val)}" placeholder="${esc(ph || '')}" spellcheck="false" autocapitalize="off" autocomplete="off" class="${showErr ? 'bad' : ''}"${b.lock || ro ? ' readonly' : ''}>
       <div class="msg" id="m-${key}">${esc(showErr)}</div></div>`;
   };
   let fields;
   if (b.t === 'for') fields = fieldHTML(defs[0]) + `<div class="row3">${defs.slice(1).map(fieldHTML).join('')}</div>`;
   else fields = defs.map(fieldHTML).join('');
   const tk = b.t === 'output' && b.ln !== false ? 'outln' : b.t;
-  if (b.t === 'output') fields += `<label class="check"><input type="checkbox" id="f-ln" ${b.ln !== false ? 'checked' : ''}${b.lock ? ' disabled' : ''}> ${esc(t('f_ln'))}</label>`;
+  if (b.t === 'output') fields += `<label class="check"><input type="checkbox" id="f-ln" ${b.ln !== false ? 'checked' : ''}${b.lock || ro ? ' disabled' : ''}> ${esc(t('f_ln'))}</label>`;
   if (b.c !== undefined) {
     let ok = true; try { FL.parse(b.c); } catch (e) { ok = false; }
     fields += `<div class="grp" style="margin:-2px 0 12px"><button class="btn" data-act="inv" ${ok ? '' : 'disabled'}>⇄ ${esc(t('invert'))}</button>${b.t === 'if' ? `<button class="btn" data-act="swap">${esc(t('swap'))}</button>` : ''}</div>`;
   }
   box.innerHTML = `<div class="bhead">${typeIcon(tk)}<div><h3>${esc(t('types')[tk])}</h3><p>${esc(noteOf(b))}</p></div></div>
-    ${b.lock ? `<p class="offnote">🔒 ${esc(t('lockNote'))}</p>` : b.off ? `<p class="offnote">${esc(t('blkOffNote'))}</p>` : ''}${fields}<div class="perr" id="blkErr" hidden></div>
-    <div class="actions">
+    ${ro ? `<p class="offnote">⏱ ${esc(t('verLockedMsg'))}</p>` : b.lock ? `<p class="offnote">🔒 ${esc(t('lockNote'))}</p>` : b.off ? `<p class="offnote">${esc(t('blkOffNote'))}</p>` : ''}${fields}<div class="perr" id="blkErr" hidden></div>
+    <div class="actions${ro ? ' ro' : ''}">
       <button class="btn" data-act="up" ${f.idx === 0 ? 'disabled' : ''}>↑ ${esc(t('up'))}</button>
       <button class="btn" data-act="down" ${f.idx === f.arr.length - 1 ? 'disabled' : ''}>↓ ${esc(t('down'))}</button>
       <button class="btn" data-act="dup">${esc(t('dup'))}</button>
@@ -739,6 +741,7 @@ $('#tab-block').addEventListener('focusin', e => { if (e.target.matches('[data-k
 $('#tab-block').addEventListener('input', e => {
   const inp = e.target.closest('[data-k]'); if (!inp) return;
   const f = sel && find(sel); if (!f) return;
+  if (!canEdit()) { renderPanel(); return; }
   if (!editSnapDone) { snap(); editSnapDone = true; stopRun(); }
   if (inp.dataset.k === '_as') {
     const inc = splitInc(inp.value), sp = inc ? null : splitAssign(inp.value);
@@ -755,6 +758,7 @@ $('#tab-block').addEventListener('input', e => {
 $('#tab-block').addEventListener('change', e => {
   if (e.target.id !== 'f-ln') return;
   const f = sel && find(sel); if (!f) return;
+  if (!canEdit()) { renderPanel(); return; }
   stopRun(); snap(); f.b.ln = e.target.checked; afterChange(true);
 });
 $('#tab-block').addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.matches('input[data-k]')) e.target.blur(); });
@@ -762,6 +766,7 @@ $('#tab-block').addEventListener('click', e => { const btn = e.target.closest('[
 function blockAct(act) {
   const f = sel && find(sel); if (!f) return;
   if (act === 'copy') { clip = JSON.stringify(f.b, replacer); toast(t('copiedBlk')); return; }
+  if (!canEdit()) return;
   stopRun(); snap();
   if (act === 'up' && f.idx > 0) { f.arr.splice(f.idx - 1, 0, f.arr.splice(f.idx, 1)[0]); }
   if (act === 'down' && f.idx < f.arr.length - 1) { f.arr.splice(f.idx + 1, 0, f.arr.splice(f.idx, 1)[0]); }
@@ -781,7 +786,7 @@ function deleteSel(f, cut) {
   sel = f.arr[Math.min(f.idx, f.arr.length - 1)]?.id || null;
   afterChange(true); toast(t('deleted'));
 }
-function afterChange(panel) { renderDiagram(); if (panel) { renderPanel(); updBlkErr(); } renderCode(); exRes = null; renderEx(); persist(); }
+function afterChange(panel) { renderDiagram(); if (panel) { renderPanel(); updBlkErr(); } renderCode(); exRes = null; renderEx(); renderVerBar(); persist(); }
 
 /* ================= side panel tabs ================= */
 let curTab = 'block';
@@ -848,7 +853,7 @@ let openLine = null;
 function conOut(text, ln) {
   if (con.dataset.idle) { con.innerHTML = ''; delete con.dataset.idle; }
   if (!openLine) { openLine = document.createElement('div'); con.appendChild(openLine); }
-  openLine.appendChild(document.createTextNode(text));
+  openLine.appendChild(document.createTextNode(text.length > 20000 ? text.slice(0, 20000) + '…' : text)); // the console shows, it does not store novels
   if (ln) openLine = null;
   while (con.childNodes.length > 3000) con.removeChild(con.firstChild);
   con.scrollTop = con.scrollHeight;
@@ -1057,7 +1062,7 @@ function testResult(r, inputs, want, noWant, last) {
 }
 function renderEx() {
   if (curTab !== 'ex') return;
-  const box = $('#tab-ex'), ver = prog.ver, mine = prog.tests || [];
+  const box = $('#tab-ex'), ver = prog.ver, mine = prog.tests || [], ro = verLocked(ver);
   let h = '';
   if (ver) {
     h += `<div class="sect"><h3>${esc(ver.title || t('verT'))}${ver.nex > 1 ? ` · ${esc(t('verExOf', (ver.ex | 0) + 1, ver.nex))}${ver.extitle ? ': ' + esc(ver.extitle) : ''}` : ''}</h3><p class="extask">${esc(ver.text || '—')}</p></div>
@@ -1067,16 +1072,16 @@ function renderEx() {
         ${exRes && !exRes.ver[i].ok ? testResult(exRes.ver[i], x.in, x.out, true) : ''}</li>`).join('') + '</ul>' +
       (ver.hidden ? `<p class="note">${esc(t('verHidden', ver.hidden))}</p>` : '') + '</div>';
     if (ver.server) h += `<div class="sect handin"><div class="exbar" style="margin:0"><button class="btn primary" id="verSubmit">${esc(t('verSubmit'))}</button>
-      <span class="note" style="margin:0">${esc(t('verSubmitTo', verHost(ver)))} · <b>${esc(ver.code)}</b>${ver.closes ? ' · ' + esc(t('verClosesAt', fmtWhen(ver.closes))) : ''}${ver.nex > 1 ? ' · ' + esc(t('verAllTogether', ver.nex)) : ''}</span></div>
+      <span class="note" style="margin:0">${esc(t('verSubmitTo', verHost(ver)))} · <b>${esc(ver.code)}</b>${ver.closes ? ' · ' + esc(t('verClosesAt', fmtWhen(ver.closes))) + (ver.grace ? ' ' + esc(t('verGraceNote', ver.grace)) : '') : ''}${ver.nex > 1 ? ' · ' + esc(t('verAllTogether', ver.nex)) : ''}</span></div>
       ${ver.sent ? `<p class="sent">✓ ${esc(t('verSentN', fmtWhen(ver.sent.at), ver.sent.n))}</p>` : ''}</div>`;
   }
   h += `<div class="sect"><h3>${esc(t('myTests'))}</h3>` + (mine.length ? '' : `<p class="note">${esc(t('myTestsNone'))}</p>`) +
     mine.map((x, i) => `<div class="mytest${exRes ? (exRes.mine[i].ok ? ' ok' : ' ko') : ''}" data-i="${i}">
-      <div class="exio"><label class="lbl" for="tIn${i}">${esc(t('exIn'))}</label><textarea id="tIn${i}" rows="2" data-k="in" spellcheck="false">${esc(x.in.join('\n'))}</textarea></div>
-      <div class="exio"><label class="lbl" for="tOut${i}">${esc(t('exOut'))}</label><textarea id="tOut${i}" rows="2" data-k="out" spellcheck="false">${esc(x.out)}</textarea></div>
-      <button class="btn danger tdel" data-del="${i}" aria-label="${esc(t('exRemove'))}">×</button>
+      <div class="exio"><label class="lbl" for="tIn${i}">${esc(t('exIn'))}</label><textarea id="tIn${i}" rows="2" data-k="in" spellcheck="false"${ro ? ' readonly' : ''}>${esc(x.in.join('\n'))}</textarea></div>
+      <div class="exio"><label class="lbl" for="tOut${i}">${esc(t('exOut'))}</label><textarea id="tOut${i}" rows="2" data-k="out" spellcheck="false"${ro ? ' readonly' : ''}>${esc(x.out)}</textarea></div>
+      <button class="btn danger tdel" data-del="${i}" aria-label="${esc(t('exRemove'))}"${ro ? ' disabled' : ''}>×</button>
       ${exRes ? testResult(exRes.mine[i], x.in, x.out, false, prog.tmode === 'last') : ''}</div>`).join('') +
-    `<div class="exbar"><button class="btn" id="tAdd">${esc(t('exAdd'))}</button>` +
+    `<div class="exbar"><button class="btn" id="tAdd"${ro ? ' disabled' : ''}>${esc(t('exAdd'))}</button>` +
     (lockOuts() ? '' : `<select id="tMode" aria-label="${esc(t('exMode'))}"><option value="exact"${prog.tmode !== 'last' ? ' selected' : ''}>${esc(t('exModeExact'))}</option><option value="last"${prog.tmode === 'last' ? ' selected' : ''}>${esc(t('exModeLast'))}</option></select>`) + '</div></div>';
   const n = mine.length + (ver ? ver.tests.length : 0);
   h += `<div class="exbar"><button class="btn primary" id="exCheck" ${n ? '' : 'disabled'}>${esc(t('exCheck'))}</button></div>`;
@@ -1092,12 +1097,13 @@ function renderEx() {
     renderEx();
   };
   if ($('#verSubmit')) $('#verSubmit').onclick = cmdSubmit;
-  $('#tAdd').onclick = () => { snap(); prog.tests = [...(prog.tests || []), { in: [], out: '' }]; exRes = null; renderEx(); persist(); $(`#tIn${prog.tests.length - 1}`).focus(); };
-  if ($('#tMode')) $('#tMode').onchange = e => { snap(); prog.tmode = e.target.value; exRes = null; renderEx(); persist(); };
-  $$('[data-del]', box).forEach(b => b.onclick = () => { snap(); prog.tests.splice(+b.dataset.del, 1); if (!prog.tests.length) delete prog.tests; exRes = null; renderEx(); persist(); });
+  $('#tAdd').onclick = () => { if (!canEdit()) return; snap(); prog.tests = [...(prog.tests || []), { in: [], out: '' }]; exRes = null; renderEx(); persist(); $(`#tIn${prog.tests.length - 1}`).focus(); };
+  if ($('#tMode')) $('#tMode').onchange = e => { if (!canEdit()) { renderEx(); return; } snap(); prog.tmode = e.target.value; exRes = null; renderEx(); persist(); };
+  $$('[data-del]', box).forEach(b => b.onclick = () => { if (!canEdit()) return; snap(); prog.tests.splice(+b.dataset.del, 1); if (!prog.tests.length) delete prog.tests; exRes = null; renderEx(); persist(); });
   $$('.mytest textarea', box).forEach(ta => {
     ta.onfocus = () => { testSnap = false; };
     ta.oninput = () => {
+      if (!canEdit()) { renderEx(); return; }
       if (!testSnap) { snap(); testSnap = true; }
       const T = prog.tests[+ta.closest('.mytest').dataset.i];
       if (ta.dataset.k === 'in') T.in = ta.value.split('\n').map(z => z.trim()).filter(Boolean); else T.out = ta.value;
@@ -1123,6 +1129,109 @@ async function verFetch(url, opts) {
   let j = {}; try { j = await r.json(); } catch (e) {}
   return { ...j, http: r.status };
 }
+/* --- time of a verifica: closing time, extra minutes to hand in, warnings; the server's clock is the reference --- */
+const verClock = new Map(); // server → its clock minus ours (ms)
+const noteClock = (server, head) => { if (head && head.now) { const d = Date.parse(head.now); if (!isNaN(d)) verClock.set(server, d - Date.now()); } };
+const serverNow = ver => Date.now() + (verClock.get(ver.server) || 0);
+const WARN_MS = 5 * 60000;
+// open → warn (last 5 minutes) → grace (closed: no more edits, hand-in still possible) → closed
+function verPhase(ver) {
+  if (!ver || !ver.closes) return { phase: 'open', left: Infinity };
+  const now = serverNow(ver), c = Date.parse(ver.closes), d = ver.deadline ? Date.parse(ver.deadline) : c;
+  if (now >= d) return { phase: 'closed', left: 0 };
+  if (now >= c) return { phase: 'grace', left: d - now };
+  return { phase: c - now <= WARN_MS ? 'warn' : 'open', left: c - now };
+}
+const verLocked = ver => !!(ver && ver.server && verPhase(ver).phase === 'grace');
+let lockToastT = 0;
+function canEdit() {
+  if (!verLocked(prog.ver)) return true;
+  if (Date.now() - lockToastT > 2500) { lockToastT = Date.now(); toast(t('verLockedMsg')); }
+  return false;
+}
+const fmtClock = s => s ? new Date(s).toLocaleTimeString(lang === 'it' ? 'it-IT' : lang, { hour: '2-digit', minute: '2-digit' }) : '';
+function fmtLeft(ms) {
+  const sec = Math.max(0, Math.round(ms / 1000));
+  if (sec >= 3600) return t('tHours', Math.floor(sec / 3600), Math.floor(sec % 3600 / 60));
+  if (sec >= 60) return t('tMin', Math.floor(sec / 60));
+  return t('tSec', sec);
+}
+// the bar under the header: which verifica, when it closes, how long is left, the hand-in button
+function renderVerBar() {
+  const bar = $('#verBar'), ver = prog.ver;
+  if (!ver || !ver.server) { bar.hidden = true; return; }
+  const { phase, left } = verPhase(ver);
+  bar.hidden = false; bar.dataset.phase = phase;
+  let msg;
+  if (!ver.closes) msg = t('verBarNoClose', ver.title, ver.code);
+  else if (phase === 'open') msg = t('verBarOpen', ver.title, fmtClock(ver.closes), fmtLeft(left));
+  else if (phase === 'warn') msg = t('verBarWarn', fmtLeft(left));
+  else if (phase === 'grace') msg = t('verBarGrace', fmtClock(ver.deadline), fmtLeft(left));
+  else msg = t('verBarClosed', fmtClock(ver.deadline || ver.closes));
+  $('#verMsg').textContent = msg;
+  $('#verGo').hidden = phase === 'closed';
+  $('#verGo').textContent = t('verSubmit');
+}
+// every second: the countdown, and a warning when a verifica (in any tab) changes phase
+const verPhaseSeen = new Map();
+function verTick() {
+  tabVers().forEach(({ ver }) => {
+    const key = ver.server + '/' + ver.vid, ph = verPhase(ver).phase, was = verPhaseSeen.get(key);
+    verPhaseSeen.set(key, ph);
+    if (!was || was === ph) return;
+    if (ph === 'warn' && was === 'open') toast(t('verWarn5', ver.title));
+    if (ph === 'grace') { toast(t('verTimeUp', fmtClock(ver.deadline))); stopRun(); afterChange(true); }
+    if (ph === 'closed') { toast(t('verClosedNow', ver.title)); afterChange(true); }
+    if ((was === 'grace' || was === 'closed') && (ph === 'open' || ph === 'warn')) { toast(t('verMoreTime', fmtClock(ver.closes))); afterChange(true); } // the teacher gave more time
+  });
+  if (prog.ver && prog.ver.server && !document.hidden) renderVerBar();
+}
+setInterval(verTick, 1000);
+$('#verGo').onclick = () => { if (prog.ver && prog.ver.server) cmdSubmit(); };
+// the verifiche in the open tabs (one entry per tab), without parsing the same data twice
+function tabVers() {
+  if (tabs[cur]) tabs[cur].data = ser();
+  const out = [];
+  tabs.forEach((T, k) => {
+    if (T._vd !== T.data) { T._vd = T.data; try { const o = JSON.parse(T.data); T._ver = o.ver && o.ver.server ? validVer(o.ver) : null; } catch (e) { T._ver = null; } }
+    if (T._ver) out.push({ k, ver: k === cur ? prog.ver : T._ver });
+  });
+  return out;
+}
+// asks the server again for the times: the teacher may have changed them. Every 30 s, every 10 s near the end
+let verPollT = 0, verPolling = false;
+async function verPoll() {
+  if (verPolling || document.hidden) return;
+  const seen = new Map();
+  tabVers().forEach(({ ver }) => seen.set(ver.server + '/' + ver.vid, ver));
+  if (!seen.size) return;
+  verPolling = true;
+  try {
+    for (const [key, ver] of seen) {
+      let head; try { head = await verFetch(`${ver.server}/api/v/${ver.vid}`); } catch (e) { continue; }
+      if (head.http !== 200 || !head.title) continue;
+      noteClock(ver.server, head);
+      let changed = false;
+      const upd = v => {
+        const n = { closes: String(head.closes || ''), deadline: String(head.deadline || ''), grace: head.grace | 0, title: String(head.title) };
+        for (const k in n) if (v[k] !== n[k]) { v[k] = n[k]; changed = true; }
+      };
+      tabs.forEach((T, k) => {
+        if (k === cur) { if (prog.ver && prog.ver.server + '/' + prog.ver.vid === key) upd(prog.ver); return; }
+        try { const o = JSON.parse(T.data); if (o.ver && o.ver.server + '/' + o.ver.vid === key) { upd(o.ver); T.data = JSON.stringify(o); } } catch (e) {}
+      });
+      if (changed) { afterChange(true); verTick(); }
+    }
+  } finally { verPolling = false; }
+}
+function verPollLoop() {
+  clearTimeout(verPollT);
+  verPoll();
+  const soon = tabVers().some(({ ver }) => { const p = verPhase(ver); return p.phase === 'grace' || (p.phase !== 'closed' && p.left < 10 * 60000); });
+  verPollT = setTimeout(verPollLoop, soon ? 10000 : 30000);
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden) { verTick(); verPollLoop(); } });
+
 async function openVerifica(ref) {
   const m = /^(.+)\/([A-Za-z0-9]{4,16})$/.exec(decodeURIComponent(ref));
   if (!m) { toast(t('badLink')); return; }
@@ -1131,10 +1240,11 @@ async function openVerifica(ref) {
   try { head = await verFetch(`${base}/api/v/${vid}`); } catch (e) { toast(t('verNoServer', host)); return; }
   if (head.http !== 200 || !head.title) { toast(t('badLink')); return; }
   if (!PROTOCOLS.includes(head.protocol)) { toast(t('verProto')); return; }
+  noteClock(base, head);
   const vstat = head.status;
   const msg = vstat === 'soon' ? t('verSoon', head.title, fmtWhen(head.opens)) : vstat === 'closed' ? t('verClosed', head.title) : '';
   openDlg(`<h2>${esc(head.title)}</h2>${msg ? `<p>${esc(msg)}</p><div class="foot"><button class="btn primary" data-close>${esc(t('close'))}</button></div>` :
-    `<p>${esc(t('verCodeP'))}</p><form id="vcf" class="field" style="margin:0"><label for="vcode">${esc(t('verCodeT'))}</label>
+    `${vstat === 'grace' ? `<p style="color:var(--red)">${esc(t('verGraceOpen', fmtClock(head.deadline)))}</p>` : ''}<p>${esc(t('verCodeP'))}</p><form id="vcf" class="field" style="margin:0"><label for="vcode">${esc(t('verCodeT'))}</label>
      <input type="text" id="vcode" autocomplete="off" autocapitalize="characters" spellcheck="false" style="font-family:var(--f-mono);font-size:20px;letter-spacing:.08em;text-transform:uppercase">
      <div class="msg" id="vmsg"></div></form><p>${esc(t('verSubmitTo', host))}${head.closes ? ' · ' + esc(t('verClosesAt', fmtWhen(head.closes))) : ''}</p>
      <div class="foot"><button class="btn" data-close>${esc(t('cancel'))}</button><button class="btn primary" id="vgo">${esc(t('verOpenBtn'))}</button></div>`}`);
@@ -1143,6 +1253,7 @@ async function openVerifica(ref) {
     if (e) e.preventDefault();
     const code = $('#vcode').value.trim(); if (!code) return;
     let r; try { r = await verFetch(`${base}/api/v/${vid}?code=${encodeURIComponent(code)}`); } catch (err) { $('#vmsg').textContent = t('verNoServer', host); return; }
+    noteClock(base, r);
     if (r.http === 403) { $('#vmsg').textContent = t('verCodeBad'); return; }
     if (!r.main && !Array.isArray(r.exercises)) { $('#vmsg').textContent = r.status === 'closed' ? t('verErrClosed') : t('verErrSoon'); return; }
     // one tab per exercise; a server of protocol 1 has a single exercise, with its fields at the top
@@ -1161,7 +1272,7 @@ async function openVerifica(ref) {
       const x = exs[e];
       const doc = { name: nex > 1 ? (x.title || t('verExN', e + 1)) : r.title, main: x.main,
         ver: { title: r.title, text: x.text, tests: x.tests, hidden: x.hidden, nlocks: x.nlocks, server: base, vid, variant: '', closes: r.closes, code: r.code,
-          ex: e, nex, extitle: x.title || '', proto } };
+          ex: e, nex, extitle: x.title || '', proto, grace: r.grace | 0, deadline: r.deadline || '' } };
       openDoc(doc);
     }
     // back to the first exercise
@@ -1169,7 +1280,7 @@ async function openVerifica(ref) {
     const first = tabs.findIndex(T => { try { const o = JSON.parse(T.data); return o.ver && o.ver.vid === vid && o.ver.code === r.code && o.ver.server === base && (o.ver.ex | 0) === 0; } catch (e2) { return false; } });
     if (first >= 0 && first !== cur) activate(first);
     toast(todo.length ? t(nex > 1 ? 'verOpenedN' : 'verOpened', nex) : t('verAlready'));
-    switchTab('ex');
+    switchTab('ex'); renderVerBar(); verPollLoop();
   };
   $('#vcf').onsubmit = go; $('#vgo').onclick = go; $('#vcode').focus();
 }
@@ -1415,7 +1526,7 @@ function fromClip() {
   assignIds([nb]); return nb;
 }
 function pasteBlock() {
-  if (!clip) return; stopRun(); snap();
+  if (!clip || !canEdit()) return; stopRun(); snap();
   const f = sel && find(sel); const nb = fromClip();
   if (f) f.arr.splice(f.idx + 1, 0, nb); else prog.main.push(nb);
   sel = nb.id; afterChange(true);
@@ -1510,6 +1621,7 @@ function runCmd(c) {
   if (c === 'redo') return redo();
   if (c === 'copy' && f) { clip = JSON.stringify(f.b, replacer); toast(t('copiedBlk')); return; }
   if (c === 'paste') return pasteBlock();
+  if (['dup', 'del', 'cut', 'ins', 'pasteSlot'].some(k => c === k || c.startsWith('ins:')) && !canEdit()) return;
   if (c === 'dup' && f) { stopRun(); snap(); const cp = JSON.parse(JSON.stringify(f.b, replacer)); assignIds([cp]); f.arr.splice(f.idx + 1, 0, cp); sel = cp.id; return afterChange(true); }
   if (c === 'del' && f) { stopRun(); snap(); return deleteSel(f); }
   if (c === 'explain') { opts.explain = !opts.explain; saveOpts(); tip.hidden = true; return; }
@@ -1550,7 +1662,7 @@ function applyLang() {
 
 /* ================= misc ================= */
 $('#pname').addEventListener('focus', () => { editSnapDone = false; });
-$('#pname').addEventListener('input', e => { if (!editSnapDone) { snap(); editSnapDone = true; } prog.name = e.target.value; renderTabs(); persist(); });
+$('#pname').addEventListener('input', e => { if (!canEdit()) { e.target.value = prog.name; return; } if (!editSnapDone) { snap(); editSnapDone = true; } prog.name = e.target.value; renderTabs(); persist(); });
 let toastT = 0;
 function toast(msg) { const el = $('#toast'); el.textContent = msg; el.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => el.hidden = true, 1800); }
 let persistT = 0;
@@ -1573,7 +1685,7 @@ document.addEventListener('keydown', e => {
   if (mod && e.key.toLowerCase() === 'z' && !e.shiftKey) { e.preventDefault(); undo(); return; }
   if (mod && (e.key.toLowerCase() === 'y' || (e.key.toLowerCase() === 'z' && e.shiftKey))) { e.preventDefault(); redo(); return; }
   const f = sel && find(sel);
-  if ((e.key === 'Delete' || e.key === 'Backspace') && f) { e.preventDefault(); stopRun(); snap(); deleteSel(f); return; }
+  if ((e.key === 'Delete' || e.key === 'Backspace') && f) { e.preventDefault(); if (!canEdit()) return; stopRun(); snap(); deleteSel(f); return; }
   if (mod && e.key.toLowerCase() === 'c' && f) { clip = JSON.stringify(f.b, replacer); toast(t('copiedBlk')); return; }
   if (mod && e.key.toLowerCase() === 'v' && clip) { e.preventDefault(); pasteBlock(); }
 });
@@ -1726,6 +1838,7 @@ const whenReady = []; // things that need the texts, waiting for the language fi
   clearConsole(); applyLang(); syncNet();
   whenReady.splice(0).forEach(f => f());
   openFromLink();
+  renderVerBar(); verPollLoop();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => renderDiagram());
 })();
 })();

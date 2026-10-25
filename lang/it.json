@@ -234,6 +234,8 @@
     "e_undef": "La variabile {0} non ha ancora un valore",
     "e_div0": "Divisione per zero",
     "e_big": "Numero troppo grande",
+    "e_bigstr": "Testo troppo lungo: più di un milione di caratteri",
+    "e_bigout": "Il programma ha scritto troppo testo (più di 2 MB): probabilmente un ciclo che non finisce",
     "e_type": "Tipi di dato non adatti all'operazione {0}",
     "e_strmix": "Non si può unire un testo con {0:mix}: usa str(), ad esempio \"Totale: \" + str(n)",
     "mix": {
@@ -316,7 +318,22 @@
     "verSubmitTo": "Le consegne vanno a {0}",
     "verClosesAt": "si chiude il {0}",
     "verErrClosed": "La verifica è chiusa: non si può più consegnare",
-    "verErrSoon": "La verifica non è ancora aperta"
+    "verErrSoon": "La verifica non è ancora aperta",
+    "verLockedMsg": "Il tempo della verifica è finito: non puoi più modificare, puoi solo consegnare.",
+    "verBarNoClose": "Verifica «{0}» · codice {1}",
+    "verBarOpen": "Verifica «{0}» · consegna entro le {1} · mancano {2}",
+    "verBarWarn": "Mancano {0} alla chiusura: ricordati di consegnare!",
+    "verBarGrace": "Tempo scaduto: non puoi più modificare. Puoi consegnare fino alle {0} ({1})",
+    "verBarClosed": "Consegna chiusa alle {0}",
+    "verWarn5": "Verifica «{0}»: mancano 5 minuti alla chiusura, ricordati di consegnare!",
+    "verTimeUp": "Tempo scaduto: puoi solo consegnare, entro le {0}",
+    "verClosedNow": "Verifica «{0}»: la consegna è chiusa",
+    "verMoreTime": "Il docente ha dato più tempo: la verifica si chiude alle {0}",
+    "verGraceOpen": "Il tempo è scaduto: puoi solo consegnare, entro le {0}.",
+    "verGraceNote": "(poi altri {0} minuti solo per consegnare)",
+    "tHours": "{0} h {1} min",
+    "tMin": "{0} min",
+    "tSec": "{0} s"
   },
   "pseudo": {
     "start": "INIZIO",

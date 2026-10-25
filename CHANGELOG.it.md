@@ -4,6 +4,12 @@
 
 Tutte le modifiche di FlussoLab, dalla più recente. I numeri di versione seguono la regola *principale.funzioni.correzioni*.
 
+## 1.3.0 · 25 ottobre 2026
+
+- **Tempo della verifica** (server 0.3): una barra sotto l'intestazione mostra l'ora di chiusura, il tempo che manca e il pulsante Consegna. Cinque minuti prima arriva un avviso; alla chiusura **non si può più modificare** e restano i minuti extra decisi dal docente solo per consegnare. Se il docente prolunga o chiude prima, l'app se ne accorge da sola.
+- I programmi non possono più creare testi enormi o scrivere senza limite: compare un errore chiaro invece di bloccare la pagina.
+- Intestazioni di sicurezza per il sito (Content Security Policy, niente inquadramento in altre pagine).
+
 ## 1.2.0 · 22 ottobre 2026
 
 - **Verifiche con più esercizi** (server 0.2): con il codice si aprono tutti gli esercizi, uno per scheda, ognuno con la sua consegna e le sue prove. **Consegna** li manda tutti insieme e avvisa se ne manca uno; riaprendo il link tornano solo quelli chiusi.

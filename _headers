@@ -1,3 +1,8 @@
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  X-Frame-Options: DENY
 /sitemap.xml
   Content-Type: application/xml; charset=utf-8
 /sitemap.xsl
@@ -6,11 +11,21 @@
   Cache-Control: no-cache
 /index.html
   Cache-Control: no-cache
-/app/index.html
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-MuQx+kHA+dYWz+L+ub2jHuywd8JRLlFtpeoNlTiK73w=' 'sha256-QPwnfXKB58OrWyWmxWcVzZyTl0SwoQrm0HNrovcMhOc='; connect-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; manifest-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'
+/
   Cache-Control: no-cache
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-MuQx+kHA+dYWz+L+ub2jHuywd8JRLlFtpeoNlTiK73w=' 'sha256-QPwnfXKB58OrWyWmxWcVzZyTl0SwoQrm0HNrovcMhOc='; connect-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; manifest-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'
 /en/index.html
   Cache-Control: no-cache
-/lang/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-FwC0e8kHnFm4pjfPY6fGgRMP3zwBhJoewEtuySPKTDc=' 'sha256-Oyd7lHRirRJ9crlg08+UG6JfMyLncflVrZJNd6HV7G0='; connect-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; manifest-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'
+/en/
   Cache-Control: no-cache
-/
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-FwC0e8kHnFm4pjfPY6fGgRMP3zwBhJoewEtuySPKTDc=' 'sha256-Oyd7lHRirRJ9crlg08+UG6JfMyLncflVrZJNd6HV7G0='; connect-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; manifest-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'
+/app/index.html
+  Cache-Control: no-cache
+  Content-Security-Policy: default-src 'self'; script-src 'self'; connect-src *; worker-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; manifest-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'
+/app/
+  Cache-Control: no-cache
+  Content-Security-Policy: default-src 'self'; script-src 'self'; connect-src *; worker-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; manifest-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'
+/lang/*
   Cache-Control: no-cache

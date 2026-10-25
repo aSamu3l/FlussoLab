@@ -4,6 +4,11 @@
 
 Tutte le modifiche di FlussoLab, dalla più recente. I numeri di versione seguono la regola *principale.funzioni.correzioni*.
 
+## 1.4.0 · 25 ottobre 2026
+
+- **Salvataggio automatico durante la verifica** (server 0.4): ogni minuto il lavoro va sul server, solo quello che è cambiato, e la barra mostra quando è stato salvato l'ultima volta. Non è una consegna: se ti dimentichi di premere **Consegna**, il docente può comunque usare la tua ultima bozza.
+- **Un codice, un dispositivo**: il codice della verifica funziona sul primo computer e browser che lo apre. Se devi cambiare computer, il docente lo sblocca.
+
 ## 1.3.0 · 25 ottobre 2026
 
 - **Tempo della verifica** (server 0.3): una barra sotto l'intestazione mostra l'ora di chiusura, il tempo che manca e il pulsante Consegna. Cinque minuti prima arriva un avviso; alla chiusura **non si può più modificare** e restano i minuti extra decisi dal docente solo per consegnare. Se il docente prolunga o chiude prima, l'app se ne accorge da sola.

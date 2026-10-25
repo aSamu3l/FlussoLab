@@ -2,7 +2,7 @@
 'use strict';
 /* ====== Project settings ====== */
 const CONFIG = {
-  version: '1.3.0',
+  version: '1.4.0',
   author: 'aSamu3l',
   github: 'https://github.com/aSamu3l',
   repo: 'https://github.com/aSamu3l/FlussoLab',
@@ -1168,6 +1168,8 @@ function renderVerBar() {
   else if (phase === 'warn') msg = t('verBarWarn', fmtLeft(left));
   else if (phase === 'grace') msg = t('verBarGrace', fmtClock(ver.deadline), fmtLeft(left));
   else msg = t('verBarClosed', fmtClock(ver.deadline || ver.closes));
+  const savedAt = verSavedAt.get(ver.server + '/' + ver.vid + '/' + ver.code);
+  if (savedAt && phase !== 'closed') msg += ' · ' + t('verAutosaved', fmtClock(savedAt));
   $('#verMsg').textContent = msg;
   $('#verGo').hidden = phase === 'closed';
   $('#verGo').textContent = t('verSubmit');
@@ -1232,6 +1234,38 @@ function verPollLoop() {
 }
 document.addEventListener('visibilitychange', () => { if (!document.hidden) { verTick(); verPollLoop(); } });
 
+// autosave: during a verifica the work goes to the server every minute (only what changed since the last time),
+// so the teacher can recover it if a student never presses Consegna. A draft is not a submission.
+const verSaved = new Map(), verSavedAt = new Map(); // server/vid/code/ex → last main sent; server/vid/code → when
+let verSaving = false;
+async function verAutosave() {
+  if (verSaving) return;
+  tabSnapshot();
+  const groups = new Map();
+  tabs.forEach(T => {
+    try {
+      const o = JSON.parse(T.data), v = o.ver;
+      if (!v || !v.server || v.proto !== 2 || verPhase(v).phase === 'closed') return;
+      const key = v.server + '/' + v.vid + '/' + v.code, k2 = key + '/' + (v.ex | 0), main = JSON.stringify(o.main);
+      if (verSaved.get(k2) === main) return;
+      const g = groups.get(key) || { ver: v, docs: [], keys: [] };
+      g.docs.push({ ex: v.ex | 0, doc: { name: o.name, main: o.main } }); g.keys.push([k2, main]); groups.set(key, g);
+    } catch (e) {}
+  });
+  if (!groups.size) return;
+  verSaving = true;
+  try {
+    for (const [key, g] of groups) {
+      let r; try { r = await verFetch(`${g.ver.server}/api/v/${g.ver.vid}/save`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: g.ver.code, device: DEV, docs: g.docs }), keepalive: true }); } catch (e) { continue; }
+      if (!r.ok) continue;
+      g.keys.forEach(([k, m]) => verSaved.set(k, m)); verSavedAt.set(key, r.at || new Date().toISOString());
+    }
+  } finally { verSaving = false; renderVerBar(); }
+}
+setInterval(verAutosave, 60000);
+document.addEventListener('visibilitychange', () => { if (document.hidden) verAutosave(); });
+window.addEventListener('pagehide', () => { verAutosave(); });
+
 async function openVerifica(ref) {
   const m = /^(.+)\/([A-Za-z0-9]{4,16})$/.exec(decodeURIComponent(ref));
   if (!m) { toast(t('badLink')); return; }
@@ -1252,9 +1286,10 @@ async function openVerifica(ref) {
   const go = async e => {
     if (e) e.preventDefault();
     const code = $('#vcode').value.trim(); if (!code) return;
-    let r; try { r = await verFetch(`${base}/api/v/${vid}?code=${encodeURIComponent(code)}`); } catch (err) { $('#vmsg').textContent = t('verNoServer', host); return; }
+    // the device goes with the code: the server ties the code to the first device that opens it
+    let r; try { r = await verFetch(`${base}/api/v/${vid}?code=${encodeURIComponent(code)}&device=${DEV}`); } catch (err) { $('#vmsg').textContent = t('verNoServer', host); return; }
     noteClock(base, r);
-    if (r.http === 403) { $('#vmsg').textContent = t('verCodeBad'); return; }
+    if (r.http === 403) { $('#vmsg').textContent = t(r.error === 'device' ? 'verDevice' : 'verCodeBad'); return; }
     if (!r.main && !Array.isArray(r.exercises)) { $('#vmsg').textContent = r.status === 'closed' ? t('verErrClosed') : t('verErrSoon'); return; }
     // one tab per exercise; a server of protocol 1 has a single exercise, with its fields at the top
     const exs = Array.isArray(r.exercises) ? r.exercises : [{ title: '', variant: r.variant, text: r.text, tests: r.tests, hidden: r.hidden, nlocks: r.nlocks, main: r.main }];
@@ -1275,8 +1310,10 @@ async function openVerifica(ref) {
           ex: e, nex, extitle: x.title || '', proto, grace: r.grace | 0, deadline: r.deadline || '' } };
       openDoc(doc);
     }
-    // back to the first exercise
+    // back to the first exercise; what was just opened is not a draft yet: nothing goes to the server until the student edits
     tabSnapshot();
+    const seedKeys = new Set(todo);
+    tabs.forEach(T => { try { const o = JSON.parse(T.data); if (o.ver && o.ver.vid === vid && o.ver.code === r.code && o.ver.server === base && seedKeys.has(o.ver.ex | 0)) verSaved.set(base + '/' + vid + '/' + r.code + '/' + (o.ver.ex | 0), JSON.stringify(o.main)); } catch (e2) {} });
     const first = tabs.findIndex(T => { try { const o = JSON.parse(T.data); return o.ver && o.ver.vid === vid && o.ver.code === r.code && o.ver.server === base && (o.ver.ex | 0) === 0; } catch (e2) { return false; } });
     if (first >= 0 && first !== cur) activate(first);
     toast(todo.length ? t(nex > 1 ? 'verOpenedN' : 'verOpened', nex) : t('verAlready'));
@@ -1309,7 +1346,7 @@ function cmdSubmit() {
     let r;
     try { r = await verFetch(`${ver.server}/api/v/${ver.vid}/submit`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); }
     catch (e) { $('#smsg').textContent = t('verNoServer', verHost(ver)); $('#sgo').disabled = false; return; }
-    if (!r.ok) { $('#smsg').textContent = r.error === 'closed' ? t('verErrClosed') : r.error === 'soon' ? t('verErrSoon') : r.error === 'code' ? t('verCodeBad') : t('verNoServer', verHost(ver)); $('#sgo').disabled = false; return; }
+    if (!r.ok) { $('#smsg').textContent = r.error === 'closed' ? t('verErrClosed') : r.error === 'soon' ? t('verErrSoon') : r.error === 'code' ? t('verCodeBad') : r.error === 'device' ? t('verDevice') : t('verNoServer', verHost(ver)); $('#sgo').disabled = false; return; }
     dlg.close();
     // every exercise that went in shows when it was handed in
     const sent = { at: r.at, n: r.n };

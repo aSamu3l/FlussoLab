@@ -299,6 +299,8 @@
     "verCodeT": "Il tuo codice",
     "verCodeP": "Inserisci il codice che ti ha dato il docente, per esempio K7P-2QX.",
     "verCodeBad": "Codice non valido per questa verifica",
+    "verDevice": "Questo codice è già in uso su un altro dispositivo o browser. Chiedi al docente di sbloccarlo.",
+    "verAutosaved": "salvato sul server alle {0}",
     "verNoServer": "Non riesco a contattare il server della verifica ({0})",
     "verProto": "Questa verifica richiede una versione diversa di FlussoLab o del server del docente",
     "verOpenBtn": "Apri la verifica",

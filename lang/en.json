@@ -299,6 +299,8 @@
     "verCodeT": "Your code",
     "verCodeP": "Enter the code your teacher gave you, for example K7P-2QX.",
     "verCodeBad": "This code is not valid for this verification",
+    "verDevice": "This code is already in use on another device or browser. Ask your teacher to unlock it.",
+    "verAutosaved": "saved to the server at {0}",
     "verNoServer": "Cannot reach the verification server ({0})",
     "verProto": "This verification needs a different version of FlussoLab or of the teacher's server",
     "verOpenBtn": "Open the verification",

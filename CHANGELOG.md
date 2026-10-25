@@ -4,6 +4,11 @@
 
 Every change to FlussoLab, newest first. Version numbers follow *major.features.fixes*.
 
+## 1.4.0 · October 25, 2026
+
+- **Autosave during a verification** (server 0.4): every minute the work goes to the server, only what changed, and the bar shows when it was last saved. It is not a hand-in: if you forget to press **Hand in**, the teacher can still use your last draft.
+- **One code, one device**: a verification code works on the first computer and browser that opens it. If you have to change computer, the teacher unlocks it.
+
 ## 1.3.0 · October 25, 2026
 
 - **Verification time** (server 0.3): a bar under the header shows the closing time, the time left and the Hand in button. A warning comes five minutes before; at the closing time **editing stops** and the extra minutes chosen by the teacher remain just to hand in. If the teacher extends or closes early, the app notices by itself.

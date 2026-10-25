@@ -516,10 +516,10 @@ function closePop() { $('#pop').hidden = true; popSlot = null; $$('.slot.on').fo
 function insertType(ty) {
   if (!popSlot) return;
   if (!canEdit()) { closePop(); return; }
-  stopRun(); snap();
   let nb;
-  if (ty === '__paste') nb = fromClip();
+  if (ty === '__paste') { nb = fromClip(); if (!nb) { closePop(); return; } }
   else { nb = mk(ty); if (ty === 'output') nb.ln = false; nb.id = nid(); }
+  stopRun(); snap();
   popSlot.arr.splice(popSlot.idx, 0, nb);
   closePop();
   sel = nb.id;
@@ -579,12 +579,13 @@ $('#svgHost').addEventListener('contextmenu', e => {
   if (b) {
     sel = b.dataset.b; renderDiagram(); renderPanel(); updBlkErr(); renderCode();
     const f = find(sel); const hasC = f && f.b.c !== undefined;
-    const items = [['copy', t('copy'), 'Ctrl+C'], ['cut', t('cut'), ''], ['paste', t('pasteAfter'), 'Ctrl+V', !clip], ['dup', t('dup'), ''], '-',
+    const lk = !!(f && hasLock(f.b));
+    const items = [['copy', t('copy'), 'Ctrl+C', lk], ['cut', t('cut'), 'Ctrl+X'], ['paste', t('pasteAfter'), 'Ctrl+V', !clip], ['dup', t('dup'), '', lk], '-',
       ['up', '\u2191 ' + t('up'), '', !f || f.idx === 0], ['down', '\u2193 ' + t('down'), '', !f || f.idx === f.arr.length - 1]];
     if (hasC) items.push('-', ['inv', t('invert'), '']);
     if (f && f.b.t === 'if') items.push(['swap', t('swap'), '']);
     if (f && !hasLock(f.b)) items.push('-', ['off', f.b.off ? t('blkOn') : t('blkOff'), '']);
-    items.push('-', ['del', t('del'), 'Canc', !!(f && hasLock(f.b))]);
+    items.push('-', ['del', t('del'), 'Canc', lk]);
     showCtx(items, e.clientX, e.clientY);
     return;
   }
@@ -723,9 +724,9 @@ function renderPanel() {
     <div class="actions${ro ? ' ro' : ''}">
       <button class="btn" data-act="up" ${f.idx === 0 ? 'disabled' : ''}>↑ ${esc(t('up'))}</button>
       <button class="btn" data-act="down" ${f.idx === f.arr.length - 1 ? 'disabled' : ''}>↓ ${esc(t('down'))}</button>
-      <button class="btn" data-act="dup">${esc(t('dup'))}</button>
+      ${hasLock(b) ? '' : `<button class="btn" data-act="dup">${esc(t('dup'))}</button>
       <button class="btn" data-act="copy">${esc(t('copy'))}</button>
-      ${hasLock(b) ? '' : `<button class="btn" data-act="off">${esc(b.off ? t('blkOn') : t('blkOff'))}</button>
+      <button class="btn" data-act="off">${esc(b.off ? t('blkOn') : t('blkOff'))}</button>
       <button class="btn danger" data-act="del">${esc(t('del'))}</button>`}
     </div>`;
 }
@@ -765,26 +766,40 @@ $('#tab-block').addEventListener('keydown', e => { if (e.key === 'Enter' && e.ta
 $('#tab-block').addEventListener('click', e => { const btn = e.target.closest('[data-act]'); if (btn) blockAct(btn.dataset.act); });
 function blockAct(act) {
   const f = sel && find(sel); if (!f) return;
-  if (act === 'copy') { clip = JSON.stringify(f.b, replacer); toast(t('copiedBlk')); return; }
+  if (act === 'copy') { copyBlock(f.b); return; }
   if (!canEdit()) return;
+  if (act === 'dup') return dupBlock(f);
   stopRun(); snap();
   if (act === 'up' && f.idx > 0) { f.arr.splice(f.idx - 1, 0, f.arr.splice(f.idx, 1)[0]); }
   if (act === 'down' && f.idx < f.arr.length - 1) { f.arr.splice(f.idx + 1, 0, f.arr.splice(f.idx, 1)[0]); }
-  if (act === 'dup') { const c = JSON.parse(JSON.stringify(f.b, replacer)); unlock(c); assignIds([c]); f.arr.splice(f.idx + 1, 0, c); sel = c.id; }
   if (act === 'del') { deleteSel(f); return; }
   if (act === 'inv') { try { f.b.c = FL.invertCond(f.b.c); toast(t('inverted')); } catch (e) {} }
   if (act === 'swap') { const y = f.b.y; f.b.y = f.b.n; f.b.n = y; toast(t('swapped')); }
   if (act === 'off') { if (hasLock(f.b)) { hist.pop(); toast(t('lockNoDel')); return; } if (f.b.off) delete f.b.off; else f.b.off = true; }
   afterChange(true);
 }
-// locked blocks (and blocks that contain them) cannot be deleted; cutting one moves it
+// locked blocks (and blocks that contain them) cannot be deleted, copied or duplicated: they can only be moved.
+// Cutting one moves it: it comes back with the paste, in this program only
 const hasLock = b => !!FL.lockedBlocks([b]).length;
-function unlock(b) { FL.lockedBlocks([b]).forEach(x => { delete x.lock; delete x.lk; }); }
+let clipSrc = null; // the program the clipboard block was cut from (its verifica), to keep the padlock only there
+const docKey = () => prog.ver && prog.ver.server ? [prog.ver.server, prog.ver.vid, prog.ver.code, prog.ver.ex | 0].join('/') : null;
+function copyBlock(b, cut) {
+  if (hasLock(b) && !cut) { toast(t('lockNoCopy')); return false; }
+  clip = JSON.stringify(b, replacer); clipSrc = cut ? docKey() : null;
+  if (!cut) toast(t('copiedBlk'));
+  return true;
+}
+function dupBlock(f) {
+  if (hasLock(f.b)) { toast(t('lockNoCopy')); return; }
+  stopRun(); snap();
+  const c = JSON.parse(JSON.stringify(f.b, replacer)); assignIds([c]); f.arr.splice(f.idx + 1, 0, c); sel = c.id;
+  afterChange(true);
+}
 function deleteSel(f, cut) {
   if (!cut && hasLock(f.b)) { hist.pop(); toast(t('lockNoDel')); return; }
   f.arr.splice(f.idx, 1);
   sel = f.arr[Math.min(f.idx, f.arr.length - 1)]?.id || null;
-  afterChange(true); toast(t('deleted'));
+  afterChange(true); toast(t(cut ? 'cutBlk' : 'deleted'));
 }
 function afterChange(panel) { renderDiagram(); if (panel) { renderPanel(); updBlkErr(); } renderCode(); exRes = null; renderEx(); renderVerBar(); persist(); }
 
@@ -1557,14 +1572,19 @@ function cmdAbout() {
 }
 function cmdHelp() { openDlg(`<h2>${esc(t('helpT'))}</h2><div class="guide">${langPart('guide')}</div><div class="foot"><button class="btn primary" data-close>${esc(t('close'))}</button></div>`); }
 function loadExample(i) { const x = langPart('examples')[i]; if (!x) return; if (openDoc({ name: x.name, main: JSON.parse(JSON.stringify(x.main)) })) toast(t('loadedOk')); }
+// the block to paste, or null when it cannot go here: a cut locked block comes back only in its own program, once
 function fromClip() {
-  const nb = JSON.parse(clip), have = new Set(FL.lockedBlocks(prog.main).map(b => b.lk));
-  FL.lockedBlocks([nb]).forEach(x => { if (have.has(x.lk)) { delete x.lock; delete x.lk; } });
+  const nb = JSON.parse(clip);
+  if (FL.lockedBlocks([nb]).length) {
+    const have = new Set(FL.lockedBlocks(prog.main).map(b => b.lk));
+    if (clipSrc !== docKey() || FL.lockedBlocks([nb]).some(x => have.has(x.lk))) { toast(t('lockNoCopy')); return null; }
+  }
   assignIds([nb]); return nb;
 }
 function pasteBlock() {
-  if (!clip || !canEdit()) return; stopRun(); snap();
-  const f = sel && find(sel); const nb = fromClip();
+  if (!clip || !canEdit()) return;
+  const f = sel && find(sel); const nb = fromClip(); if (!nb) return;
+  stopRun(); snap();
   if (f) f.arr.splice(f.idx + 1, 0, nb); else prog.main.push(nb);
   sel = nb.id; afterChange(true);
 }
@@ -1578,7 +1598,7 @@ const MENUS = {
   edit: () => {
     const f = sel && find(sel);
     return [['undo', t('undoM'), 'Ctrl+Z', !hist.length], ['redo', t('redoM'), 'Ctrl+Y', !fut.length], '-',
-      ['copy', t('copy'), 'Ctrl+C', !f], ['paste', t('pasteHere'), 'Ctrl+V', !clip], ['dup', t('dup'), '', !f], ['del', t('del'), 'Canc', !f]];
+      ['copy', t('copy'), 'Ctrl+C', !f || hasLock(f.b)], ['paste', t('pasteHere'), 'Ctrl+V', !clip], ['dup', t('dup'), '', !f || hasLock(f.b)], ['del', t('del'), 'Canc', !f || hasLock(f.b)]];
   },
   view: () => [
     ['explain', t('optExplain'), '', false, opts.explain], ['sym', t('optSymShort'), '', false, opts.sym], ['trace', t('trace'), '', false, opts.trace], '-',
@@ -1656,17 +1676,17 @@ function runCmd(c) {
   if (c.startsWith('ex:')) return loadExample(+c.slice(3));
   if (c === 'undo') return undo();
   if (c === 'redo') return redo();
-  if (c === 'copy' && f) { clip = JSON.stringify(f.b, replacer); toast(t('copiedBlk')); return; }
+  if (c === 'copy' && f) { copyBlock(f.b); return; }
   if (c === 'paste') return pasteBlock();
   if (['dup', 'del', 'cut', 'ins', 'pasteSlot'].some(k => c === k || c.startsWith('ins:')) && !canEdit()) return;
-  if (c === 'dup' && f) { stopRun(); snap(); const cp = JSON.parse(JSON.stringify(f.b, replacer)); assignIds([cp]); f.arr.splice(f.idx + 1, 0, cp); sel = cp.id; return afterChange(true); }
+  if (c === 'dup' && f) return dupBlock(f);
   if (c === 'del' && f) { stopRun(); snap(); return deleteSel(f); }
   if (c === 'explain') { opts.explain = !opts.explain; saveOpts(); tip.hidden = true; return; }
   if (c === 'sym') { opts.sym = !opts.sym; saveOpts(); renderDiagram(); return; }
   if (c === 'trace') { opts.trace = !opts.trace; saveOpts(); syncTrace(); return; }
   if (c === 'link') { opts.link = !opts.link; saveOpts(); hoverLink(null, false); return; }
   if (c === 'py') { opts.py = !opts.py; saveOpts(); renderCode(); return; }
-  if (c === 'cut' && f) { clip = JSON.stringify(f.b, replacer); stopRun(); snap(); return deleteSel(f, true); }
+  if (c === 'cut' && f) { copyBlock(f.b, true); stopRun(); snap(); return deleteSel(f, true); }
   if (c === 'up' || c === 'down') return blockAct(c);
   if ((c === 'inv' || c === 'swap' || c === 'off') && f) return blockAct(c);
   if (c.startsWith('ins:')) { const sl = ctxSlot; if (sl) { popSlot = sl; insertType(c.slice(4)); } return; }
@@ -1723,7 +1743,8 @@ document.addEventListener('keydown', e => {
   if (mod && (e.key.toLowerCase() === 'y' || (e.key.toLowerCase() === 'z' && e.shiftKey))) { e.preventDefault(); redo(); return; }
   const f = sel && find(sel);
   if ((e.key === 'Delete' || e.key === 'Backspace') && f) { e.preventDefault(); if (!canEdit()) return; stopRun(); snap(); deleteSel(f); return; }
-  if (mod && e.key.toLowerCase() === 'c' && f) { clip = JSON.stringify(f.b, replacer); toast(t('copiedBlk')); return; }
+  if (mod && e.key.toLowerCase() === 'c' && f) { copyBlock(f.b); return; }
+  if (mod && e.key.toLowerCase() === 'x' && f) { e.preventDefault(); if (!canEdit()) return; copyBlock(f.b, true); stopRun(); snap(); deleteSel(f, true); return; }
   if (mod && e.key.toLowerCase() === 'v' && clip) { e.preventDefault(); pasteBlock(); }
 });
 

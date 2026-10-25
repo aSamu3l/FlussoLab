@@ -7,6 +7,7 @@ Tutte le modifiche di FlussoLab, dalla più recente. I numeri di versione seguon
 ## 1.4.0 · 25 ottobre 2026
 
 - **Salvataggio automatico durante la verifica** (server 0.4): ogni minuto il lavoro va sul server, solo quello che è cambiato, e la barra mostra quando è stato salvato l'ultima volta. Non è una consegna: se ti dimentichi di premere **Consegna**, il docente può comunque usare la tua ultima bozza.
+- I **blocchi fissi** della verifica si possono solo spostare: niente copia, duplica o elimina, dal pannello, dai menu o dalla tastiera; un blocco che ne contiene uno (un ciclo, un IF) segue la stessa regola. Tagliarne uno lo sposta solo dentro il suo programma.
 - **Un codice, un dispositivo**: il codice della verifica funziona sul primo computer e browser che lo apre. Se devi cambiare computer, il docente lo sblocca.
 
 ## 1.3.0 · 25 ottobre 2026

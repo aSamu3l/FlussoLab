@@ -44,7 +44,8 @@ td{padding:8px;border-bottom:1px solid var(--rule);vertical-align:top}
 tr.click{cursor:pointer} tr.click:hover td{background:var(--surface-2)}
 .badge{display:inline-block;font-size:12px;font-weight:700;padding:1px 8px;border-radius:99px;background:var(--surface-2);color:var(--muted);white-space:nowrap}
 .badge.open{background:var(--green-soft);color:var(--green)} .badge.soon{background:var(--amber-soft);color:var(--amber)} .badge.closed{background:var(--surface-2);color:var(--muted)}
-.badge.warn{background:var(--red-soft);color:var(--red)} .badge.grace{background:var(--amber-soft);color:var(--amber)}
+.badge.warn{background:var(--red-soft);color:var(--red)} .badge.grace{background:var(--amber-soft);color:var(--amber)} .badge.draft{background:var(--amber-soft);color:var(--amber);white-space:nowrap}
+.inuse{display:flex;flex-wrap:wrap;gap:8px 18px} .inuse>span{display:inline-flex;align-items:center;gap:8px} .btn.small{padding:3px 10px;font-size:13px}
 .code{font-family:var(--mono);font-weight:700;letter-spacing:.04em}
 .score{font-weight:700} .score.full{color:var(--green)}
 .dots span{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:2px;background:var(--red)} .dots span.ok{background:var(--green)} .dots span.h{border-radius:2px}

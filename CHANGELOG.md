@@ -2,6 +2,13 @@
 
 [Italiano](CHANGELOG.it.md) · **English**
 
+## 0.4.0 · October 25, 2026
+
+- **One code, one device**: a student code works on the first device that opens it; on another one the app says it is in use. The teacher frees it with **Unlock** on the verification's page (*Codes in use*).
+- **Autosave**: during the verification the app sends the work to the server every minute, only what changed. Drafts appear in the results with their time; the teacher can **use a draft as the submission** for one code or for all the missing ones at once (graded like the others, marked *From draft*).
+- **Automatic backup**: with `BACKUP_DIR` (e.g. `/backup`, on its own volume) the server writes a consistent copy of the database at start and every `BACKUP_EVERY` hours (6), keeping `BACKUP_KEEP` days (30).
+- Database schema 3 (migrated by itself at the first start).
+
 ## 0.3.0 · October 25, 2026
 
 - **Verification time**: at the closing time students can no longer edit, but still have the **extra minutes** chosen by the teacher (5 by default) to hand in. The app shows them the closing time, the time left and the warnings; the server also sends its own clock, so the count is right even when the computer's clock is wrong.

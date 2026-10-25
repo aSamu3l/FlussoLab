@@ -5,7 +5,7 @@ const path = require('node:path');
 const fs = require('node:fs');
 const { DatabaseSync } = require('node:sqlite');
 
-const SCHEMA = 2;
+const SCHEMA = 3;
 
 function open(dir) {
   try {
@@ -25,10 +25,12 @@ function open(dir) {
     CREATE TABLE IF NOT EXISTS admin (id INTEGER PRIMARY KEY, email TEXT UNIQUE NOT NULL, hash TEXT NOT NULL, salt TEXT NOT NULL, created TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS sessions (token TEXT PRIMARY KEY, admin_id INTEGER NOT NULL, expires INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS verifiche (id TEXT PRIMARY KEY, data TEXT NOT NULL, created TEXT NOT NULL, updated TEXT NOT NULL);
-    CREATE TABLE IF NOT EXISTS codes (vid TEXT NOT NULL REFERENCES verifiche(id) ON DELETE CASCADE, code TEXT NOT NULL, variant INTEGER NOT NULL, vars TEXT, PRIMARY KEY (vid, code));
+    CREATE TABLE IF NOT EXISTS codes (vid TEXT NOT NULL REFERENCES verifiche(id) ON DELETE CASCADE, code TEXT NOT NULL, variant INTEGER NOT NULL, vars TEXT, device TEXT NOT NULL DEFAULT '', PRIMARY KEY (vid, code));
     CREATE TABLE IF NOT EXISTS submissions (id INTEGER PRIMARY KEY AUTOINCREMENT, vid TEXT NOT NULL REFERENCES verifiche(id) ON DELETE CASCADE,
       code TEXT NOT NULL, ex INTEGER NOT NULL DEFAULT 0, variant INTEGER NOT NULL, at TEXT NOT NULL, ip TEXT, device TEXT, doc TEXT NOT NULL, results TEXT NOT NULL, flags TEXT NOT NULL);
     CREATE INDEX IF NOT EXISTS sub_vid ON submissions(vid, code);
+    CREATE TABLE IF NOT EXISTS drafts (vid TEXT NOT NULL REFERENCES verifiche(id) ON DELETE CASCADE, code TEXT NOT NULL, ex INTEGER NOT NULL,
+      at TEXT NOT NULL, ip TEXT, device TEXT, doc TEXT NOT NULL, PRIMARY KEY (vid, code, ex));
   `);
   const cur = db.prepare('SELECT v FROM meta WHERE k = ?').get('schema');
   const have = cur ? Number(cur.v) : 0;
@@ -40,7 +42,26 @@ function open(dir) {
     if (!cols('codes').includes('vars')) { db.exec('ALTER TABLE codes ADD COLUMN vars TEXT'); db.exec("UPDATE codes SET vars = '[' || variant || ']'"); }
     if (!cols('submissions').includes('ex')) db.exec('ALTER TABLE submissions ADD COLUMN ex INTEGER NOT NULL DEFAULT 0');
   }
+  if (have < 3) {
+    // 3: a code is tied to the first device that opens it; drafts saved by the app while the verifica is open
+    const cols = t => db.prepare(`PRAGMA table_info(${t})`).all().map(c => c.name);
+    if (!cols('codes').includes('device')) db.exec("ALTER TABLE codes ADD COLUMN device TEXT NOT NULL DEFAULT ''");
+  }
   db.prepare('INSERT OR REPLACE INTO meta (k, v) VALUES (?, ?)').run('schema', String(SCHEMA));
   return db;
 }
-module.exports = { open, SCHEMA };
+// a consistent copy of the database (VACUUM INTO) in dir, named by date and time; older copies are removed
+function backup(db, dir, keepDays) {
+  fs.mkdirSync(dir, { recursive: true });
+  const stamp = new Date().toISOString().slice(0, 16).replace(/[-:T]/g, '').replace(/^(\d{8})(\d{4})$/, '$1-$2');
+  const file = path.join(dir, `flussolab-${stamp}.db`);
+  if (fs.existsSync(file)) fs.unlinkSync(file);
+  db.exec(`VACUUM INTO '${file.replace(/'/g, "''")}'`);
+  const limit = Date.now() - keepDays * 86400e3;
+  for (const f of fs.readdirSync(dir)) {
+    if (!/^flussolab-\d{8}-\d{4}\.db$/.test(f)) continue;
+    try { if (fs.statSync(path.join(dir, f)).mtimeMs < limit) fs.unlinkSync(path.join(dir, f)); } catch (e) {}
+  }
+  return file;
+}
+module.exports = { open, backup, SCHEMA };

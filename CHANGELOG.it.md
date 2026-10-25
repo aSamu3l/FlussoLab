@@ -2,6 +2,13 @@
 
 **Italiano** · [English](CHANGELOG.md)
 
+## 0.4.0 · 25 ottobre 2026
+
+- **Un codice, un dispositivo**: il codice studente funziona sul primo dispositivo che lo apre; su un altro l'app dice che è in uso. Il docente lo libera con **Sblocca** nella pagina della verifica (*Codici in uso*).
+- **Salvataggio automatico**: durante la verifica l'app manda il lavoro al server ogni minuto, solo quello che è cambiato. Le bozze compaiono nei risultati con la loro ora; il docente può **usare una bozza come consegna**, per un codice o per tutti quelli mancanti insieme (corretta come le altre, segnata *Da bozza*).
+- **Backup automatico**: con `BACKUP_DIR` (per esempio `/backup`, su un volume a parte) il server scrive una copia coerente del database all'avvio e ogni `BACKUP_EVERY` ore (6), tenendo `BACKUP_KEEP` giorni (30).
+- Schema del database 3 (migrato da solo al primo avvio).
+
 ## 0.3.0 · 25 ottobre 2026
 
 - **Tempo della verifica**: alla chiusura gli studenti non possono più modificare, ma hanno ancora i **minuti extra** scelti dal docente (5 di base) per consegnare. L'app mostra loro l'ora di chiusura, il tempo che manca e gli avvisi; il server manda anche la propria ora, così il conto è giusto anche con l'orologio del computer sbagliato.

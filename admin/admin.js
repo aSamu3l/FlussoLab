@@ -22,10 +22,13 @@ const T = IT ? {
   edit: 'Modifica', closeNow: 'Chiudi ora', closeQ: 'Chiudere subito la verifica? Gli studenti non potranno più consegnare.', delQ: 'Eliminare la verifica, i codici e tutte le consegne? Non si può annullare.',
   link: 'Link per la classe', copy: 'Copia', copied: 'Copiato', printCodes: 'Codici da stampare', zip: 'Scarica tutto (ZIP)',
   results: 'Consegne', noSubs: 'Nessuna consegna per ora. La pagina si aggiorna da sola.', code: 'Codice', when: 'Ultima consegna', score: 'Prove', count: 'N.', device: 'Dispositivo', flags: 'Segnalazioni',
-  flagT: { struttura: 'Blocchi fissi cambiati', alterato: 'File modificato fuori da FlussoLab', altriDispositivi: 'Modificato anche su altri dispositivi', stessoDispositivo: 'Stesso dispositivo di altri codici', stessoIp: 'Stessa rete di altri codici' },
-  flagD: { struttura: 'Lo studente ha tolto o cambiato i blocchi fissi: le prove risultano tutte non superate.', alterato: 'Il diagramma arriva da un file modificato a mano.', altriDispositivi: 'Il diagramma è stato modificato anche su un dispositivo diverso da quello che ha consegnato (es. casa e scuola, oppure un file passato).', stessoDispositivo: 'Dallo stesso dispositivo sono arrivate consegne con codici diversi.', stessoIp: 'Stesso indirizzo di rete di altri codici: normale se il server è su internet (tutta la scuola esce con lo stesso indirizzo).' },
+  flagT: { bozza: 'Da bozza', struttura: 'Blocchi fissi cambiati', alterato: 'File modificato fuori da FlussoLab', altriDispositivi: 'Modificato anche su altri dispositivi', stessoDispositivo: 'Stesso dispositivo di altri codici', stessoIp: 'Stessa rete di altri codici' },
+  flagD: { bozza: 'Lo studente non ha premuto Consegna: questa è l\'ultima bozza salvata automaticamente, usata dal docente come consegna.', struttura: 'Lo studente ha tolto o cambiato i blocchi fissi: le prove risultano tutte non superate.', alterato: 'Il diagramma arriva da un file modificato a mano.', altriDispositivi: 'Il diagramma è stato modificato anche su un dispositivo diverso da quello che ha consegnato (es. casa e scuola, oppure un file passato).', stessoDispositivo: 'Dallo stesso dispositivo sono arrivate consegne con codici diversi.', stessoIp: 'Stesso indirizzo di rete di altri codici: normale se il server è su internet (tutta la scuola esce con lo stesso indirizzo).' },
   detail: 'Consegna', history: 'Consegne di questo codice', openApp: 'Apri in FlussoLab', dlFile: 'Scarica .flusso', ok: 'superata', ko: 'non superata', hiddenT: 'nascosta',
   testN: n => `Prova ${n}`, codesFor: v => `Codici · ${v}`, nameCol: 'Studente', printBtn: 'Stampa', needTitle: 'Scrivi un titolo', needTest: (e, n) => `Esercizio ${e}, variante ${n}: mancano le prove`,
+  inUse: 'Codici in uso', inUseHint: 'Ogni codice funziona su un solo dispositivo, il primo che lo apre. Se uno studente cambia computer o browser, sbloccalo.', unlock: 'Sblocca', noInUse: 'Nessun codice è ancora stato aperto.',
+  draft: 'Bozza', draftAt: t => `bozza delle ${t}`, draftBlocks: n => `${n} blocchi`, draftNewer: 'C\'è una bozza più recente della consegna.', draftHint: 'FlussoLab salva il lavoro sul server ogni minuto durante la verifica. Se uno studente non ha premuto Consegna, puoi usare la sua ultima bozza come consegna: viene corretta come le altre.',
+  useDraft: 'Usa la bozza come consegna', useDraftAll: 'Usa le bozze come consegna', useDraftQ: n => `Usare le bozze di ${n} ${n === 1 ? 'esercizio' : 'esercizi'} come consegna? Vengono corrette come le altre e segnate come "da bozza".`, recovered: n => `${n} ${n === 1 ? 'bozza usata' : 'bozze usate'} come consegna`,
   errs: { struttura: 'blocchi fissi cambiati', loop: 'non termina', moreinput: 'chiede troppi input', crash: 'errore', nodef: 'usa una variabile senza valore', empty: 'blocco vuoto', syntax: 'errore di scrittura', type: 'tipi non compatibili', strmix: 'testo unito a un numero', div0: 'divisione per zero', tdecl: 'valore del tipo sbagliato', tdeclint: 'valore con la virgola in un int', tin: 'input del tipo sbagliato', assigneq: '= al posto di ==', lockmissing: 'blocco fisso mancante', lockorder: 'blocchi fissi in ordine diverso', bigstr: 'testo troppo lungo', bigout: 'scrive troppo (ciclo infinito?)' },
 } : {
   setupT: 'Create the teacher account', setupP: 'First start: choose an email and a password to log in. This will be the only account.',
@@ -45,10 +48,13 @@ const T = IT ? {
   edit: 'Edit', closeNow: 'Close now', closeQ: 'Close the verification now? Students will not be able to hand in any more.', delQ: 'Delete the verification, its codes and all submissions? This cannot be undone.',
   link: 'Link for the class', copy: 'Copy', copied: 'Copied', printCodes: 'Codes to print', zip: 'Download all (ZIP)',
   results: 'Submissions', noSubs: 'No submissions yet. The page updates by itself.', code: 'Code', when: 'Last submission', score: 'Tests', count: 'No.', device: 'Device', flags: 'Warnings',
-  flagT: { struttura: 'Locked blocks changed', alterato: 'File edited outside FlussoLab', altriDispositivi: 'Also edited on other devices', stessoDispositivo: 'Same device as other codes', stessoIp: 'Same network as other codes' },
-  flagD: { struttura: 'The student removed or changed the locked blocks: all tests count as failed.', alterato: 'The diagram comes from a hand-edited file.', altriDispositivi: 'The diagram was also edited on a device other than the one that handed it in (e.g. home and school, or a file passed on).', stessoDispositivo: 'Submissions with different codes came from the same device.', stessoIp: 'Same network address as other codes: normal if the server is on the internet (the whole school shares one address).' },
+  flagT: { bozza: 'From draft', struttura: 'Locked blocks changed', alterato: 'File edited outside FlussoLab', altriDispositivi: 'Also edited on other devices', stessoDispositivo: 'Same device as other codes', stessoIp: 'Same network as other codes' },
+  flagD: { bozza: 'The student did not press Hand in: this is the last autosaved draft, used by the teacher as the submission.', struttura: 'The student removed or changed the locked blocks: all tests count as failed.', alterato: 'The diagram comes from a hand-edited file.', altriDispositivi: 'The diagram was also edited on a device other than the one that handed it in (e.g. home and school, or a file passed on).', stessoDispositivo: 'Submissions with different codes came from the same device.', stessoIp: 'Same network address as other codes: normal if the server is on the internet (the whole school shares one address).' },
   detail: 'Submission', history: 'Submissions of this code', openApp: 'Open in FlussoLab', dlFile: 'Download .flusso', ok: 'passed', ko: 'failed', hiddenT: 'hidden',
   testN: n => `Test ${n}`, codesFor: v => `Codes · ${v}`, nameCol: 'Student', printBtn: 'Print', needTitle: 'Write a title', needTest: (e, n) => `Exercise ${e}, variant ${n}: tests are missing`,
+  inUse: 'Codes in use', inUseHint: 'Each code works on one device only, the first that opens it. If a student changes computer or browser, unlock it.', unlock: 'Unlock', noInUse: 'No code has been opened yet.',
+  draft: 'Draft', draftAt: t => `draft of ${t}`, draftBlocks: n => `${n} blocks`, draftNewer: 'There is a draft newer than the submission.', draftHint: 'FlussoLab saves the work to the server every minute during the verification. If a student did not press Hand in, you can use their last draft as the submission: it is graded like the others.',
+  useDraft: 'Use the draft as submission', useDraftAll: 'Use the drafts as submissions', useDraftQ: n => `Use the drafts of ${n} ${n === 1 ? 'exercise' : 'exercises'} as submissions? They are graded like the others and marked "from draft".`, recovered: n => `${n} ${n === 1 ? 'draft used' : 'drafts used'} as submission`,
   errs: { struttura: 'locked blocks changed', loop: 'does not end', moreinput: 'asks for too many inputs', crash: 'error', nodef: 'uses a variable with no value', empty: 'empty block', syntax: 'writing error', type: 'types do not match', strmix: 'text joined to a number', div0: 'division by zero', tdecl: 'value of the wrong type', tdeclint: 'decimal value in an int', tin: 'input of the wrong type', assigneq: '= instead of ==', lockmissing: 'locked block missing', lockorder: 'locked blocks in a different order', bigstr: 'text too long', bigout: 'writes too much (endless loop?)' },
 };
 document.documentElement.lang = IT ? 'it' : 'en';
@@ -63,6 +69,7 @@ async function api(path, opts = {}) {
 }
 function toast(m) { const t = $('#toast'); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => t.hidden = true, 1800); }
 const fmtDate = s => s ? new Date(s).toLocaleString(IT ? 'it-IT' : 'en-GB', { dateStyle: 'medium', timeStyle: 'short' }) : '—';
+const fmtTime = s => s ? new Date(s).toLocaleTimeString(IT ? 'it-IT' : 'en-GB', { timeStyle: 'short' }) : '—';
 const toLocal = s => { if (!s) return ''; const d = new Date(s); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 16); };
 const linkFor = id => `${ME.appUrl}#v=${location.host}/${id}`;
 async function copy(text) { try { await navigator.clipboard.writeText(text); } catch (e) { const ta = document.createElement('textarea'); ta.value = text; document.body.append(ta); ta.select(); document.execCommand('copy'); ta.remove(); } toast(T.copied); }
@@ -184,7 +191,14 @@ async function viewDetail(id) {
     <div class="card"><h2>${esc(T.link)}</h2><div class="link"><input class="in" readonly value="${esc(link)}" id="lk"><button class="btn primary" id="cp">${esc(T.copy)}</button></div>
       <div class="row" style="margin-top:12px"><a class="btn" href="#/v/${id}/codes">${esc(T.printCodes)} (${v.codes.length})</a><a class="btn" href="/api/admin/verifiche/${id}/zip">${esc(T.zip)}</a>
       <span class="sp"></span>${v.closes ? `<span class="muted">${esc(T.extend)}</span><button class="btn" data-ext="5">+5 ${esc(T.min)}</button><button class="btn" data-ext="15">+15 ${esc(T.min)}</button>` : ''}<a class="btn" href="#/v/${id}/edit">${esc(T.edit)}</a>${v.status === 'open' || v.status === 'soon' ? `<button class="btn" id="cn">${esc(T.closeNow)}</button>` : ''}${v.status === 'grace' ? `<button class="btn" id="ch">${esc(T.closeHard)}</button>` : ''}<button class="btn danger" id="dl">${esc(T.del)}</button></div></div>
-    <div class="card"><h2>${esc(T.results)}</h2><div id="subs"></div></div>`;
+    <div class="card"><h2>${esc(T.results)}</h2><div id="subs"></div></div>
+    <div class="card"><h2>${esc(T.inUse)}</h2><p class="muted">${esc(T.inUseHint)}</p><div id="inuse"></div></div>`;
+  const inUse = codes => {
+    const used = codes.filter(c => c.device);
+    $('#inuse').innerHTML = used.length ? `<div class="inuse">${used.map(c => `<span><span class="code">${esc(c.code)}</span> <span class="mono muted">${esc(c.device)}</span> <button class="btn small" data-unlock="${esc(c.code)}">${esc(T.unlock)}</button></span>`).join('')}</div>` : `<p class="muted">${esc(T.noInUse)}</p>`;
+    $$('[data-unlock]').forEach(b => b.onclick = async () => { const r = await api(`verifiche/${id}/unlock`, { method: 'POST', body: { code: b.dataset.unlock } }); toast(T.saved); inUse(r.codes || []); });
+  };
+  inUse(v.codes);
   $('#cp').onclick = () => copy(link); $('#lk').onfocus = e => e.target.select();
   if ($('#cn')) $('#cn').onclick = async () => { if (confirm(v.grace ? T.closeGraceQ(v.grace) : T.closeQ)) { await api(`verifiche/${id}/close`, { method: 'POST' }); viewDetail(id); } };
   if ($('#ch')) $('#ch').onclick = async () => { if (confirm(T.closeHardQ)) { await api(`verifiche/${id}/close`, { method: 'POST', body: { hard: true } }); viewDetail(id); } };
@@ -196,23 +210,27 @@ async function viewDetail(id) {
     const nex = v.exercises.length, multiVar = v.exercises.some(x => x.variants.length > 1);
     const vname = (e, k) => v.exercises[e].variants[k] ? v.exercises[e].variants[k].name : '';
     const dots = x => `<span class="dots">${x.visible.map(o => `<span class="${o ? 'ok' : ''}"></span>`).join('')}${x.hidden.map(o => `<span class="h${o ? ' ok' : ''}"></span>`).join('')}</span>`;
-    const cell = (x, e) => x.done ? `<span class="score${x.passed === x.total ? ' full' : ''}">${x.passed}/${x.total}</span>${multiVar && v.exercises[e].variants.length > 1 ? ` <span class="muted">${esc(vname(e, x.variant))}</span>` : ''} ${dots(x)}`
-      : `<span class="muted">— ${esc(T.notSent)}</span>`;
+    const draftMark = x => x.draft ? ` <span class="badge draft" title="${esc(x.done ? T.draftNewer : T.draftHint)}">${esc(T.draft)} ${esc(fmtTime(x.draft.at))}</span>` : '';
+    const cell = (x, e) => (x.done ? `<span class="score${x.passed === x.total ? ' full' : ''}">${x.passed}/${x.total}</span>${multiVar && v.exercises[e].variants.length > 1 ? ` <span class="muted">${esc(vname(e, x.variant))}</span>` : ''} ${dots(x)}`
+      : `<span class="muted">— ${esc(T.notSent)}</span>`) + draftMark(x);
+    const nDrafts = subs.reduce((n, s) => n + s.ex.filter(x => x.draft && !x.done).length, 0);
     $('#subs').innerHTML = subs.length ? `<div style="overflow-x:auto"><table><thead><tr><th>${esc(T.code)}</th>
       ${nex > 1 ? v.exercises.map((x, e) => `<th>${esc(exLabel(v, e))}</th>`).join('') + `<th>${esc(T.total)}</th>` : `${multiVar ? `<th>${esc(T.variant)}</th>` : ''}<th>${esc(T.score)}</th>`}
       <th class="hide-s">${esc(T.when)}</th><th class="hide-s">${esc(T.count)}</th><th class="hide-s">${esc(T.device)}</th><th>${esc(T.flags)}</th></tr></thead><tbody>
       ${subs.map(s => `<tr class="click" data-s="${esc(s.code)}"><td class="code">${esc(s.code)}</td>
         ${nex > 1 ? s.ex.map((x, e) => `<td>${cell(x, e)}</td>`).join('') + `<td><span class="score${s.passed === s.total ? ' full' : ''}">${s.passed}/${s.total}</span></td>`
-          : `${multiVar ? `<td>${esc(vname(0, s.ex[0].variant))}</td>` : ''}<td><span class="score${s.passed === s.total ? ' full' : ''}">${s.passed}/${s.total}</span> ${dots(s.ex[0])}</td>`}
+          : `${multiVar ? `<td>${esc(vname(0, s.ex[0].variant))}</td>` : ''}<td>${s.ex[0].done ? `<span class="score${s.passed === s.total ? ' full' : ''}">${s.passed}/${s.total}</span> ${dots(s.ex[0])}` : `<span class="muted">— ${esc(T.notSent)}</span>`}${draftMark(s.ex[0])}</td>`}
         <td class="hide-s">${esc(fmtDate(s.at))}</td><td class="hide-s">${s.count}</td><td class="hide-s mono">${esc(s.device || '—')}</td>
-        <td>${s.flags.map(f => `<span class="badge ${f === 'stessoIp' ? '' : 'warn'}" title="${esc(T.flagD[f] || '')}">${esc(T.flagT[f] || f)}</span>`).join(' ')}</td></tr>`).join('')}</tbody></table></div>` : `<p class="muted">${esc(T.noSubs)}</p>`;
-    $$('tr[data-s]').forEach(tr => tr.onclick = () => showSub(v, subs.find(s => s.code === tr.dataset.s)));
+        <td>${s.flags.map(f => `<span class="badge ${f === 'stessoIp' || f === 'bozza' ? '' : 'warn'}" title="${esc(T.flagD[f] || '')}">${esc(T.flagT[f] || f)}</span>`).join(' ')}</td></tr>`).join('')}</tbody></table></div>
+      ${nDrafts ? `<div class="row" style="margin-top:12px"><span class="muted">${esc(T.draftHint)}</span><button class="btn" id="recAll">${esc(T.useDraftAll)} (${nDrafts})</button></div>` : ''}` : `<p class="muted">${esc(T.noSubs)}</p>`;
+    $$('tr[data-s]').forEach(tr => tr.onclick = () => showSub(v, subs.find(s => s.code === tr.dataset.s), load));
+    if ($('#recAll')) $('#recAll').onclick = async () => { if (!confirm(T.useDraftQ(nDrafts))) return; const r = await api(`verifiche/${id}/recover`, { method: 'POST', body: {} }); toast(T.recovered((r.recovered || []).length)); load(); };
   };
   await load();
   clearInterval(timer); timer = setInterval(() => { if (location.hash === '#/v/' + id && !$('#dlg').open) load(); }, 10000);
 }
 // one code: every exercise with its tests, the warnings, the files
-async function showSub(v, row) {
+async function showSub(v, row, reload) {
   const nex = v.exercises.length, done = row.ex.map((x, e) => ({ ...x, e })).filter(x => x.done);
   const subs = await Promise.all(done.map(x => api('submissions/' + x.id)));
   const d = $('#dlg');
@@ -229,10 +247,16 @@ async function showSub(v, row) {
     <p class="muted">${esc(fmtDate(row.at))} · ${esc(T.device)} <span class="mono">${esc(row.device || '—')}</span>${row.ip ? ` · IP <span class="mono">${esc(row.ip)}</span>` : ''}${nex > 1 ? ` · ${esc(T.total)} <b>${row.passed}/${row.total}</b>` : ''}</p>
     ${row.flags.length ? `<ul class="flags">${row.flags.map(f => `<li><b>${esc(T.flagT[f] || f)}</b>: ${esc(T.flagD[f] || '')}</li>`).join('')}</ul>` : ''}
     ${done.map((x, k) => part(x, subs[k])).join('')}
-    ${missing.length ? `<p class="muted" style="margin-top:12px">${missing.map(x => `${esc(exLabel(v, x.e))}: ${esc(T.notSent)}`).join(' · ')}</p>` : ''}
+    ${missing.length ? `<p class="muted" style="margin-top:12px">${missing.map(x => `${esc(exLabel(v, x.e))}: ${esc(T.notSent)}${x.draft ? ` (${esc(T.draftAt(fmtTime(x.draft.at)))}, ${esc(T.draftBlocks(x.draft.blocks))})` : ''}`).join(' · ')}</p>` : ''}
+    ${row.ex.some(x => x.draft) ? `<div class="row"><span class="muted">${esc(row.ex.some(x => x.draft && x.done) ? T.draftNewer : '')}</span><button class="btn" id="rec1">${esc(T.useDraft)}</button></div>` : ''}
     ${row.history.length > 1 ? `<p class="muted">${esc(T.history)}: ${row.history.map(h => esc(fmtDate(h.at))).join(', ')}</p>` : ''}`;
   d.showModal();
   $('#x', d).onclick = () => d.close();
+  if ($('#rec1', d)) $('#rec1', d).onclick = async () => {
+    const n = row.ex.filter(x => x.draft).length; if (!confirm(T.useDraftQ(n))) return;
+    const r = await api(`verifiche/${v.id}/recover`, { method: 'POST', body: { code: row.code } });
+    toast(T.recovered((r.recovered || []).length)); d.close(); if (reload) reload();
+  };
   $$('[data-dl]', d).forEach(b => b.onclick = () => {
     const e = +b.dataset.dl, s = subs[done.findIndex(x => x.e === e)];
     const file = { format: 'flussolab', version: 1, name: `${v.title}${nex > 1 ? ' · ' + exLabel(v, e) : ''} · ${row.code}`, main: s.doc.main, dev: s.doc.dev };

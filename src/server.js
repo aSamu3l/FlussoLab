@@ -6,11 +6,11 @@ const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
-const { open } = require('./db.js');
+const { open, backup } = require('./db.js');
 const { cleanMain, startMain, grade } = require('./check.js');
 const { makeZip } = require('./zip.js');
 
-const VERSION = '0.3.0';
+const VERSION = '0.4.0';
 const PROTOCOL = 2; // bump when the app and the server stop understanding each other
 const CFG = {
   port: Number(process.env.PORT || 8080),
@@ -18,6 +18,9 @@ const CFG = {
   appUrl: (process.env.APP_URL || 'https://flussolab.s3l.it/').replace(/\/?$/, '/'),
   origins: (process.env.ALLOWED_ORIGINS || 'https://flussolab.s3l.it').split(',').map(s => s.trim()).filter(Boolean),
   trustProxy: /^(1|true|yes)$/i.test(process.env.TRUST_PROXY || ''),
+  backupDir: process.env.BACKUP_DIR || '',                       // e.g. /backup: a copy of the database at start and then every BACKUP_EVERY hours
+  backupEvery: Math.max(1, Number(process.env.BACKUP_EVERY) || 6),
+  backupKeep: Math.max(1, Number(process.env.BACKUP_KEEP) || 30), // days
 };
 const db = open(CFG.dataDir);
 const ADMIN_DIR = path.join(__dirname, '..', 'admin');
@@ -140,11 +143,20 @@ function varsFor(v, ord, stored) {
   let s = []; try { s = JSON.parse(stored || '[]'); } catch (e) {}
   return v.exercises.map((x, e) => Number.isInteger(s[e]) && s[e] >= 0 && s[e] < x.variants.length ? s[e] : (ord + e) % x.variants.length);
 }
-const codeRows = vid => db.prepare('SELECT code, variant, vars FROM codes WHERE vid = ? ORDER BY rowid').all(vid);
+const codeRows = vid => db.prepare('SELECT code, variant, vars, device FROM codes WHERE vid = ? ORDER BY rowid').all(vid);
 function codeInfo(v, code) {
   const rows = codeRows(v.id), ord = rows.findIndex(r => r.code === code);
-  return ord < 0 ? null : { code, vars: varsFor(v, ord, rows[ord].vars) };
+  return ord < 0 ? null : { code, vars: varsFor(v, ord, rows[ord].vars), device: rows[ord].device || '' };
 }
+// a code works on one device only: the first that opens it. The teacher can free it from the panel.
+// Returns null when fine, or the error to send.
+function bindDevice(v, c, device) {
+  if (!device) return null; // an old app that sends no device: nothing to tie
+  if (c.device && c.device !== device) return 'device';
+  if (!c.device) { db.prepare('UPDATE codes SET device = ? WHERE vid = ? AND code = ?').run(device, v.id, c.code); c.device = device; }
+  return null;
+}
+const cleanDevice = d => /^[A-Z0-9]{4,8}$/.test(d || '') ? d : '';
 function addCodes(v, n) {
   const rows = codeRows(v.id), have = new Set(rows.map(r => r.code));
   let ord = rows.length;
@@ -175,18 +187,25 @@ function listSubs(v) {
     if (r.ip) (ipCodes.get(r.ip) || ipCodes.set(r.ip, new Set()).get(r.ip)).add(r.code);
   }
   const info = new Map(codeRows(v.id).map((r, ord) => [r.code, varsFor(v, ord, r.vars)]));
+  // drafts newer than the last submission of that exercise (or without any submission)
+  const drafts = new Map();
+  for (const d of db.prepare('SELECT code, ex, at, doc FROM drafts WHERE vid = ?').all(v.id)) {
+    const e = byCode.get(d.code) || { code: d.code, times: new Set(), last: null, ex: new Map() }; byCode.set(d.code, e);
+    const sub = e.ex.get(d.ex);
+    if (!sub || sub.at < d.at) { let n = 0; try { n = JSON.parse(d.doc).main.length; } catch (err) {} drafts.set(d.code + '/' + d.ex, { at: d.at, blocks: n }); }
+  }
   return [...byCode.values()].map(e => {
     const r = e.last, flags = new Set(), vars = info.get(e.code) || v.exercises.map(() => 0);
     const ex = v.exercises.map((x, k) => {
-      const s = e.ex.get(k);
-      if (!s) return { variant: vars[k], done: false, passed: 0, total: testsOf(x.variants[vars[k]] || x.variants[0]), visible: [], hidden: [] };
+      const s = e.ex.get(k), draft = drafts.get(e.code + '/' + k) || null;
+      if (!s) return { variant: vars[k], done: false, passed: 0, total: testsOf(x.variants[vars[k]] || x.variants[0]), visible: [], hidden: [], draft };
       const res = JSON.parse(s.results); JSON.parse(s.flags).forEach(f => flags.add(f));
       return { variant: s.variant, done: true, id: s.id, at: s.at, passed: res.passed, total: res.total,
-        visible: res.results.filter(x => !x.hidden).map(x => x.ok), hidden: res.results.filter(x => x.hidden).map(x => x.ok) };
+        visible: res.results.filter(x => !x.hidden).map(x => x.ok), hidden: res.results.filter(x => x.hidden).map(x => x.ok), draft };
     });
-    if (r.device && devCodes.get(r.device).size > 1) flags.add('stessoDispositivo');
-    if (r.ip && ipCodes.get(r.ip).size > 1) flags.add('stessoIp');
-    return { code: fmtCode(e.code), at: r.at, count: e.times.size, history: [...e.times].map(at => ({ at })), ip: r.ip, device: r.device, ex,
+    if (r && r.device && devCodes.get(r.device).size > 1) flags.add('stessoDispositivo');
+    if (r && r.ip && ipCodes.get(r.ip).size > 1) flags.add('stessoIp');
+    return { code: fmtCode(e.code), at: r ? r.at : null, count: e.times.size, history: [...e.times].map(at => ({ at })), ip: r ? r.ip : '', device: r ? r.device : '', ex,
       passed: ex.reduce((a, x) => a + x.passed, 0), total: ex.reduce((a, x) => a + x.total, 0), flags: [...flags] };
   });
 }
@@ -217,7 +236,7 @@ async function route(req, res) {
     }
     if (M === 'OPTIONS') return send(res, 204, '');
     if (p === '/api/info') return send(res, 200, { app: 'flussolab-server', version: VERSION, protocol: PROTOCOL, appUrl: CFG.appUrl });
-    const m = /^\/api\/v\/([A-Za-z0-9]{4,16})(\/submit)?$/.exec(p);
+    const m = /^\/api\/v\/([A-Za-z0-9]{4,16})(\/submit|\/save)?$/.exec(p);
     const v = m && getVer(m[1]);
     if (!v) return send(res, 404, { error: 'notfound' });
     const head = publicHead(v);
@@ -227,6 +246,8 @@ async function route(req, res) {
       if (limited('code:' + ip, 120, 60000)) return send(res, 429, { error: 'slow' });
       const c = codeInfo(v, code);
       if (!c) return send(res, 403, { error: 'code' });
+      const dErr = bindDevice(v, c, cleanDevice(url.searchParams.get('device')));
+      if (dErr) return send(res, 403, { error: dErr });
       return send(res, 200, { ...head, code: fmtCode(code), exercises: v.exercises.map((x, e) => {
         const vr = x.variants[c.vars[e]] || x.variants[0];
         // the variant's name is never sent: students must not know which variant they have
@@ -241,7 +262,10 @@ async function route(req, res) {
       const code = normCode(body.code);
       const c = codeInfo(v, code);
       if (!c) return send(res, 403, { error: 'code' });
-      if (limited('sub:' + v.id + code, 10, 60000)) return send(res, 429, { error: 'slow' });
+      const device = cleanDevice(body.device);
+      const dErr = bindDevice(v, c, device);
+      if (dErr) return send(res, 403, { error: dErr });
+      if (limited('sub:' + v.id + code, m[2] === '/save' ? 6 : 10, 60000)) return send(res, 429, { error: 'slow' });
       // one or more exercises in one submission; the app of protocol 1 sent a single "doc" (exercise 1)
       const items = Array.isArray(body.docs) ? body.docs : [{ ex: 0, doc: body.doc }];
       const seen = new Set(), work = [];
@@ -254,8 +278,13 @@ async function route(req, res) {
         work.push({ ex, doc, main });
       }
       if (!work.length) return send(res, 400, { error: 'doc' });
-      const device = /^[A-Z0-9]{4,8}$/.test(body.device || '') ? body.device : '';
       const at = now();
+      // autosave: the app sends its work every minute. A draft is not a submission: the teacher can turn it into one
+      if (m[2] === '/save') {
+        const up = db.prepare('INSERT OR REPLACE INTO drafts (vid, code, ex, at, ip, device, doc) VALUES (?, ?, ?, ?, ?, ?, ?)');
+        for (const { ex, doc, main } of work) up.run(v.id, code, ex, at, ip, device, JSON.stringify({ name: String(doc.name || '').slice(0, 120), main, dev: [] }));
+        return send(res, 200, { ok: true, at, status: status(v) });
+      }
       const ins = db.prepare('INSERT INTO submissions (vid, code, ex, variant, at, ip, device, doc, results, flags) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
       for (const { ex, doc, main } of work) {
         const variant = c.vars[ex], vr = v.exercises[ex].variants[variant];
@@ -333,11 +362,11 @@ async function route(req, res) {
       addCodes({ ...v, id }, Math.min(500, Math.max(1, b.ncodes | 0 || 30)));
       return send(res, 200, { id });
     }
-    const vm = /^verifiche\/([A-Z0-9]{8})(\/(close|extend|submissions|zip|codes))?$/.exec(r);
+    const vm = /^verifiche\/([A-Z0-9]{8})(\/(close|extend|submissions|zip|codes|unlock|recover))?$/.exec(r);
     const sm = /^submissions\/(\d+)$/.exec(r);
     if (vm) {
       const v = getVer(vm[1]); if (!v) return send(res, 404, { error: 'notfound' });
-      const codes = () => codeRows(v.id).map((c, ord) => ({ code: fmtCode(c.code), vars: varsFor(v, ord, c.vars) }));
+      const codes = () => codeRows(v.id).map((c, ord) => ({ code: fmtCode(c.code), vars: varsFor(v, ord, c.vars), device: c.device || '' }));
       if (!vm[2] && M === 'GET') return send(res, 200, { ...v, status: status(v), deadline: deadline(v), codes: codes() });
       if (!vm[2] && M === 'PUT') {
         let b; try { b = await readJson(req); } catch (e) { return send(res, 400, { error: 'body' }); }
@@ -392,6 +421,31 @@ async function route(req, res) {
         const safe = v.title.replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '_') || 'verifica';
         return send(res, 200, makeZip(files), { 'Content-Type': 'application/zip', 'Content-Disposition': `attachment; filename="${safe}.zip"` });
       }
+      // unlock: the code can be opened on another device (the student changed computer or browser)
+      if (vm[3] === 'unlock' && M === 'POST') {
+        let b; try { b = await readJson(req, 1000); } catch (e) { return send(res, 400, { error: 'body' }); }
+        db.prepare("UPDATE codes SET device = '' WHERE vid = ? AND code = ?").run(v.id, normCode(b.code));
+        return send(res, 200, { ok: true, codes: codes() });
+      }
+      // recover: the drafts saved by the app become submissions, graded like the others (one code, or all)
+      if (vm[3] === 'recover' && M === 'POST') {
+        let b; try { b = await readJson(req, 1000); } catch (e) { return send(res, 400, { error: 'body' }); }
+        const only = b.code ? normCode(b.code) : null, done = [];
+        const ins = db.prepare('INSERT INTO submissions (vid, code, ex, variant, at, ip, device, doc, results, flags) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+        for (const row of listSubs(v)) {
+          const code = normCode(row.code); if (only && code !== only) continue;
+          const c = codeInfo(v, code); if (!c) continue;
+          row.ex.forEach((x, e) => {
+            if (!x.draft) return;
+            const d = db.prepare('SELECT * FROM drafts WHERE vid = ? AND code = ? AND ex = ?').get(v.id, code, e); if (!d) return;
+            const doc = JSON.parse(d.doc), vr = v.exercises[e].variants[c.vars[e]], g = grade(doc.main, vr);
+            const flags = ['bozza']; if (!g.structure) flags.push('struttura');
+            ins.run(v.id, code, e, c.vars[e], d.at, d.ip, d.device, d.doc, JSON.stringify(g), JSON.stringify(flags));
+            done.push({ code: row.code, ex: e });
+          });
+        }
+        return send(res, 200, { ok: true, recovered: done });
+      }
       if (vm[3] === 'codes' && M === 'POST') {
         let b; try { b = await readJson(req, 1000); } catch (e) { return send(res, 400, { error: 'body' }); }
         addCodes(v, Math.min(500, codeRows(v.id).length + Math.max(1, b.add | 0)));
@@ -416,6 +470,10 @@ if (require.main === module) {
     setAdmin(email, pw); console.log('Account del docente impostato:', email); process.exit(0);
   }
   if (!hasAdmin() && process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD) setAdmin(process.env.ADMIN_EMAIL, process.env.ADMIN_PASSWORD);
+  if (CFG.backupDir) {
+    const run = () => { try { console.log('FlussoLab: backup in', backup(db, CFG.backupDir, CFG.backupKeep)); } catch (e) { console.error('FlussoLab: backup non riuscito / backup failed:', e.message); } };
+    run(); setInterval(run, CFG.backupEvery * 3600e3).unref();
+  }
   http.createServer((req, res) => route(req, res).catch(e => { console.error(e); if (!res.headersSent) send(res, 500, { error: 'server' }); }))
     .listen(CFG.port, () => console.log(`FlussoLab server ${VERSION} su http://0.0.0.0:${CFG.port} · dati in ${CFG.dataDir}${hasAdmin() ? '' : ' · apri /admin per creare l\'account del docente'}`));
 }

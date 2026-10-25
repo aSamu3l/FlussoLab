@@ -19,9 +19,16 @@ services:
       # optional: create the teacher's account at the first start instead of from the page
       # ADMIN_EMAIL: "prof@scuola.it"
       # ADMIN_PASSWORD: "change-me-please"
+      # automatic backup: a copy of the database in /backup at start and then every BACKUP_EVERY hours, kept BACKUP_KEEP days
+      # (uncomment the two lines here and the /backup volume below)
+      # BACKUP_DIR: "/backup"
+      # BACKUP_EVERY: "6"
+      # BACKUP_KEEP: "30"
     volumes:
-      - flussolab-data:/data   # verifiche and submissions: back up this volume
+      - flussolab-data:/data   # verifiche and submissions
       # or a folder on the host (it is given to PUID:PGID at start):
       # - ./data:/data
+      # - flussolab-backup:/backup   # ← with BACKUP_DIR: the copies, on a separate volume or a folder on the host (./backup:/backup)
 volumes:
   flussolab-data:
+  # flussolab-backup:

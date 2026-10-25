@@ -7,6 +7,7 @@ DATA_DIR="${DATA_DIR:-/data}"
 if [ "$(id -u)" = "0" ]; then
   mkdir -p "$DATA_DIR"
   chown -R "$PUID:$PGID" "$DATA_DIR"
+  if [ -n "$BACKUP_DIR" ]; then mkdir -p "$BACKUP_DIR"; chown "$PUID:$PGID" "$BACKUP_DIR"; fi
   exec su-exec "$PUID:$PGID" "$@"
 fi
 exec "$@"

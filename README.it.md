@@ -58,6 +58,9 @@ Poi configura il reverse proxy come sopra e apri `/admin`.
 | `PUID`, `PGID` | `1000` | Utente e gruppo con cui gira il server e a cui appartengono i dati. |
 | `PORT` | `8080` | Porta interna del container. |
 | `DATA_DIR` | `/data` | Dove salva il database (un solo file). |
+| `BACKUP_DIR` | vuoto | Accende il **backup automatico**: una copia coerente del database (`flussolab-AAAAMMGG-HHMM.db`) in questa cartella all'avvio e poi ogni `BACKUP_EVERY` ore. Montaci un volume a parte, per esempio `/backup`. |
+| `BACKUP_EVERY` | `6` | Ore tra una copia e l'altra. |
+| `BACKUP_KEEP` | `30` | Giorni per cui una copia viene tenuta; le più vecchie vengono tolte. |
 
 ## Operazioni utili
 
@@ -86,7 +89,7 @@ docker exec -it -u 1000:1000 flussolab-server node src/server.js reset-admin pro
 
 I dati restano nel volume `flussolab-data`.
 
-**Backup**: tutti i dati stanno nel volume `flussolab-data`.
+**Backup**: con `BACKUP_DIR=/backup` e un volume (o una cartella dell'host) montato su `/backup`, il server ci scrive da solo una copia del database, all'avvio e ogni `BACKUP_EVERY` ore, e toglie le copie più vecchie di `BACKUP_KEEP` giorni. Per ripristinarne una, ferma il container e copia il file sopra `/data/flussolab.db`. Senza, tutti i dati stanno nel volume `flussolab-data`:
 
 ```sh
 docker run --rm -v flussolab-data:/data -v "$PWD":/backup alpine tar czf /backup/flussolab-backup.tgz -C /data .
@@ -101,7 +104,9 @@ docker run --rm -v flussolab-data:/data -v "$PWD":/backup alpine tar czf /backup
    - **Output atteso**: un valore per riga, uno per ogni volta che un OUT fisso scrive. I testi scritti dagli altri OUT non contano; i numeri si confrontano con una piccola tolleranza, quindi 7 e 7.0 sono uguali.
 4. **Varianti.** Ogni codice riceve una variante di ogni esercizio; i codici si alternano tra le varianti, così i vicini di banco hanno combinazioni diverse. Se modifichi la verifica dopo, i codici tengono le varianti che avevano già. Lo studente non vede mai quale variante ha (né nell'app né sul foglio con il codice): solo tu la vedi nei risultati.
 5. **Risultati.** Una riga per codice, con il risultato di ogni esercizio e il totale; lo ZIP contiene un file `.flusso` per studente ed esercizio, più `risultati.csv`.
-6. **Orari.** Prima dell'apertura il link non mostra niente. L'app mostra allo studente l'ora di chiusura e il tempo che manca, e lo avvisa 5 minuti prima. All'ora di chiusura non può più modificare, ma ha ancora i **minuti extra** che hai scelto (5, di base) solo per premere Consegna; poi la consegna è chiusa. Fino ad allora può consegnare di nuovo: vale l'ultima consegna, e il docente vede anche le precedenti. Dalla pagina della verifica puoi **prolungare** di 5 o 15 minuti o chiudere subito: l'app degli studenti si aggiorna da sola entro mezzo minuto.
+6. **Un codice, un dispositivo.** Un codice funziona sul primo dispositivo (computer e browser) che lo apre: su un altro l'app dice che il codice è in uso. Se uno studente deve cambiare computer, libera il codice con **Sblocca** nella pagina della verifica.
+7. **Salvataggio automatico.** Durante la verifica l'app manda al server il lavoro degli studenti ogni minuto (solo quello che è cambiato). Una bozza non è una consegna: se uno studente non preme mai Consegna, nei risultati vedi l'ora dell'ultima bozza e puoi **usarla come consegna**, per quel codice o per tutti insieme; viene corretta come le altre e segnata *Da bozza*.
+8. **Orari.** Prima dell'apertura il link non mostra niente. L'app mostra allo studente l'ora di chiusura e il tempo che manca, e lo avvisa 5 minuti prima. All'ora di chiusura non può più modificare, ma ha ancora i **minuti extra** che hai scelto (5, di base) solo per premere Consegna; poi la consegna è chiusa. Fino ad allora può consegnare di nuovo: vale l'ultima consegna, e il docente vede anche le precedenti. Dalla pagina della verifica puoi **prolungare** di 5 o 15 minuti o chiudere subito: l'app degli studenti si aggiorna da sola entro mezzo minuto.
 
 ## Privacy
 
@@ -118,7 +123,7 @@ Non ci sono account per gli studenti, cookie per gli studenti o log degli access
 
 L'app parte dalla versione 1.x, il server dalla 0.x. App e server si scambiano un numero di *protocollo*: se non coincide, l'app mostra un messaggio chiaro invece di un errore.
 
-- Il **server 0.2** o successivo (protocollo 2) richiede **FlussoLab 1.2** o successivo. FlussoLab 1.2 funziona anche con il server 0.1. Gli avvisi sul tempo e il blocco delle modifiche alla chiusura richiedono FlussoLab 1.3 e server 0.3.
+- Il **server 0.2** o successivo (protocollo 2) richiede **FlussoLab 1.2** o successivo. FlussoLab 1.2 funziona anche con il server 0.1. Gli avvisi sul tempo e il blocco delle modifiche alla chiusura richiedono FlussoLab 1.3 e server 0.3; il codice legato al dispositivo e il salvataggio automatico richiedono FlussoLab 1.4 e server 0.4 (un'app più vecchia continua a funzionare, senza).
 - L'aggiornamento dalla 0.1 è automatico: al primo avvio i dati vengono convertiti e le verifiche che hai diventano verifiche con un esercizio.
 - Le novità di ogni versione sono nel [changelog](CHANGELOG.it.md).
 

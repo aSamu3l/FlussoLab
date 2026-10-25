@@ -58,6 +58,9 @@ Then set up the reverse proxy as above and open `/admin`.
 | `PUID`, `PGID` | `1000` | User and group running the server and owning the data. |
 | `PORT` | `8080` | Port inside the container. |
 | `DATA_DIR` | `/data` | Where the database (a single file) is kept. |
+| `BACKUP_DIR` | empty | Turns on the **automatic backup**: a consistent copy of the database (`flussolab-YYYYMMDD-HHMM.db`) in this folder at start and then every `BACKUP_EVERY` hours. Mount a separate volume there, e.g. `/backup`. |
+| `BACKUP_EVERY` | `6` | Hours between two copies. |
+| `BACKUP_KEEP` | `30` | Days a copy is kept; older ones are removed. |
 
 ## Useful commands
 
@@ -86,7 +89,7 @@ docker exec -it -u 1000:1000 flussolab-server node src/server.js reset-admin tea
 
 Data stays in the `flussolab-data` volume.
 
-**Backup**: all data is in the `flussolab-data` volume.
+**Backup**: with `BACKUP_DIR=/backup` and a volume (or a host folder) mounted at `/backup`, the server writes a copy of the database there by itself, at start and every `BACKUP_EVERY` hours, and removes copies older than `BACKUP_KEEP` days. To restore one, stop the container and copy the file over `/data/flussolab.db`. Without it, all data is in the `flussolab-data` volume:
 
 ```sh
 docker run --rm -v flussolab-data:/data -v "$PWD":/backup alpine tar czf /backup/flussolab-backup.tgz -C /data .
@@ -101,7 +104,9 @@ docker run --rm -v flussolab-data:/data -v "$PWD":/backup alpine tar czf /backup
    - **Expected output**: one value per line, one for each time a locked OUT writes. Text written by other OUTs does not count; numbers are compared with a small tolerance, so 7 and 7.0 are equal.
 4. **Variants.** Every code gets one variant of each exercise; codes alternate between them, so students sitting next to each other get different combinations. Editing a verification later keeps the variants already given to the codes. Students never see which variant they have (neither in the app nor on the slip with the code): only you see it in the results.
 5. **Results.** One row per code, with the result of every exercise and the total; the ZIP holds one `.flusso` file per student and exercise, and `risultati.csv`.
-6. **Times.** Before it opens the link shows nothing. The app shows students the closing time and the time left, and warns them 5 minutes before. At the closing time they can no longer edit, but still have the **extra minutes** you chose (5 by default) just to press Hand in; then the hand-in is closed. Until then a student can hand in again: the last submission counts, and the teacher also sees the earlier ones. From the verification's page you can **extend** by 5 or 15 minutes or close at once: the students' app updates by itself within half a minute.
+6. **One code, one device.** A code works on the first device (computer and browser) that opens it: on another one the app says the code is in use. If a student has to change computer, free the code with **Unlock** on the verification's page.
+7. **Autosave.** During the verification the app sends the students' work to the server every minute (only what changed). A draft is not a submission: if a student never presses Hand in, you see the time of the last draft in the results and can **use it as the submission** for that code or for everyone at once; it is graded like the others and marked *From draft*.
+8. **Times.** Before it opens the link shows nothing. The app shows students the closing time and the time left, and warns them 5 minutes before. At the closing time they can no longer edit, but still have the **extra minutes** you chose (5 by default) just to press Hand in; then the hand-in is closed. Until then a student can hand in again: the last submission counts, and the teacher also sees the earlier ones. From the verification's page you can **extend** by 5 or 15 minutes or close at once: the students' app updates by itself within half a minute.
 
 ## Privacy
 
@@ -118,7 +123,7 @@ There are no student accounts, no student cookies and no access logs. Data stays
 
 The app starts from 1.x, the server from 0.x. App and server exchange a *protocol* number: if it does not match, the app shows a clear message instead of an error.
 
-- **Server 0.2** or newer (protocol 2) needs **FlussoLab 1.2** or newer. FlussoLab 1.2 also works with server 0.1. The time warnings and the editing lock at the closing time need FlussoLab 1.3 and server 0.3.
+- **Server 0.2** or newer (protocol 2) needs **FlussoLab 1.2** or newer. FlussoLab 1.2 also works with server 0.1. The time warnings and the editing lock at the closing time need FlussoLab 1.3 and server 0.3; the device-bound codes and the autosave need FlussoLab 1.4 and server 0.4 (an older app keeps working, without them).
 - Updating from 0.1 is automatic: the data is converted at the first start and the verifications you already have become verifications with one exercise.
 - The changes of every version are in the [changelog](CHANGELOG.md).
 

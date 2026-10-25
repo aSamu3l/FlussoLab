@@ -133,3 +133,57 @@ test('verifica con più esercizi: una variante per esercizio, consegna insieme o
   const zip = await call(`/api/admin/verifiche/${id}/zip`, { admin: true });
   assert.ok(zip.body.includes(Buffer.from('_es3.flusso')));
 });
+
+test('un codice, un dispositivo: il docente lo sblocca', async () => {
+  const r = await call('/api/admin/verifiche', { method: 'POST', admin: true, body: { title: 'Sessione', variants: [variant], ncodes: 2 } });
+  const id = r.body.id, cs = (await call('/api/admin/verifiche/' + id, { admin: true })).body.codes;
+  assert.equal((await call(`/api/v/${id}?code=${cs[0].code}&device=PC0001`)).status, 200, 'il primo dispositivo lega il codice');
+  assert.equal((await call(`/api/v/${id}?code=${cs[0].code}&device=PC0001`)).status, 200, 'lo stesso dispositivo riapre');
+  const other = await call(`/api/v/${id}?code=${cs[0].code}&device=PC0002`);
+  assert.equal(other.status, 403); assert.equal(other.body.error, 'device');
+  assert.equal((await call(`/api/v/${id}/submit`, { method: 'POST', body: { code: cs[0].code, device: 'PC0002', docs: [{ ex: 0, doc: { main: solution } }] } })).body.error, 'device', 'nemmeno la consegna');
+  assert.equal((await call(`/api/v/${id}?code=${cs[0].code}`)).status, 200, 'una app vecchia senza dispositivo non viene bloccata');
+  const v = (await call('/api/admin/verifiche/' + id, { admin: true })).body;
+  assert.equal(v.codes[0].device, 'PC0001'); assert.equal(v.codes[1].device, '');
+  const un = await call(`/api/admin/verifiche/${id}/unlock`, { method: 'POST', admin: true, body: { code: cs[0].code } });
+  assert.equal(un.body.codes[0].device, '');
+  assert.equal((await call(`/api/v/${id}?code=${cs[0].code}&device=PC0002`)).status, 200, 'dopo lo sblocco il nuovo dispositivo entra');
+  assert.equal((await call(`/api/v/${id}?code=${cs[0].code}&device=PC0001`)).body.error, 'device', 'e il vecchio no');
+});
+
+test('bozze: salvataggio automatico e recupero come consegna', async () => {
+  const r = await call('/api/admin/verifiche', { method: 'POST', admin: true, body: { title: 'Bozze', variants: [variant], ncodes: 3 } });
+  const id = r.body.id, cs = (await call('/api/admin/verifiche/' + id, { admin: true })).body.codes;
+  const partial = [solution[0], solution[1], solution[4]];
+  const s1 = await call(`/api/v/${id}/save`, { method: 'POST', body: { code: cs[0].code, device: 'PC0009', docs: [{ ex: 0, doc: { name: 'Cinema', main: partial } }] } });
+  assert.equal(s1.status, 200); assert.ok(s1.body.at);
+  await call(`/api/v/${id}/save`, { method: 'POST', body: { code: cs[0].code, device: 'PC0009', docs: [{ ex: 0, doc: { name: 'Cinema', main: solution } }] } });
+  await call(`/api/v/${id}/save`, { method: 'POST', body: { code: cs[1].code, device: 'PC0010', docs: [{ ex: 0, doc: { main: partial } }] } });
+  await call(`/api/v/${id}/submit`, { method: 'POST', body: { code: cs[1].code, device: 'PC0010', docs: [{ ex: 0, doc: { main: partial } }] } });
+  let subs = (await call(`/api/admin/verifiche/${id}/submissions`, { admin: true })).body;
+  const a = subs.find(s => s.code === cs[0].code), b = subs.find(s => s.code === cs[1].code);
+  assert.equal(a.ex[0].done, false); assert.equal(a.ex[0].draft.blocks, 5, 'l\'ultima bozza sostituisce la precedente');
+  assert.equal(b.ex[0].done, true); assert.equal(b.ex[0].draft, null, 'la consegna è più recente della bozza');
+  assert.equal(subs.length, 2, 'il terzo codice non ha né bozze né consegne');
+  const rec = await call(`/api/admin/verifiche/${id}/recover`, { method: 'POST', admin: true, body: {} });
+  assert.deepEqual(rec.body.recovered, [{ code: cs[0].code, ex: 0 }]);
+  subs = (await call(`/api/admin/verifiche/${id}/submissions`, { admin: true })).body;
+  const a2 = subs.find(s => s.code === cs[0].code);
+  assert.equal(a2.ex[0].done, true); assert.equal(a2.passed, 2); assert.ok(a2.flags.includes('bozza')); assert.equal(a2.ex[0].draft, null);
+  assert.equal((await call(`/api/admin/verifiche/${id}/recover`, { method: 'POST', admin: true, body: {} })).body.recovered.length, 0, 'niente da recuperare due volte');
+});
+
+test('backup: copia del database con data e pulizia delle vecchie', async () => {
+  const { db } = require('../src/server.js');
+  const { backup } = require('../src/db.js');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'flbak-'));
+  const old = path.join(dir, 'flussolab-20200101-0000.db'); fs.writeFileSync(old, 'x'); fs.utimesSync(old, new Date('2020-01-01'), new Date('2020-01-01'));
+  const file = backup(db, dir, 30);
+  assert.match(path.basename(file), /^flussolab-\d{8}-\d{4}\.db$/);
+  assert.ok(fs.statSync(file).size > 0);
+  assert.ok(!fs.existsSync(old), 'la copia vecchia di 30 giorni viene tolta');
+  const { DatabaseSync } = require('node:sqlite');
+  const copy = new DatabaseSync(file, { readOnly: true });
+  assert.ok(copy.prepare('SELECT COUNT(*) AS n FROM verifiche').get().n >= 4, 'la copia contiene le verifiche');
+  copy.close();
+});

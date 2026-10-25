@@ -1,6 +1,6 @@
 {
   "name": "flussolab-server",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Server for FlussoLab verifiche: keeps the teacher's verifiche and receives the students' submissions.",
   "private": true,
   "license": "CC-BY-NC-SA-4.0",

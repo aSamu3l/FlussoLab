@@ -7,6 +7,7 @@ Every change to FlussoLab, newest first. Version numbers follow *major.features.
 ## 1.4.0 · October 25, 2026
 
 - **Autosave during a verification** (server 0.4): every minute the work goes to the server, only what changed, and the bar shows when it was last saved. It is not a hand-in: if you forget to press **Hand in**, the teacher can still use your last draft.
+- **Moving blocks**: drag a block with the mouse onto any **+**, even inside an IF or a loop; or select it and press **↑ ↓** on the keyboard (the panel arrows now walk through IF and loops the same way).
 - **Locked blocks** of a verification can only be moved: no copy, duplicate or delete, from the panel, the menus or the keyboard; a block that contains one (a loop, an IF) follows the same rule. Cutting one moves it inside its own program only.
 - **One code, one device**: a verification code works on the first computer and browser that opens it. If you have to change computer, the teacher unlocks it.
 

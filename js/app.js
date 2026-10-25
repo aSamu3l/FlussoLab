@@ -581,7 +581,7 @@ $('#svgHost').addEventListener('contextmenu', e => {
     const f = find(sel); const hasC = f && f.b.c !== undefined;
     const lk = !!(f && hasLock(f.b));
     const items = [['copy', t('copy'), 'Ctrl+C', lk], ['cut', t('cut'), 'Ctrl+X'], ['paste', t('pasteAfter'), 'Ctrl+V', !clip], ['dup', t('dup'), '', lk], '-',
-      ['up', '\u2191 ' + t('up'), '', !f || f.idx === 0], ['down', '\u2193 ' + t('down'), '', !f || f.idx === f.arr.length - 1]];
+      ['up', '\u2191 ' + t('up'), '\u2191', !f || !nextSlot(f, -1)], ['down', '\u2193 ' + t('down'), '\u2193', !f || !nextSlot(f, 1)]];
     if (hasC) items.push('-', ['inv', t('invert'), '']);
     if (f && f.b.t === 'if') items.push(['swap', t('swap'), '']);
     if (f && !hasLock(f.b)) items.push('-', ['off', f.b.off ? t('blkOn') : t('blkOff'), '']);
@@ -636,6 +636,73 @@ function moveTip(e) {
   });
   window.addEventListener('pointerup', () => { if (drag) { drag = null; c.classList.remove('panning'); } });
   c.addEventListener('click', e => { if (moved) { e.stopPropagation(); e.preventDefault(); moved = false; } }, true);
+})();
+/* ================= moving blocks: drag with the mouse, arrows on the keyboard ================= */
+// the arrays inside a block (its branches and bodies): a block cannot be dropped into itself
+function arraysIn(b) { const out = []; (function walk(x) { for (const a of kids(x)) { out.push(a); a.forEach(walk); } })(b); return out; }
+const slotOk = (f, inside, s) => !!s && !inside.includes(s.arr) && !(s.arr === f.arr && (s.idx === f.idx || s.idx === f.idx + 1));
+// moves the block of f to the slot {arr, idx}; false when nothing changes
+function moveBlock(f, to) {
+  if (!slotOk(f, arraysIn(f.b), to)) return false;
+  stopRun(); snap();
+  f.arr.splice(f.idx, 1);
+  to.arr.splice(to.arr === f.arr && to.idx > f.idx ? to.idx - 1 : to.idx, 0, f.b);
+  afterChange(true); return true;
+}
+// the next slot up (-1) or down (+1) in reading order: so a block walks into and out of IF and loops, one step at a time
+function nextSlot(f, dir) {
+  const slots = [...slotMap.values()], inside = arraysIn(f.b);
+  const k = slots.findIndex(s => s.arr === f.arr && s.idx === f.idx);
+  for (let i = k + dir; k >= 0 && i >= 0 && i < slots.length; i += dir) if (slotOk(f, inside, slots[i])) return slots[i];
+  return null;
+}
+function moveSel(dir) {
+  const f = sel && find(sel); if (!f || !canEdit()) return;
+  if (moveBlock(f, nextSlot(f, dir))) { const g = $(`.blk[data-b="${sel}"]`); if (g) scrollToEl(g); }
+}
+// drag a block with the mouse (or a pen) and drop it on a +. On touch the long press menu, cut and paste and the arrows do the same
+(function dragBlocks() {
+  const host = $('#svgHost'), canvas = $('#canvas'), ghost = $('#drag');
+  let d = null, dropped = false;
+  const stop = () => { if (!d) return; if (d.on) { d.g.classList.remove('dragging'); document.body.classList.remove('dragblk'); ghost.hidden = true; if (d.over) d.over.classList.remove('drop'); } d = null; };
+  host.addEventListener('pointerdown', e => {
+    if (e.pointerType === 'touch' || e.button !== 0 || verLocked(prog.ver)) return;
+    const g = e.target.closest('.blk'); if (!g) return;
+    const f = find(g.dataset.b); if (!f) return;
+    d = { f, g, x: e.clientX, y: e.clientY, on: false, over: null, inside: arraysIn(f.b) };
+  });
+  window.addEventListener('pointermove', e => {
+    if (!d) return;
+    if (!(e.buttons & 1)) { stop(); return; } // the button was released outside the window
+    if (!d.on) {
+      if (Math.hypot(e.clientX - d.x, e.clientY - d.y) < 6) return;
+      d.on = true; closePop(); tip.hidden = true; d.g.classList.add('dragging'); document.body.classList.add('dragblk');
+      ghost.textContent = fullLabel(d.f.b); ghost.hidden = false;
+    }
+    ghost.style.left = e.clientX + 12 + 'px'; ghost.style.top = e.clientY + 10 + 'px';
+    // the canvas scrolls by itself near its edges
+    const r = canvas.getBoundingClientRect(), m = 36, sp = 14;
+    if (e.clientY < r.top + m) canvas.scrollTop -= sp; else if (e.clientY > r.bottom - m) canvas.scrollTop += sp;
+    if (e.clientX < r.left + m) canvas.scrollLeft -= sp; else if (e.clientX > r.right - m) canvas.scrollLeft += sp;
+    // the nearest + that can take the block
+    let best = null, bd = 52;
+    for (const g of host.querySelectorAll('.slot')) {
+      if (!slotOk(d.f, d.inside, slotMap.get(+g.dataset.s))) continue;
+      const c = g.querySelector('.dot').getBoundingClientRect(), dist = Math.hypot(c.left + c.width / 2 - e.clientX, c.top + c.height / 2 - e.clientY);
+      if (dist < bd) { bd = dist; best = g; }
+    }
+    if (best !== d.over) { if (d.over) d.over.classList.remove('drop'); if (best) best.classList.add('drop'); d.over = best; }
+  });
+  window.addEventListener('pointerup', () => {
+    if (!d) return;
+    const { on, over, f } = d; stop();
+    if (!on) return;
+    dropped = true; setTimeout(() => { dropped = false; }, 0);
+    if (over) { const to = slotMap.get(+over.dataset.s); if (moveBlock(f, to)) { sel = f.b.id; renderDiagram(); renderPanel(); } }
+  });
+  window.addEventListener('pointercancel', stop);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && d) stop(); });
+  host.addEventListener('click', e => { if (dropped) { e.stopImmediatePropagation(); e.preventDefault(); } }, true);
 })();
 function setZoom(z) { zoom = Math.min(2, Math.max(0.25, Math.round(z * 20) / 20)); renderDiagram(); persist(); }
 function fitZoom() {
@@ -722,8 +789,8 @@ function renderPanel() {
   box.innerHTML = `<div class="bhead">${typeIcon(tk)}<div><h3>${esc(t('types')[tk])}</h3><p>${esc(noteOf(b))}</p></div></div>
     ${ro ? `<p class="offnote">⏱ ${esc(t('verLockedMsg'))}</p>` : b.lock ? `<p class="offnote">🔒 ${esc(t('lockNote'))}</p>` : b.off ? `<p class="offnote">${esc(t('blkOffNote'))}</p>` : ''}${fields}<div class="perr" id="blkErr" hidden></div>
     <div class="actions${ro ? ' ro' : ''}">
-      <button class="btn" data-act="up" ${f.idx === 0 ? 'disabled' : ''}>↑ ${esc(t('up'))}</button>
-      <button class="btn" data-act="down" ${f.idx === f.arr.length - 1 ? 'disabled' : ''}>↓ ${esc(t('down'))}</button>
+      <button class="btn" data-act="up" ${nextSlot(f, -1) ? '' : 'disabled'} title="↑">↑ ${esc(t('up'))}</button>
+      <button class="btn" data-act="down" ${nextSlot(f, 1) ? '' : 'disabled'} title="↓">↓ ${esc(t('down'))}</button>
       ${hasLock(b) ? '' : `<button class="btn" data-act="dup">${esc(t('dup'))}</button>
       <button class="btn" data-act="copy">${esc(t('copy'))}</button>
       <button class="btn" data-act="off">${esc(b.off ? t('blkOn') : t('blkOff'))}</button>
@@ -770,8 +837,7 @@ function blockAct(act) {
   if (!canEdit()) return;
   if (act === 'dup') return dupBlock(f);
   stopRun(); snap();
-  if (act === 'up' && f.idx > 0) { f.arr.splice(f.idx - 1, 0, f.arr.splice(f.idx, 1)[0]); }
-  if (act === 'down' && f.idx < f.arr.length - 1) { f.arr.splice(f.idx + 1, 0, f.arr.splice(f.idx, 1)[0]); }
+  if (act === 'up' || act === 'down') { hist.pop(); return moveSel(act === 'up' ? -1 : 1); }
   if (act === 'del') { deleteSel(f); return; }
   if (act === 'inv') { try { f.b.c = FL.invertCond(f.b.c); toast(t('inverted')); } catch (e) {} }
   if (act === 'swap') { const y = f.b.y; f.b.y = f.b.n; f.b.n = y; toast(t('swapped')); }
@@ -1742,6 +1808,7 @@ document.addEventListener('keydown', e => {
   if (mod && e.key.toLowerCase() === 'z' && !e.shiftKey) { e.preventDefault(); undo(); return; }
   if (mod && (e.key.toLowerCase() === 'y' || (e.key.toLowerCase() === 'z' && e.shiftKey))) { e.preventDefault(); redo(); return; }
   const f = sel && find(sel);
+  if ((e.key === 'ArrowUp' || e.key === 'ArrowDown') && f && !mod && !e.altKey) { e.preventDefault(); moveSel(e.key === 'ArrowUp' ? -1 : 1); return; }
   if ((e.key === 'Delete' || e.key === 'Backspace') && f) { e.preventDefault(); if (!canEdit()) return; stopRun(); snap(); deleteSel(f); return; }
   if (mod && e.key.toLowerCase() === 'c' && f) { copyBlock(f.b); return; }
   if (mod && e.key.toLowerCase() === 'x' && f) { e.preventDefault(); if (!canEdit()) return; copyBlock(f.b, true); stopRun(); snap(); deleteSel(f, true); return; }
